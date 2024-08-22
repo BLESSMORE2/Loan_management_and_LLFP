@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">
+        {% if messages %}
+            {% if messages.0.tags == "success" %}
+                Success
+            {% else %}
+                Upload Feedback
+            {% endif %}
+        {% else %}
+            Status
+        {% endif %}
+    </h2>
+
+    <div class="mb-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="d-flex justify-content-center">
+        {% if messages and messages.0.tags == "success" %}
+            <a href="{% url 'file_upload' %}" class="btn btn-primary mt-3">Upload Another File</a>
+        {% else %}
+            <a href="{% url 'file_upload' %}" class="btn btn-danger mt-3">Try Again</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
