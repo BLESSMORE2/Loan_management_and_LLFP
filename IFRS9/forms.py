@@ -1,4 +1,5 @@
 from django import forms
+from .models import *
 
 class UploadFileForm(forms.Form):
     file = forms.FileField(label='Select a file', widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
@@ -36,3 +37,11 @@ class ColumnMappingForm(forms.Form):
         cleaned_data = super().clean()
         column_mappings = {key.replace('column_mapping_', ''): value for key, value in cleaned_data.items()}
         return {'column_mappings': column_mappings}
+
+
+
+##########################################################
+class TableSelectForm(forms.Form):
+    table_name = forms.ModelChoiceField(queryset=TableMetadata.objects.filter(table_type='STG'), label="Select Table")
+
+# Form for Ldn_Financial_Instrument

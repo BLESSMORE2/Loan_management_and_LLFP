@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="bg-light py-3 shadow-sm border-bottom">
+    <div class="container">
+        <ul class="nav nav-pills justify-content-center">
+            <li class="nav-item">
+                <a class="nav-link custom-link" href="{% url 'file_upload' %}">Data Upload as File</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link custom-link" href="{% url 'data_entry' %}">Data Upload as Form</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link custom-link" href="#">View Data</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Data Upload as File</h5>
+                    <p class="card-text">Upload data through a file (CSV, Excel).</p>
+                    <a href="{% url 'file_upload' %}" class="btn btn-primary custom-link">Upload File</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Data Upload as Form</h5>
+                    <p class="card-text">Upload data through a web form.</p>
+                    <a href="{% url 'data_entry' %}" class="btn btn-secondary custom-link">Upload Form</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">View Data</h5>
+                    <p class="card-text">View the uploaded data.</p>
+                    <a href="#" class="btn btn-info custom-link">View Data</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-link {
+        font-weight: bold;
+        color: darkblue;
+    }
+    .custom-link:hover {
+        color: darkblue;
+    }
+</style>
+{% endblock %}

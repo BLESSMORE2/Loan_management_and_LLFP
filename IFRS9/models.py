@@ -91,7 +91,7 @@ class Ldn_Bank_Product_Info(models.Model):
     v_balance_sheet_category = models.CharField(max_length=50)
     v_balance_sheet_category_desc = models.CharField(max_length=255)
     v_prod_type_desc = models.CharField(max_length=255)
-    v_prod_desc = models.TextField()
+    v_prod_desc = models.CharField(max_length=50)
 
 class Ldn_Customer_Info(models.Model):
     v_party_id = models.CharField(max_length=50, unique=True)
@@ -105,7 +105,7 @@ class Ldn_Customer_Info(models.Model):
 class Ldn_PD_Term_Structure(models.Model):
     v_pd_term_structure_id = models.CharField(max_length=100, unique=True)
     v_pd_term_structure_name = models.CharField(max_length=255)
-    v_pd_term_structure_desc = models.TextField(blank=True, null=True)
+    v_pd_term_structure_desc = models.CharField(max_length=50)
     v_pd_term_frequency_unit = models.CharField(max_length=1, choices=[
         ('M', 'Monthly'),
         ('Q', 'Quarterly'),
@@ -152,7 +152,7 @@ class Ldn_PD_Term_Structure_Dtl(models.Model):
 class Ldn_LGD_Term_Structure(models.Model):
     v_lgd_term_structure_id = models.CharField(max_length=100, primary_key=True)
     v_lgd_term_structure_name = models.CharField(max_length=255)
-    v_lgd_term_structure_desc = models.TextField()
+    v_lgd_term_structure_desc = models.CharField(max_length=50)
     v_lgd_term_frequency_unit = models.CharField(max_length=1)  # e.g., M, Q, H, Y, D
     n_lgd_percent = models.DecimalField(max_digits=5, decimal_places=4)
     fic_mis_date = models.DateField()

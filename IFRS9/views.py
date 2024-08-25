@@ -9,10 +9,12 @@ from django.views import View
 from django.contrib import messages
 from threading import Thread
 from queue import Queue
-from django.db import IntegrityError
+from django.db import transaction, IntegrityError, DatabaseError
 from django.core.exceptions import ValidationError
 from django.db import connection
 from django.apps import apps
+from django.forms import modelform_factory
+from django.forms import modelformset_factory
 
 
 
@@ -40,22 +42,10 @@ def dashboard_view(request):
 
     return render(request, 'dashboard.html', {'graph': image_base64})
 
-def stg_tables_view(request):
-    # Query the TableMetadata model for tables of type 'STG'
-    stg_tables = TableMetadata.objects.filter(table_type='STG')
-    
-    selected_table = request.GET.get('table_name')  # Get the selected table name from the query params
-    print('rr')
-    # If a specific table is selected, filter the results further
-    if selected_table:
-        stg_tables = stg_tables.filter(table_name=selected_table)
-    
-    # Pass the result to the template
-    return render(request, 'stg_tables.html', {
-        'stg_tables': stg_tables,
-        'selected_table': selected_table
-    })
 
+
+def data_management(request):
+    return render(request, 'load_data/data_management.html')
 class FileUploadView(View):
     template_name = 'load_data/file_upload_step1.html'
 
@@ -329,3 +319,40 @@ class SubmitToDatabaseView(View):
             messages.error(request, f"Unexpected Error: {str(e)}")
 
         return render(request, self.template_name)
+    
+    ####################################################################
+def data_entry_view(request):
+    table_form = TableSelectForm(request.POST or None)
+    data_form = None
+
+    if request.method == 'POST':
+        if table_form.is_valid():
+            selected_table = table_form.cleaned_data['table_name'].table_name  # Get the selected table's name
+
+            try:
+                # Get the model class dynamically
+                model_class = apps.get_model('IFRS9', selected_table)  # Replace 'IFRS9' with your actual app name
+            except LookupError:
+                messages.error(request, "Error: The selected table does not exist.")
+                return render(request, 'load_data/data_entry.html', {'table_form': table_form, 'data_form': data_form})
+
+            # Dynamically create a form for the selected model
+            DynamicForm = modelform_factory(model_class, fields='__all__')
+            data_form = DynamicForm(request.POST or None)
+
+            if data_form.is_valid():
+                try:
+                    data_form.save()
+                    messages.success(request, "Data successfully saved!")
+                    return redirect('data_entry')
+                except IntegrityError as e:
+                    messages.error(request, f"Database Error: {e}")
+                except ValidationError as e:
+                    messages.error(request, f"Validation Error: {e.message_dict}")
+                except Exception as e:
+                    messages.error(request, f"Unexpected Error: {e}")
+    
+    return render(request, 'load_data/data_entry.html', {
+        'table_form': table_form,
+        'data_form': data_form
+    })
