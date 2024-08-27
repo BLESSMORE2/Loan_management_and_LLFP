@@ -44,4 +44,43 @@ class ColumnMappingForm(forms.Form):
 class TableSelectForm(forms.Form):
     table_name = forms.ModelChoiceField(queryset=TableMetadata.objects.filter(table_type='STG'), label="Select Table")
 
-# Form for Ldn_Financial_Instrument
+
+def generate_filter_form(model_class):
+    """
+    Dynamically generate a filter form based on the model's fields.
+    """
+    class FilterForm(forms.Form):
+        pass
+
+    for field in model_class._meta.fields:
+        if isinstance(field, forms.CharField):
+            FilterForm.base_fields[field.name] = forms.CharField(
+                required=False,
+                label=field.verbose_name,
+                widget=forms.TextInput(attrs={'class': 'form-control'})
+            )
+        elif isinstance(field, forms.DateField):
+            FilterForm.base_fields[field.name] = forms.DateField(
+                required=False,
+                label=field.verbose_name,
+                widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+            )
+        elif isinstance(field, forms.IntegerField):
+            FilterForm.base_fields[field.name] = forms.IntegerField(
+                required=False,
+                label=field.verbose_name,
+                widget=forms.NumberInput(attrs={'class': 'form-control'})
+            )
+        elif isinstance(field, forms.FloatField):
+            FilterForm.base_fields[field.name] = forms.FloatField(
+                required=False,
+                label=field.verbose_name,
+                widget=forms.NumberInput(attrs={'class': 'form-control'})
+            )
+        # Add other field types as needed
+
+    return FilterForm
+
+class FilterForm(forms.Form):
+    filter_column = forms.CharField(widget=forms.HiddenInput())
+    filter_value = forms.CharField(widget=forms.HiddenInput())

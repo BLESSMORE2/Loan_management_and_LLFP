@@ -1,4 +1,4 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect, get_object_or_404
 import matplotlib.pyplot as plt
 import io
 import urllib, base64
@@ -15,6 +15,12 @@ from django.db import connection
 from django.apps import apps
 from django.forms import modelform_factory
 from django.forms import modelformset_factory
+from django.db.models import Value
+from django.db.models.functions import Coalesce
+from django.db.models import Q
+import csv
+from django.http import HttpResponse
+from django.http import JsonResponse
 
 
 
@@ -356,3 +362,213 @@ def data_entry_view(request):
         'table_form': table_form,
         'data_form': data_form
     })
+
+
+########################################################
+class TableSelectForm(forms.Form):
+    table_name = forms.ChoiceField(choices=[], label="Select Table")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Dynamically populate the choices with all the tables in the app
+        app_models = apps.get_app_config('IFRS9').get_models()
+        self.fields['table_name'].choices = [(model._meta.model_name, model._meta.verbose_name) for model in app_models]
+
+def view_data(request):
+    table_form = TableSelectForm(request.GET or None)
+    data = None
+    columns = []
+    column_unique_values = {}
+    table_name = None
+
+    if table_form.is_valid():
+        table_name = table_form.cleaned_data['table_name']
+        print(f"Table name: {table_name}")
+        try:
+            model_class = apps.get_model('IFRS9', table_name)
+            data = model_class.objects.all()
+            columns = [field.name for field in model_class._meta.fields]
+            for column in columns:
+                column_unique_values[column] = model_class.objects.values_list(column, flat=True).distinct()
+        except LookupError:
+            messages.error(request, "Error: The selected table does not exist.")
+
+    return render(request, 'load_data/view_data.html', {
+        'table_form': table_form,
+        'data': data,
+        'columns': columns,
+        'column_unique_values': column_unique_values,
+        'table_name': table_name,  # Pass the table_name to the template
+    })
+
+
+def filter_table(request, table_name):
+    table_form = TableSelectForm(initial={'table_name': table_name})
+    data = None
+    columns = []
+    column_unique_values = {}
+
+    print(f"Table name: {table_name}")
+    
+
+    try:
+        # Get the model class dynamically using the table name
+        model_class = apps.get_model('IFRS9', table_name)
+        data = model_class.objects.all()
+
+        # Handle filtering via GET parameters
+        filter_column = request.GET.get('filter_column')
+        filter_values = request.GET.get('filter_values')
+        sort_order = request.GET.get('sort_order')  # New sort order parameter
+
+
+
+        # Filtering logic
+        if filter_column and filter_values:
+            filter_values_list = filter_values.split(',')
+
+            # Filter out any unwanted values like "on" or "Select All"
+            filter_values_list = [value for value in filter_values_list if value not in ["on", "(Select All)"]]
+
+            # Prepare a Q object to combine multiple conditions
+            filters = Q()
+
+            # If "None" is selected, add an isnull filter
+            if "None" in filter_values_list:
+                filter_values_list.remove("None")
+                filters |= Q(**{f"{filter_column}__isnull": True})
+
+            # If there are other values selected, add the in filter
+            if filter_values_list:
+                filters |= Q(**{f"{filter_column}__in": filter_values_list})
+
+            # Apply the combined filter to the data
+            data = data.filter(filters)
+
+   
+
+        # Sorting logic
+        if filter_column and sort_order:
+            if sort_order == 'asc':
+                data = data.order_by(filter_column)
+            elif sort_order == 'desc':
+                data = data.order_by(f'-{filter_column}')
+
+        # Prepare column names and unique values for each column
+        columns = [field.name for field in model_class._meta.fields]
+        for column in columns:
+            column_unique_values[column] = model_class.objects.values_list(column, flat=True).distinct()
+
+      
+
+    except LookupError:
+        messages.error(request, "Error: The selected table does not exist.")
+        print("Error: The selected table does not exist.")
+
+    return render(request, 'load_data/view_data.html', {
+        'table_form': table_form,
+        'data': data,
+        'columns': columns,
+        'column_unique_values': column_unique_values,
+        'table_name': table_name,
+    })
+
+def download_data(request, table_name):
+    try:
+        # Get the model class dynamically using the table name
+        model_class = apps.get_model('IFRS9', table_name)
+        data = model_class.objects.all()
+
+        # Handle filtering via GET parameters
+        filter_column = request.GET.get('filter_column')
+        filter_values = request.GET.get('filter_values')
+
+        if filter_column and filter_values:
+            filter_values_list = filter_values.split(',')
+
+            # Filter out any unwanted values like "on" or "Select All"
+            filter_values_list = [value for value in filter_values_list if value not in ["on", "(Select All)"]]
+
+            # Prepare a Q object to combine multiple conditions
+            filters = Q()
+
+            # If "None" is selected, add an isnull filter
+            if "None" in filter_values_list:
+                filter_values_list.remove("None")
+                filters |= Q(**{f"{filter_column}__isnull": True})
+
+            # If there are other values selected, add the in filter
+            if filter_values_list:
+                filters |= Q(**{f"{filter_column}__in": filter_values_list})
+
+            # Apply the combined filter to the data
+            data = data.filter(filters)
+
+        # Handle sorting via GET parameters
+        sort_order = request.GET.get('sort_order')
+        if filter_column and sort_order:
+            if sort_order == 'asc':
+                data = data.order_by(filter_column)
+            elif sort_order == 'desc':
+                data = data.order_by(f'-{filter_column}')
+
+        # Create the HTTP response object with the appropriate CSV header.
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{table_name}.csv"'
+
+        writer = csv.writer(response)
+        # Write the headers
+        writer.writerow([field.name for field in model_class._meta.fields])
+
+        # Write the data rows
+        for item in data:
+            writer.writerow([getattr(item, field.name) for field in model_class._meta.fields])
+
+        return response
+
+    except LookupError:
+        messages.error(request, "Error: The selected table does not exist.")
+        return redirect('view_data')
+
+
+
+def edit_row(request, table_name, row_id):
+    try:
+        # Get the model class dynamically
+        model_class = apps.get_model('IFRS9', table_name)
+        row = get_object_or_404(model_class, id=row_id)
+
+        if request.method == 'POST':
+            # Update the row with new data from the AJAX request
+            for field, value in request.POST.items():
+                if field != 'csrfmiddlewaretoken':
+                    setattr(row, field, value)
+            row.save()
+
+            return JsonResponse({'success': True})  # Respond with success
+
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+    except LookupError:
+        return JsonResponse({'success': False, 'error': 'Table not found'}, status=404)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+def delete_row(request, table_name, row_id):
+    try:
+        # Get the model class dynamically
+        model_class = apps.get_model('IFRS9', table_name)
+        row = get_object_or_404(model_class, id=row_id)
+
+        if request.method == 'POST':
+            row.delete()
+            return JsonResponse({'success': True})  # Respond with success
+
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+    except LookupError:
+        return JsonResponse({'success': False, 'error': 'Table not found'}, status=404)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
