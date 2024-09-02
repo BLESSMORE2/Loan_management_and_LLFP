@@ -89,9 +89,10 @@
         </div>
     {% endif %}
 
-    <!-- Include jQuery and Bootstrap without integrity checks -->
+    <!-- Include jQuery, Bootstrap, and Moment.js -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 
     <script>
         console.log("Script loaded successfully");
@@ -111,45 +112,116 @@
 
         // Save changes
         $(document).on('click', '.save-row', function() {
-            const row = $(this).closest('tr');
-            const rowId = row.data('id');
-            const tableName = $("select[name='table_name']").val();  // Use the selected table name
-            const updatedData = {};
+    const row = $(this).closest('tr');
+    const rowId = row.data('id');
+    const tableName = $("select[name='table_name']").val();  // Use the selected table name
+    const updatedData = {};
 
-            row.find('.editable-field').each(function() {
-                const cell = $(this);
-                const input = cell.find('input');
-                updatedData[cell.data('column')] = input.val();
-            });
+    row.find('.editable-field').each(function() {
+        const cell = $(this);
+        const input = cell.find('input');
+        let value = input.val().trim();  // Trim the value to remove unnecessary spaces
+        const column = cell.data('column');
 
-            // Send AJAX request to update the row
-            $.ajax({
-                url: `{% url 'edit_row' 'table_name_placeholder' 0 %}`.replace('table_name_placeholder', tableName).replace('0', rowId),
-                method: 'POST',
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    ...updatedData
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Replace input fields with updated text
-                        row.find('.editable-field').each(function() {
-                            const cell = $(this);
-                            const input = cell.find('input');
-                            cell.text(input.val());
-                        });
-                        row.find('.edit-row, .delete-row').removeClass('d-none');
-                        row.find('.save-row, .cancel-row').addClass('d-none');
+        // Handle None and date formats
+        if (value === "" || value.toLowerCase() === 'none') {
+            value = null;
+        } else if (moment(value, [
+            'MMMM D, YYYY',  
+            'YYYY-MM-DD',    
+            'MM/DD/YYYY',    
+            'DD/MM/YYYY',    
+            'MM-DD-YYYY',    
+            'DD-MM-YYYY',    
+            'YYYY/MM/DD',    
+            'D MMM YYYY',    
+            'MMM D, YYYY',   
+            'MMM DD, YYYY',  
+            'D-MMM-YY',      
+            'D-MMM-YYYY',    
+            'MMM D YYYY',    
+            'MMM DD YYYY',   
+            'MMMM D YYYY',   
+            'DD.MM.YYYY',    
+            'D.MM.YYYY',     
+            'D MMMM YYYY'    
+        ], true).isValid()) {
+            value = moment(value, [
+                'MMMM D, YYYY',
+                'YYYY-MM-DD',
+                'MM/DD/YYYY',
+                'DD/MM/YYYY',
+                'MM-DD-YYYY',
+                'DD-MM-YYYY',
+                'YYYY/MM/DD',
+                'D MMM YYYY',
+                'MMM D, YYYY',
+                'MMM DD, YYYY',
+                'D-MMM-YY',
+                'D-MMM-YYYY',
+                'MMM D YYYY',
+                'MMM DD YYYY',
+                'MMMM D YYYY',
+                'DD.MM.YYYY',
+                'D.MM.YYYY',
+                'D MMMM YYYY'
+            ]).format('YYYY-MM-DD');
+        }
+
+        // Handle decimal/numeric fields
+        if (column.toLowerCase().includes('amount') || column.toLowerCase().includes('price') || column.toLowerCase().includes('cost') || column.toLowerCase().includes('rate')) {
+            if (value === null || value === "" || isNaN(parseFloat(value))) {
+                // If the field expects a number and the value is null or invalid, do not include it
+                console.log(`Skipping column ${column} due to invalid or null decimal value.`);
+                return; // Skip adding this field to updatedData
+            } else {
+                // Convert to float if valid
+                value = parseFloat(value).toFixed(2);  // Adjust the decimal places if needed
+            }
+        }
+
+        // Only include the value in the update if it's not null or invalid
+        if (value !== null) {
+            updatedData[column] = value;
+        } else {
+            console.log(`Skipping column ${column} due to invalid or null value.`);
+        }
+    });
+
+    // Send AJAX request to update the row
+    $.ajax({
+        url: `{% url 'edit_row' 'table_name_placeholder' 0 %}`.replace('table_name_placeholder', tableName).replace('0', rowId),
+        method: 'POST',
+        data: {
+            'csrfmiddlewaretoken': '{{ csrf_token }}',
+            ...updatedData
+        },
+        success: function(response) {
+            if (response.success) {
+                row.find('.editable-field').each(function() {
+                    const cell = $(this);
+                    const input = cell.find('input');
+                    const value = input.val().trim();
+                    
+                    // Handle None and date formats for display
+                    if (value === "" || value.toLowerCase() === "none") {
+                        cell.text("None");
                     } else {
-                        alert('Error: ' + response.error);
+                        cell.text(value);
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.log(xhr.responseText);
-                    alert('Error updating the row: ' + xhr.responseText);
-                }
-            });
-        });
+                });
+                row.find('.edit-row, .delete-row').removeClass('d-none');
+                row.find('.save-row, .cancel-row').addClass('d-none');
+            } else {
+                alert('Error: ' + response.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log(xhr.responseText);
+            alert('Error updating the row: ' + xhr.responseText);
+        }
+    });
+});
 
         // Cancel editing
         $(document).on('click', '.cancel-row', function() {
