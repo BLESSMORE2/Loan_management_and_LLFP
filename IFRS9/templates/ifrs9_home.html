@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-primary">{{ title }}</h1>
+        <a href="" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-database fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Data Management</h5>
+                    <p class="card-text">Manage your data efficiently and securely.</p>
+                    <a href="{% url 'data_management' %}" class="btn btn-light custom-link">Go to Data Management</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-shield-alt fa-3x text-dark mb-3"></i>
+                    <h5 class="card-title">Operations</h5>
+                    <p class="card-text">Manage application operations.</p>
+                    <a href="" class="btn btn-light custom-link">Operations</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Credit Risk Models</h5>
+                    <p class="card-text">Analyze and manage credit risk models.</p>
+                    <a href="{% url 'credit_risk_models' %}" class="btn btn-light custom-link">Explore Models</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Reporting & Analytics</h5>
+                    <p class="card-text">Generate and view detailed reports and analytics.</p>
+                    <a href="" class="btn btn-light custom-link">View Reports</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-cogs fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">System Configuration</h5>
+                    <p class="card-text">Configure system settings and preferences.</p>
+                    <a href="" class="btn btn-danger custom-link">Configure System</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-life-ring fa-3x text-danger mb-3"></i>
+                    <h5 class="card-title">Help & Support</h5>
+                    <p class="card-text">Access help and support resources.</p>
+                    <a href="" class="btn btn-light custom-link">Get Support</a>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+</div>
+
+<style>
+    .custom-link {
+        font-weight: bold;
+        color: darkblue;
+    }
+    .custom-link:hover {
+        color: darkblue;
+    }
+</style>
+{% endblock %}

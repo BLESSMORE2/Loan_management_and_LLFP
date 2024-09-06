@@ -5,9 +5,9 @@ from .models import *
 
 @admin.register(Ldn_Financial_Instrument)
 class Ldn_Financial_InstrumentsAdmin(admin.ModelAdmin):
-    list_display = ('v_account_number', 'fic_mis_date', 'n_eop_curr_prin_bal')
-    search_fields = ('v_account_number', 'v_loan_type')
-    list_filter = ('v_loan_type', 'v_country_id')
+    list_display = ('v_account_number', 'fic_mis_date', 'v_prod_code')  # Ensure these fields exist
+    search_fields = ('v_account_number', 'v_loan_type')  # Ensure these fields exist
+    list_filter = ('v_loan_type', 'v_country_id') 
 
 @admin.register(Ldn_Customer_Rating_Detail)
 class Ldn_Customer_Rating_DetailsAdmin(admin.ModelAdmin):
@@ -39,6 +39,18 @@ class Ldn_PD_Term_Structure_DtlAdmin(admin.ModelAdmin):
     search_fields = ('v_pd_term_structure_id', 'v_credit_risk_basis_cd')
     list_filter = ('v_pd_term_structure_id',)
 
+@admin.register(FSI_LLFP_APP_PREFERENCES)
+class FSI_LLFP_APP_PREFERENCESAdmin(admin.ModelAdmin):
+    list_display = ('pd_interpolation_method', 'n_pd_model_proj_cap', 'llfp_bucket_length')
+    search_fields = ('pd_interpolation_method', )
+    list_filter = ('pd_interpolation_method',)
+@admin.register(FSI_PD_Interpolated)
+class FSI_PD_InterpolatedAdmin(admin.ModelAdmin):
+    list_display = ('v_pd_term_structure_id','v_pd_term_structure_type', 'v_delq_band_code','n_per_period_default_prob', 'n_cumulative_default_prob','v_cash_flow_bucket_id')
+    search_fields = ('v_pd_term_structure_type', )
+    list_filter = ('v_pd_term_structure_type',)
+
+
 @admin.register(Ldn_LGD_Term_Structure)
 class Ldn_LGD_Term_StructureAdmin(admin.ModelAdmin):
     list_display = ('v_lgd_term_structure_id', 'v_lgd_term_structure_name', 'fic_mis_date')
@@ -55,13 +67,20 @@ class Ldn_Exchange_RatesAdmin(admin.ModelAdmin):
 class Ldn_Expected_CashflowsAdmin(admin.ModelAdmin):
     list_display = ('fic_mis_date', 'v_account_number', 'd_cash_flow_date', 'n_cash_flow_amount')
     search_fields = ('v_account_number',)
-    list_filter = ('fic_mis_date', 'v_iso_ccy_code')
+    list_filter = ('fic_mis_date', 'V_CASH_FLOW_TYPE')
 
 @admin.register(Ldn_Recovery_Cashflow)
 class Ldn_Recovery_CashflowsAdmin(admin.ModelAdmin):
     list_display = ('fic_mis_date', 'v_account_number', 'd_cash_flow_date', 'n_cash_flow_amount')
     search_fields = ('v_account_number',)
-    list_filter = ('fic_mis_date', 'v_iso_ccy_code')
+    list_filter = ('fic_mis_date', 'V_CASH_FLOW_TYPE')
+
+
+@admin.register(FSI_Expected_Cashflow)
+class FSI_Expected_CashflowAdmin(admin.ModelAdmin):
+    list_display = ('fic_mis_date', 'v_account_number', 'd_cash_flow_date', 'n_cash_flow_amount')
+    search_fields = ('v_account_number',)
+    list_filter = ('fic_mis_date', 'V_CASH_FLOW_TYPE')
 
 @admin.register(Ldn_Acct_Recovery_Detail)
 class Ldn_Acct_Recovery_DetailsAdmin(admin.ModelAdmin):

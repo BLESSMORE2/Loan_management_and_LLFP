@@ -3,66 +3,42 @@ from django.db import models
 # Create your models here.
 
 class Ldn_Financial_Instrument(models.Model):
+    fic_mis_date = models.DateField(null=True)
     v_account_number = models.CharField(max_length=255, unique=True, null=False)
-    d_last_payment_date = models.DateField(null=True)
-    d_revised_maturity_date = models.DateField(null=True)
-    d_maturity_date = models.DateField(null=True)
-    d_orig_maturity_date = models.DateField(null=True)
-    d_start_date_p = models.DateField(null=True)
-    d_start_date_i = models.DateField(null=True)
+    v_cust_ref_code = models.CharField(max_length=50, null=True)
+    v_prod_code = models.CharField(max_length=50, null=True)
+    n_curr_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    v_interest_freq_unit = models.CharField(max_length=50, null=True)
+    v_interest_payment_type = models.CharField(max_length=50, null=True)
+    n_effective_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    n_accrued_interest = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     d_start_date = models.DateField(null=True)
+    d_last_payment_date = models.DateField(null=True)
     d_next_payment_date = models.DateField(null=True)
-    n_cnr = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_allocated_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_commitment_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_maturity_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    d_maturity_date = models.DateField(null=True)
+    v_repayment_type = models.CharField(max_length=50, null=True)
+    v_amrt_term_unit = models.CharField(max_length=50, null=True)
     n_eop_curr_prin_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_eop_int_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_eop_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_current_fees = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_delinquent_days = models.IntegerField(null=True)
-    v_interest_freq_unit = models.CharField(max_length=50, null=True)
-    v_interest_payment_type = models.CharField(max_length=50, null=True)
     n_pd_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     n_lgd_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    n_ccf_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     n_acct_risk_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    n_amrt_term = models.IntegerField(null=True)
-    v_amrt_term_unit = models.CharField(max_length=50, null=True)
-    v_interest_method = models.CharField(max_length=50, null=True)
     v_ccy_code = models.CharField(max_length=10, null=True)
     v_loan_type = models.CharField(max_length=50, null=True)
+    m_fees = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    v_m_fees_term_unit=models.CharField(max_length=1, null=True)
     v_lob_code = models.CharField(max_length=50, null=True)
     v_lv_code = models.CharField(max_length=50, null=True)
     v_country_id = models.CharField(max_length=50, null=True)
     v_credit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    v_coll_ccy = models.CharField(max_length=10, null=True)
     v_collateral_type = models.CharField(max_length=50, null=True)
-    n_effective_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    d_orig_next_payment_date = models.DateField(null=True)
-    fic_mis_date = models.DateField(null=True)
-    n_fees_eir = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    v_account_group_id = models.CharField(max_length=50, null=True)
     v_loan_desc = models.CharField(max_length=255, null=True)
-    n_amortized_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_market_value = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_twelvemonths_pd_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    n_guaranteed_amt = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    v_loan_default_reason = models.CharField(max_length=255, null=True)
-    d_past_due_date = models.DateField(null=True)
-    n_ifrs9_provision_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_fees = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     v_account_classification_cd = models.CharField(max_length=50, null=True)
-    v_day_count_ind = models.CharField(max_length=10, null=True)
     v_gaap_code = models.CharField(max_length=50, null=True)
-    v_repayment_type = models.CharField(max_length=50, null=True)
-    n_accrued_interest = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_curr_payment_recd = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_curr_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    n_undrawn_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     v_branch_code = models.CharField(max_length=50, null=True)
-    v_cust_ref_code = models.CharField(max_length=50, null=True)
-    v_prod_code = models.CharField(max_length=50, null=True)
+    
 
     class Meta:
         db_table = 'Ldn_Financial_Instrument'
@@ -147,6 +123,58 @@ class Ldn_PD_Term_Structure_Dtl(models.Model):
         unique_together = ('v_pd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd', 'n_period_applicable', 'v_scenario_cd')
 
 
+class FSI_PD_Interpolated(models.Model):
+    v_pd_term_structure_id = models.CharField(max_length=100)
+    fic_mis_date = models.DateField( null=True)
+    v_int_rating_code = models.CharField(max_length=20, null=True, blank=True)  # For Rating bands
+    v_delq_band_code = models.CharField(max_length=20, null=True, blank=True)  # For DPD bands
+    v_pd_term_structure_type = models.CharField(max_length=3)  # R for Rating, D for DPD
+    n_pd_percent = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_per_period_default_prob = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_cumulative_default_prob = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    v_cash_flow_bucket_id = models.IntegerField()
+    v_cash_flow_bucket_unit = models.CharField(max_length=1)  # E.g., 'M' for Monthly
+    d_record_start_date = models.DateField()
+    d_record_end_date = models.DateField()
+
+    class Meta:
+        db_table = 'FSI_PD_Interpolated'
+
+from django.db import models
+
+class FSI_LLFP_APP_PREFERENCES(models.Model):
+    PD_INTERPOLATION_METHOD_CHOICES = [
+        ('NL-POISSON', 'Non-Linear Poisson'),
+        ('NL-GEOMETRIC', 'Non-Linear Geometric'),
+        ('NL-ARITHMETIC', 'Non-Linear Arithmetic'),
+        ('EXPONENTIAL_DECAY', 'Exponential Decay'),
+        # Add more methods here if needed
+    ]
+
+    pd_interpolation_method = models.CharField(
+        max_length=100,
+        choices=PD_INTERPOLATION_METHOD_CHOICES,
+        null=True,
+        blank=True,
+        default='NL-POISSON'
+    )
+    n_pd_model_proj_cap = models.IntegerField(default=25)
+    llfp_bucket_length = models.CharField(
+        max_length=1,
+        choices=[
+            ('Y', 'Yearly'),
+            ('H', 'Half-Yearly'),
+            ('Q', 'Quarterly'),
+            ('M', 'Monthly'),
+        ],
+        default='Y'
+    )
+
+   
+
+
+
+
 
 
 class Ldn_LGD_Term_Structure(models.Model):
@@ -177,20 +205,48 @@ class Ldn_Expected_Cashflow(models.Model):
     v_account_number = models.CharField(max_length=50)
     d_cash_flow_date = models.DateField()
     n_cash_flow_amount = models.DecimalField(max_digits=20, decimal_places=2)
-    v_financial_element_code = models.CharField(max_length=10)
-    v_iso_ccy_code = models.CharField(max_length=3)
+    V_CASH_FLOW_TYPE = models.CharField(max_length=10)
+    V_CCY_CODE = models.CharField(max_length=3)
 
     class Meta:
         db_table = 'Ldn_expected_cashflow'
         unique_together = ('fic_mis_date', 'v_account_number', 'd_cash_flow_date')
+
+
+class FSI_Expected_Cashflow(models.Model):
+    fic_mis_date = models.DateField()
+    v_account_number = models.CharField(max_length=50)
+    n_cash_flow_bucket = models.IntegerField() 
+    d_cash_flow_date = models.DateField()
+    n_principal_payment = models.DecimalField(max_digits=20, decimal_places=2)
+    n_interest_payment = models.DecimalField(max_digits=20, decimal_places=2)
+    n_cash_flow_amount = models.DecimalField(max_digits=20, decimal_places=2)
+    n_balance = models.DecimalField(max_digits=20, decimal_places=2)
+    V_CASH_FLOW_TYPE = models.CharField(max_length=10)
+    V_CCY_CODE = models.CharField(max_length=3)
+
+    class Meta:
+        db_table = 'FSI_Expected_Cashflow'
+        unique_together = ('fic_mis_date', 'v_account_number', 'd_cash_flow_date')
+
+class Ldn_Payment_Schedule(models.Model):
+    fic_mis_date = models.DateField(null=False)
+    v_account_number = models.CharField(max_length=50, null=False)
+    d_payment_date = models.DateField(null=False)
+    n_principal_payment_amt = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_interest_payment_amt = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_amount = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    v_payment_type_cd = models.CharField(max_length=20, null=True)  # Payment type code
+
+
 
 class Ldn_Recovery_Cashflow(models.Model):
     fic_mis_date = models.DateField()
     v_account_number = models.CharField(max_length=50)
     d_cash_flow_date = models.DateField()
     n_cash_flow_amount = models.DecimalField(max_digits=20, decimal_places=2)
-    v_financial_element_code = models.CharField(max_length=10)
-    v_iso_ccy_code = models.CharField(max_length=3)
+    V_CASH_FLOW_TYPE = models.CharField(max_length=10)
+    V_CCY_CODE = models.CharField(max_length=3)
 
     class Meta:
         db_table = 'Ldn_Recovery_Cashflow'
