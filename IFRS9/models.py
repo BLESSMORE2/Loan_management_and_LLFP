@@ -286,3 +286,47 @@ class TableMetadata(models.Model):
 
     def __str__(self):
         return f"{self.table_name} ({self.get_table_type_display()})"
+
+
+class fsi_Financial_Cash_Flow_Cal(models.Model):
+    v_account_number = models.CharField(max_length=20, null=False)
+    d_cash_flow_date = models.DateField(null=False)
+    n_run_skey = models.BigIntegerField(null=False, default=-1)
+    fic_mis_date = models.DateField(null=False)
+    n_principal_run_off = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_interest_run_off = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_cash_flow_bucket_id = models.IntegerField(null=True)
+    n_cash_flow_amount = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_cumulative_loss_rate = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_expected_cash_flow_rate = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_discount_rate = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_discount_factor = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_expected_cash_flow = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_effective_interest_rate = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_lgd_percent = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_expected_cash_flow_pv = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_exposure_at_default = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_forward_expected_loss = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_forward_expected_loss_pv = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_interest_rate_cd = models.BigIntegerField(null=True)
+    v_ccy_code = models.CharField(max_length=3, null=True)
+    n_cash_shortfall = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_per_period_loss_rate = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_cash_shortfall_pv = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_per_period_loss_pv = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_cash_flow_fwd_pv = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_forward_exposure_amt = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_per_period_impaired_prob = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_cumulative_impaired_prob = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_12m_per_period_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_12m_cumulative_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True)
+    n_12m_exp_cash_flow = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_12m_exp_cash_flow_pv = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_12m_cash_shortfall = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_12m_cash_shortfall_pv = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_12m_fwd_expected_loss = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+    n_12m_fwd_expected_loss_pv = models.DecimalField(max_digits=22, decimal_places=3, null=True)
+
+    class Meta:
+        db_table = 'fsi_Financial_Cash_Flow_Cal'
+        unique_together = (('v_account_number', 'd_cash_flow_date', 'fic_mis_date', 'n_run_skey'),)
