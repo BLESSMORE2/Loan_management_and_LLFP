@@ -7,16 +7,21 @@ class Ldn_Financial_Instrument(models.Model):
     v_account_number = models.CharField(max_length=255, unique=True, null=False)
     v_cust_ref_code = models.CharField(max_length=50, null=True)
     v_prod_code = models.CharField(max_length=50, null=True)
-    n_curr_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    n_curr_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, help_text="Fixed interest rate for the loan")    
+    # The changing interest rate (e.g., LIBOR or SOFR)
+    n_interest_changing_rate = models.DecimalField(max_digits=5, decimal_places=4, null=True, help_text="Changing interest rate value, e.g., LIBOR rate at a specific time")   
     v_interest_freq_unit = models.CharField(max_length=50, null=True)
     v_interest_payment_type = models.CharField(max_length=50, null=True)
+    # New fields for variable rate and fees   
+    v_management_fee_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, help_text="Annual management fee rate, e.g., 1%")
+    n_wht_percent= models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_effective_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     n_accrued_interest = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     d_start_date = models.DateField(null=True)
     d_last_payment_date = models.DateField(null=True)
     d_next_payment_date = models.DateField(null=True)
     d_maturity_date = models.DateField(null=True)
-    v_repayment_type = models.CharField(max_length=50, null=True)
+    v_amrt_repayment_type = models.CharField(max_length=50, null=True)
     v_amrt_term_unit = models.CharField(max_length=50, null=True)
     n_eop_curr_prin_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_eop_int_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
@@ -38,12 +43,11 @@ class Ldn_Financial_Instrument(models.Model):
     v_account_classification_cd = models.CharField(max_length=50, null=True)
     v_gaap_code = models.CharField(max_length=50, null=True)
     v_branch_code = models.CharField(max_length=50, null=True)
-    
-
     class Meta:
         db_table = 'Ldn_Financial_Instrument'
 
 
+    
 class Ldn_Customer_Rating_Detail(models.Model):
     fic_mis_date = models.DateField(null=False)
     v_rating_src_code = models.CharField(max_length=50)
@@ -134,13 +138,32 @@ class FSI_PD_Interpolated(models.Model):
     n_cumulative_default_prob = models.DecimalField(max_digits=15, decimal_places=11, null=True)
     v_cash_flow_bucket_id = models.IntegerField()
     v_cash_flow_bucket_unit = models.CharField(max_length=1)  # E.g., 'M' for Monthly
-    d_record_start_date = models.DateField()
-    d_record_end_date = models.DateField()
+
 
     class Meta:
         db_table = 'FSI_PD_Interpolated'
 
-from django.db import models
+
+class FSI_PD_Account_Interpolated(models.Model):
+    """
+    Model to store the interpolated PD values at the account level.
+    """
+    fic_mis_date = models.DateField()  # MIS date for the record
+    v_account_number = models.CharField(max_length=50)  # Account number
+    n_pd_percent = models.DecimalField(max_digits=10, decimal_places=6)  # PD percentage
+    n_per_period_default_prob = models.DecimalField(max_digits=10, decimal_places=6)  # Marginal PD for the period
+    n_cumulative_default_prob = models.DecimalField(max_digits=10, decimal_places=6)  # Cumulative default probability
+    v_cash_flow_bucket_id = models.IntegerField()  # Cash flow bucket ID
+    v_cash_flow_bucket_unit = models.CharField(max_length=1, choices=[('M', 'Monthly'), ('Q', 'Quarterly'), ('H', 'Half-Yearly'), ('Y', 'Yearly')])  # Cash flow bucket unit (M, Q, H, Y)
+   
+
+    class Meta:
+        db_table = 'fsi_pd_account_interpolated'
+        unique_together = ('fic_mis_date', 'v_account_number', 'v_cash_flow_bucket_id')
+
+    def __str__(self):
+        return f"Account {self.v_account_number} - Bucket {self.v_cash_flow_bucket_id}"
+
 
 class FSI_LLFP_APP_PREFERENCES(models.Model):
     PD_INTERPOLATION_METHOD_CHOICES = [
@@ -169,7 +192,16 @@ class FSI_LLFP_APP_PREFERENCES(models.Model):
         ],
         default='Y'
     )
-
+    # New column to determine interpolation level
+    INTERPOLATION_LEVEL_CHOICES = [
+        ('ACCOUNT', 'Account Level'),
+        ('TERM_STRUCTURE', 'PD Term Structure Level')
+    ]
+    interpolation_level = models.CharField(
+        max_length=20,
+        choices=INTERPOLATION_LEVEL_CHOICES,
+        default='TERM_STRUCTURE'  # Default to PD Term Structure level
+    )
    
 
 
@@ -213,6 +245,20 @@ class Ldn_Expected_Cashflow(models.Model):
         unique_together = ('fic_mis_date', 'v_account_number', 'd_cash_flow_date')
 
 
+from django.db import models
+
+class Fsi_Interest_Method(models.Model):
+    # Define choices for the interest method
+    INTEREST_METHOD_CHOICES = [('Simple', 'Simple Interest'), ('Compound', 'Compound Interest'),('Amortized', 'Amortized Interest'),('Floating', 'Floating/Variable Interest'),]
+    
+    v_interest_method = models.CharField( max_length=50, choices=INTEREST_METHOD_CHOICES,unique=True)
+    description = models.TextField(blank=True)  # Optional description for documentation
+  
+
+    def __str__(self):
+        return self.v_interest_method
+
+    
 class FSI_Expected_Cashflow(models.Model):
     fic_mis_date = models.DateField()
     v_account_number = models.CharField(max_length=50)

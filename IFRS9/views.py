@@ -17,7 +17,7 @@ from .Functions.pd_interpolation import *
 def dashboard_view(request):
     # Example data for financial graphs
     mis_date = '2024-08-31'  # Input date in 'YYYY-MM-DD' format
-    status = pd_interpolation(mis_date)
+    status = perform_interpolation(mis_date)
     print(status)  # Should print '1' for success or '0' for failure
 
 

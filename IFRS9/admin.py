@@ -50,6 +50,11 @@ class FSI_PD_InterpolatedAdmin(admin.ModelAdmin):
     search_fields = ('v_pd_term_structure_type', )
     list_filter = ('v_pd_term_structure_type',)
 
+@admin.register(FSI_PD_Account_Interpolated)
+class FSI_PD_Account_InterpolatedAdmin(admin.ModelAdmin):
+    list_display = ('v_account_number','n_per_period_default_prob', 'n_cumulative_default_prob','v_cash_flow_bucket_id')
+    search_fields = ('v_account_number', )
+    list_filter = ('v_account_number',)
 
 @admin.register(Ldn_LGD_Term_Structure)
 class Ldn_LGD_Term_StructureAdmin(admin.ModelAdmin):
@@ -78,7 +83,7 @@ class Ldn_Recovery_CashflowsAdmin(admin.ModelAdmin):
 
 @admin.register(FSI_Expected_Cashflow)
 class FSI_Expected_CashflowAdmin(admin.ModelAdmin):
-    list_display = ('fic_mis_date', 'v_account_number', 'd_cash_flow_date', 'n_cash_flow_amount')
+    list_display = ('fic_mis_date', 'v_account_number','n_cash_flow_bucket', 'd_cash_flow_date','n_principal_payment','n_interest_payment', 'n_cash_flow_amount','n_balance')
     search_fields = ('v_account_number',)
     list_filter = ('fic_mis_date', 'V_CASH_FLOW_TYPE')
 
