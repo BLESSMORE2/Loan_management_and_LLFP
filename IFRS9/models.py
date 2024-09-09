@@ -12,6 +12,7 @@ class Ldn_Financial_Instrument(models.Model):
     n_interest_changing_rate = models.DecimalField(max_digits=5, decimal_places=4, null=True, help_text="Changing interest rate value, e.g., LIBOR rate at a specific time")   
     v_interest_freq_unit = models.CharField(max_length=50, null=True)
     v_interest_payment_type = models.CharField(max_length=50, null=True)
+    v_day_count_ind= models.CharField(max_length=7,default='30/365', help_text="This column stores the accrual basis code for interest accrual calculation.")
     # New fields for variable rate and fees   
     v_management_fee_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, help_text="Annual management fee rate, e.g., 1%")
     n_wht_percent= models.DecimalField(max_digits=10, decimal_places=2, null=True)

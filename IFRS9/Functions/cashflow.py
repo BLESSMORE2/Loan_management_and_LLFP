@@ -4,22 +4,42 @@ from datetime import timedelta, date
 from ..models import *
 
 
-def get_payment_interval(repayment_type):
-    """Determine the payment interval in days based on repayment type."""
-    if repayment_type == 'D':
-        return timedelta(days=1)  # Daily payments
-    elif repayment_type == 'W':
-        return timedelta(weeks=1)  # Weekly payments
-    elif repayment_type == 'M':
-        return timedelta(days=30)  # Monthly payments (approx. 30 days)
-    elif repayment_type == 'Q':
-        return timedelta(days=91)  # Quarterly payments (approx. 3 months)
-    elif repayment_type == 'H':
-        return timedelta(days=180)  # Semi-annual payments (approx. 6 months)
-    elif repayment_type == 'Y':
-        return timedelta(days=365)  # Annual payments
+def get_payment_interval(repayment_type, day_count_ind):
+    """Determine the payment interval in days based on repayment type and day count convention."""
+    if day_count_ind == '30/360':
+        if repayment_type == 'D':
+            return timedelta(days=1)  # Daily payments
+        elif repayment_type == 'W':
+            return timedelta(weeks=1)  # Weekly payments
+        elif repayment_type == 'M':
+            return timedelta(days=30)  # Monthly payments
+        elif repayment_type == 'Q':
+            return timedelta(days=90)  # Quarterly payments
+        elif repayment_type == 'H':
+            return timedelta(days=180)  # Semi-annual payments
+        elif repayment_type == 'Y':
+            return timedelta(days=360)  # Annual payments
+        else:
+            return timedelta(days=30)  # Default to monthly
+
+    elif day_count_ind == '30/365':
+        if repayment_type == 'D':
+            return timedelta(days=1)  # Daily payments
+        elif repayment_type == 'W':
+            return timedelta(weeks=1)  # Weekly payments
+        elif repayment_type == 'M':
+            return timedelta(days=30)  # Monthly payments
+        elif repayment_type == 'Q':
+            return timedelta(days=91)  # Quarterly payments (approx. 3 months)
+        elif repayment_type == 'H':
+            return timedelta(days=182)  # Semi-annual payments (approx. 6 months)
+        elif repayment_type == 'Y':
+            return timedelta(days=365)  # Annual payments
+        else:
+            return timedelta(days=30)  # Default to monthly
+
     else:
-        # Default to monthly if repayment type is unrecognized
+        # If the day count convention is unrecognized, use a default
         return timedelta(days=30)
 
 def calculate_cash_flows_for_loan(loan):
@@ -38,6 +58,7 @@ def calculate_cash_flows_for_loan(loan):
         management_fee_rate =  float(loan.v_management_fee_rate) if loan.v_management_fee_rate is not None else 0.0 # Management fee rate (if applicable)
         v_amrt_term_unit = loan.v_amrt_term_unit
         repayment_type = loan.v_amrt_repayment_type  # Get amortization type (bullet/amortized)
+        v_day_count_ind=loan.v_day_count_ind
         cashflow_bucket = 1
 
          # Fetch the interest method from Fsi_Interest_Method. Default to 'Simple' if none exists.
@@ -46,7 +67,7 @@ def calculate_cash_flows_for_loan(loan):
             interest_method = Fsi_Interest_Method.objects.create(v_interest_method='Simple', description="Default Simple Interest Method")
 
         # Determine payment interval based on repayment type (e.g., 'M', 'Q', 'H', 'Y')
-        payment_interval = get_payment_interval(v_amrt_term_unit)
+        payment_interval = get_payment_interval(v_amrt_term_unit, v_day_count_ind)
 
         # Management fee calculation
         management_fee_day = loan.d_start_date.day
@@ -91,48 +112,31 @@ def calculate_cash_flows_for_loan(loan):
                 # Default interest payment to avoid UnboundLocalError
                 interest_payment = 0.0
 
+                                # Assuming v_day_count_ind has been retrieved from the loan object
+                v_day_count_ind = loan.v_day_count_ind
+
+                # Adjust day count factor based on v_day_count_ind
+                if v_day_count_ind == '30/360':
+                    day_count_factor = 360
+                elif v_day_count_ind == '30/365':
+                    day_count_factor = 365
+                else:
+                    # Default to 365 if the day count convention is unrecognized
+                    day_count_factor = 365
+
                 # Interest Calculation based on the method selected
                 if interest_method.v_interest_method == 'Simple':
                     # Simple Interest
-                    if v_amrt_term_unit == 'M':
-                            interest_payment = balance * fixed_interest_rate * (payment_interval.days / 30)  # Monthly interest
-                    elif v_amrt_term_unit == 'Q':
-                            interest_payment = balance * fixed_interest_rate * (payment_interval.days / 360)# Quarterly interest
-                    elif v_amrt_term_unit == 'H':
-                            interest_payment = balance * fixed_interest_rate * (payment_interval.days / 360)  # Semi-annual interest
-                    elif v_amrt_term_unit == 'Y':
-                            interest_payment = balance * fixed_interest_rate * (payment_interval.days / 365) # Annual interest
-                    else:
-                        interest_payment = balance * fixed_interest_rate * (payment_interval.days / 365)
+                    interest_payment = balance * fixed_interest_rate * (payment_interval.days / day_count_factor)
 
                 elif interest_method.v_interest_method == 'Compound':
                     # Calculate Interest Payment based on the frequency (M, Q, H, Y)
-                    if v_amrt_term_unit == 'M':
-                        interest_payment = balance * ((1 + fixed_interest_rate / 12) ** periods - 1)  # Monthly interest
-                    elif v_amrt_term_unit == 'Q':
-                        interest_payment = balance * ((1 + fixed_interest_rate / 4) ** periods - 1) # Quarterly interest
-                    elif v_amrt_term_unit == 'H':
-                        interest_payment = balance * ((1 + fixed_interest_rate / 2) ** periods - 1)  # Semi-annual interest
-                    elif v_amrt_term_unit == 'Y':
-                        interest_payment = balance * fixed_interest_rate  # Annual interest
-                    else:
-                        # Use default monthly interest calculation if frequency is unrecognized
-                        interest_payment = balance * ((1 + fixed_interest_rate /12) ** periods - 1)
-                 
+                    interest_payment = balance * ((1 + fixed_interest_rate / (day_count_factor / payment_interval.days)) ** periods - 1)
+
                 elif interest_method.v_interest_method == 'Amortized':
                     # Amortized Interest
-                    # Check if fixed_interest_rate is annual, adjust as needed if it's monthly, quarterly, etc.
-                    if v_amrt_term_unit == 'Y':
-                        interest_rate_per_period = fixed_interest_rate  # Annual to per-period rate
-                    elif v_amrt_term_unit == 'M':
-                        interest_rate_per_period = fixed_interest_rate / 12  # Convert annual rate to monthly
-                    elif v_amrt_term_unit == 'Q':
-                        interest_rate_per_period = fixed_interest_rate / 4  # Convert annual rate to quarterly
-                    elif v_amrt_term_unit == 'H':
-                        interest_rate_per_period = fixed_interest_rate / 2  # Convert annual rate to semi-annual
-                    else:
-                        # Default to annual rate
-                        interest_rate_per_period = fixed_interest_rate / 12
+                    interest_rate_per_period = fixed_interest_rate / (day_count_factor / payment_interval.days)
+
                     # Calculate total payment (fixed payment for each period)
                     total_payment = loan.n_eop_bal * (interest_rate_per_period / (1 - (1 + interest_rate_per_period) ** -periods))
                     # Calculate interest payment for the current period
@@ -142,39 +146,16 @@ def calculate_cash_flows_for_loan(loan):
 
                 elif interest_method.v_interest_method == 'Floating':
                     # Floating/Variable Interest Rate
-                    if v_amrt_term_unit == 'M':
-                        variable_rate = loan.n_curr_interest_rate + loan.n_variable_rate_margin
-                        interest_payment = balance * variable_rate * (payment_interval.days / 30)  # Monthly interest
-                    elif v_amrt_term_unit == 'Q':
-                        variable_rate = loan.n_curr_interest_rate + loan.n_variable_rate_margin
-                        interest_payment = balance * variable_rate * (payment_interval.days / 91)  # Monthly interest# Quarterly interest
-                    elif v_amrt_term_unit == 'H':
-                        variable_rate = loan.n_curr_interest_rate + loan.n_variable_rate_margin
-                        interest_payment = balance * variable_rate * (payment_interval.days / 180)  # Monthly interest  # Semi-annual interest
-                    elif v_amrt_term_unit == 'Y':
-                        variable_rate = loan.n_curr_interest_rate + loan.n_variable_rate_margin
-                        interest_payment = balance * variable_rate * (payment_interval.days / 365)  # Monthly interest # Annual interest
-                    else:
-                        interest_payment = balance * fixed_interest_rate * (payment_interval.days / 30)
+                    variable_rate = loan.n_curr_interest_rate + loan.n_variable_rate_margin
+                    interest_payment = balance * variable_rate * (payment_interval.days / day_count_factor)
 
-                else :
-                    # Simple Interest
-                    if v_amrt_term_unit == 'M':
-                            interest_payment = balance * fixed_interest_rate * (payment_interval.days / 30)  # Monthly interest
-                    elif v_amrt_term_unit == 'Q':
-                            interest_payment = balance * fixed_interest_rate * (payment_interval.days / 91)# Quarterly interest
-                    elif v_amrt_term_unit == 'H':
-                            interest_payment = balance * fixed_interest_rate * (payment_interval.days / 182)  # Semi-annual interest
-                    elif v_amrt_term_unit == 'Y':
-                            interest_payment = balance * fixed_interest_rate * (payment_interval.days / 365) # Annual interest
-                    else:
-                        interest_payment = balance * fixed_interest_rate * (payment_interval.days / 365)
-                
+                else:
+                    # Default Simple Interest Calculation
+                    interest_payment = balance * fixed_interest_rate * (payment_interval.days / day_count_factor)
 
-                    
-                    
+                   
 
-                # Calculate WHT payment and net interest
+                                # Calculate WHT payment and net interest
                 wht_payment = interest_payment * withholding_tax  # WHT is calculated on the interest
                 interest_payment_net = interest_payment - wht_payment  # Subtract WHT from total interest
 
