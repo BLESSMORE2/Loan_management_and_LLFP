@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import *
+from .forms import FSIProductSegmentForm
 
 # Register your models here.
 
@@ -17,9 +18,17 @@ class Ldn_Customer_Rating_DetailsAdmin(admin.ModelAdmin):
 
 @admin.register(Ldn_Bank_Product_Info)
 class Ldn_Bank_Product_InfoAdmin(admin.ModelAdmin):
-    list_display = ('v_prod_code', 'v_prod_name', 'v_prod_type')
+    list_display = ('v_prod_code', 'v_prod_name', 'v_prod_type','v_prod_segment')
     search_fields = ('v_prod_code', 'v_prod_name')
     list_filter = ('v_prod_type', 'v_prod_group')
+
+@admin.register(FSI_Product_Segment)
+class FSI_Product_SegmentAdmin(admin.ModelAdmin):
+    form = FSIProductSegmentForm  # Use the custom form
+    list_display = ('segment_id', 'v_prod_segment', 'v_prod_type', 'v_prod_desc')
+    search_fields = ('v_prod_segment', 'v_prod_type')
+    list_filter = ('v_prod_segment', 'v_prod_type')
+
 
 @admin.register(Ldn_Customer_Info)
 class Ldn_Customer_InfoAdmin(admin.ModelAdmin):

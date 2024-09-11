@@ -162,11 +162,12 @@ def calculate_cash_flows_for_loan(loan):
                 # Calculate Principal Payment based on the amortization type
                 if repayment_type == 'bullet':
                     principal_payment = 0 if current_date < loan.d_maturity_date else balance
-                elif repayment_type == 'amortized':
-                        principal_payment = fixed_principal_payment
+                elif repayment_type =='amortized':
+                    principal_payment = fixed_principal_payment
                   # Last payment clears the balance
 
-            
+                print(principal_payment)
+                print(repayment_type)
 
                 total_principal_paid += principal_payment  # Track total principal paid
 

@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 
@@ -27,10 +28,10 @@ class Ldn_Financial_Instrument(models.Model):
     n_eop_curr_prin_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_eop_int_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_eop_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    n_collateral_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_delinquent_days = models.IntegerField(null=True)
     n_pd_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     n_lgd_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    n_acct_risk_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     v_ccy_code = models.CharField(max_length=10, null=True)
     v_loan_type = models.CharField(max_length=50, null=True)
     m_fees = models.DecimalField(max_digits=5, decimal_places=2, null=True)
@@ -38,7 +39,9 @@ class Ldn_Financial_Instrument(models.Model):
     v_lob_code = models.CharField(max_length=50, null=True)
     v_lv_code = models.CharField(max_length=50, null=True)
     v_country_id = models.CharField(max_length=50, null=True)
-    v_credit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    v_credit_rating_code=models.CharField(max_length=50, null=True)
+    v_org_credit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    v_curr_credit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     v_collateral_type = models.CharField(max_length=50, null=True)
     v_loan_desc = models.CharField(max_length=255, null=True)
     v_account_classification_cd = models.CharField(max_length=50, null=True)
@@ -74,6 +77,22 @@ class Ldn_Bank_Product_Info(models.Model):
     v_prod_type_desc = models.CharField(max_length=255)
     v_prod_desc = models.CharField(max_length=50)
 
+class FSI_Product_Segment(models.Model):
+    segment_id = models.AutoField(primary_key=True)  # Auto-incrementing ID   
+    v_prod_segment = models.CharField(max_length=255)
+    v_prod_type = models.CharField(max_length=255)
+    v_prod_desc = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.v_prod_segment} - {self.v_prod_type} - {self.v_prod_desc}"
+
+    class Meta:
+        db_table = 'fsi_product_segment'
+        constraints = [
+            models.UniqueConstraint(fields=['v_prod_segment', 'v_prod_type', 'v_prod_desc'], name='unique_segment_type_desc')
+        ]
+
+        
 class Ldn_Customer_Info(models.Model):
     v_party_id = models.CharField(max_length=50, unique=True)
     fic_mis_date = models.DateField()
@@ -84,38 +103,34 @@ class Ldn_Customer_Info(models.Model):
         db_table = 'Ldn_Customer_Info'
 
 class Ldn_PD_Term_Structure(models.Model):
-    v_pd_term_structure_id = models.CharField(max_length=100, unique=True)
-    v_pd_term_structure_name = models.CharField(max_length=255)
-    v_pd_term_structure_desc = models.CharField(max_length=50)
-    v_pd_term_frequency_unit = models.CharField(max_length=1, choices=[
-        ('M', 'Monthly'),
-        ('Q', 'Quarterly'),
-        ('H', 'Half Yearly'),
-        ('Y', 'Yearly'),
-        ('D', 'Daily'),
-    ])
-    v_pd_term_structure_type = models.CharField(max_length=1, choices=[
-        ('R', 'Rating'),
-        ('D', 'DPD'),
-    ])
-    v_default_probability_type = models.CharField(max_length=1, choices=[
-        ('M', 'Marginal'),
-        ('C', 'Cumulative'),
-    ])
+    v_pd_term_structure_id = models.CharField(max_length=100, unique=True)  # This will be auto-filled
+    v_pd_term_structure_name = models.ForeignKey(FSI_Product_Segment, on_delete=models.CASCADE)  # Use ForeignKey to select segment by ID
+    v_pd_term_structure_desc = models.CharField(max_length=50, editable=False)  # Auto-filled from v_prod_desc in FSI_Product_Segment
+    v_pd_term_frequency_unit = models.CharField(max_length=1, choices=[('M', 'Monthly'), ('Q', 'Quarterly'), ('H', 'Half Yearly'), ('Y', 'Yearly'), ('D', 'Daily')])
+    v_pd_term_structure_type = models.CharField(max_length=1, choices=[('R', 'Rating'), ('D', 'DPD')])
+    v_default_probability_type = models.CharField(max_length=1, choices=[('M', 'Marginal'), ('C', 'Cumulative')])
     fic_mis_date = models.DateField()
     n_pd_term_frequency = models.PositiveIntegerField()
     v_data_source_code = models.CharField(max_length=50)
 
+    def save(self, *args, **kwargs):
+        # Automatically populate v_pd_term_structure_id and v_pd_term_structure_desc
+        product_segment = self.v_pd_term_structure_name  # Reference the FSI_Product_Segment object
+        # Fill fields based on the selected segment
+        self.v_pd_term_structure_id = product_segment.segment_id  # Use segment_id as ID
+        self.v_pd_term_structure_desc = product_segment.v_prod_desc  # Fill description from the product segment
+
+        super(Ldn_PD_Term_Structure, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.v_pd_term_structure_name.v_prod_segment} - {self.v_pd_term_structure_desc}"
+
     class Meta:
-        db_table = 'Ldn_pd_term_structure'
+        db_table = 'ldn_pd_term_structure'
         unique_together = ('v_pd_term_structure_id', 'fic_mis_date')
 
 class Ldn_PD_Term_Structure_Dtl(models.Model):
-    v_pd_term_structure_id = models.ForeignKey(
-        'Ldn_PD_Term_Structure',
-        on_delete=models.CASCADE,
-        related_name='term_structure_details'
-    )
+    v_pd_term_structure_id = models.ForeignKey('Ldn_PD_Term_Structure',on_delete=models.CASCADE,related_name='term_structure_details')
     fic_mis_date = models.DateField()
     v_credit_risk_basis_cd = models.CharField(max_length=100)
     n_period_applicable = models.PositiveIntegerField()
@@ -167,62 +182,41 @@ class FSI_PD_Account_Interpolated(models.Model):
 
 
 class FSI_LLFP_APP_PREFERENCES(models.Model):
-    PD_INTERPOLATION_METHOD_CHOICES = [
-        ('NL-POISSON', 'Non-Linear Poisson'),
-        ('NL-GEOMETRIC', 'Non-Linear Geometric'),
-        ('NL-ARITHMETIC', 'Non-Linear Arithmetic'),
-        ('EXPONENTIAL_DECAY', 'Exponential Decay'),
-        # Add more methods here if needed
-    ]
-
-    pd_interpolation_method = models.CharField(
-        max_length=100,
-        choices=PD_INTERPOLATION_METHOD_CHOICES,
-        null=True,
-        blank=True,
-        default='NL-POISSON'
-    )
+    PD_INTERPOLATION_METHOD_CHOICES = [ ('NL-POISSON', 'Non-Linear Poisson'),('NL-GEOMETRIC', 'Non-Linear Geometric'),('NL-ARITHMETIC', 'Non-Linear Arithmetic'),('EXPONENTIAL_DECAY', 'Exponential Decay'),]
+    pd_interpolation_method = models.CharField(max_length=100,choices=PD_INTERPOLATION_METHOD_CHOICES,null=True,blank=True,default='NL-POISSON')
     n_pd_model_proj_cap = models.IntegerField(default=25)
-    llfp_bucket_length = models.CharField(
-        max_length=1,
-        choices=[
-            ('Y', 'Yearly'),
-            ('H', 'Half-Yearly'),
-            ('Q', 'Quarterly'),
-            ('M', 'Monthly'),
-        ],
-        default='Y'
-    )
+    llfp_bucket_length = models.CharField(max_length=1,choices=[ ('Y', 'Yearly'),('H', 'Half-Yearly'),('Q', 'Quarterly'),('M', 'Monthly'),],default='Y')
     # New column to determine interpolation level
-    INTERPOLATION_LEVEL_CHOICES = [
-        ('ACCOUNT', 'Account Level'),
-        ('TERM_STRUCTURE', 'PD Term Structure Level')
-    ]
-    interpolation_level = models.CharField(
-        max_length=20,
-        choices=INTERPOLATION_LEVEL_CHOICES,
-        default='TERM_STRUCTURE'  # Default to PD Term Structure level
-    )
+    INTERPOLATION_LEVEL_CHOICES = [('ACCOUNT', 'Account Level'),('TERM_STRUCTURE', 'PD Term Structure Level')]
+    interpolation_level = models.CharField( max_length=20,choices=INTERPOLATION_LEVEL_CHOICES,default='TERM_STRUCTURE' )
    
 
-
-
-
-
-
 class Ldn_LGD_Term_Structure(models.Model):
-    v_lgd_term_structure_id = models.CharField(max_length=100, primary_key=True)
-    v_lgd_term_structure_name = models.CharField(max_length=255)
-    v_lgd_term_structure_desc = models.CharField(max_length=50)
-    v_lgd_term_frequency_unit = models.CharField(max_length=1)  # e.g., M, Q, H, Y, D
+    v_lgd_term_structure_id = models.CharField(max_length=100, primary_key=True)  # This will be filled automatically
+    v_lgd_term_structure_name = models.ForeignKey(FSI_Product_Segment, on_delete=models.CASCADE)  # Use ForeignKey to select segment by ID
+    v_lgd_term_structure_desc = models.CharField(max_length=50, editable=False)  # Auto-filled from v_prod_desc in FSI_Product_Segment
     n_lgd_percent = models.DecimalField(max_digits=5, decimal_places=4)
     fic_mis_date = models.DateField()
     v_data_source_code = models.CharField(max_length=50)
 
+    def save(self, *args, **kwargs):
+        # Automatically populate v_lgd_term_structure_id and v_lgd_term_structure_desc
+        product_segment = self.v_lgd_term_structure_name  # Reference the FSI_Product_Segment object
+        
+        # Fill fields based on the selected segment
+        self.v_lgd_term_structure_id = product_segment.segment_id  # Use segment_id as ID
+        self.v_lgd_term_structure_desc = product_segment.v_prod_desc  # Fill description from the product segment
+
+        super(Ldn_LGD_Term_Structure, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.v_lgd_term_structure_name.v_prod_segment} - {self.v_lgd_term_structure_desc}"
+
     class Meta:
-        db_table = 'Ldn_lgd_term_structure'
-
-
+        db_table = 'ldn_lgd_term_structure'
+        constraints = [
+            models.UniqueConstraint(fields=['v_lgd_term_structure_id', 'fic_mis_date'], name='unique_term_structure_id_date')
+        ]
 class Ldn_Exchange_Rate(models.Model):
     fic_mis_date = models.DateField()
     v_from_ccy_code = models.CharField(max_length=3)
@@ -319,14 +313,7 @@ class Ldn_Acct_Recovery_Detail(models.Model):
         unique_together = ('v_account_number', 'fic_mis_date', 'd_recovery_date')
 
 class TableMetadata(models.Model):
-    TABLE_TYPE_CHOICES = [
-        ('FACT', 'Fact Table'),
-        ('DIM', 'Dimension Table'),
-        ('REF', 'Reference Table'),
-        ('STG', 'Staging Table'),
-        ('OTHER', 'Other'),
-    ]
-
+    TABLE_TYPE_CHOICES = [('FACT', 'Fact Table'),('DIM', 'Dimension Table'),('REF', 'Reference Table'),('STG', 'Staging Table'),('OTHER', 'Other'),]
     table_name = models.CharField(max_length=50, unique=True)
     description = models.TextField(null=True, blank=True)
     table_type = models.CharField(max_length=10, choices=TABLE_TYPE_CHOICES, default='OTHER')
@@ -377,3 +364,70 @@ class fsi_Financial_Cash_Flow_Cal(models.Model):
     class Meta:
         db_table = 'fsi_Financial_Cash_Flow_Cal'
         unique_together = (('v_account_number', 'd_cash_flow_date', 'fic_mis_date', 'n_run_skey'),)
+
+
+class FCT_Stage_Determination(models.Model):
+    fic_mis_date = models.BigIntegerField(null=False, blank=True)  # Part of composite key
+    n_account_number = models.BigIntegerField(null=False)  # Part of composite key
+    
+    d_acct_start_date = models.DateField(null=True, blank=True)
+    d_last_payment_date = models.DateField(null=True, blank=True)
+    d_last_reprice_date = models.DateField(null=True, blank=True)
+    d_next_payment_date = models.DateField(null=True, blank=True)
+    d_revised_maturity_date = models.DateField(null=True, blank=True)
+    n_accrual_basis_code = models.IntegerField(null=True, blank=True)
+    n_acct_classification = models.IntegerField(null=True, blank=True)
+    n_carrying_amount_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_curr_payment_recd = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_cust_ref_code = models.CharField(max_length=50, null=True)
+    n_cust_type_skey = models.BigIntegerField(null=True, blank=True)
+    n_delinquent_days = models.IntegerField(null=True, blank=True)
+    n_delq_band_skey = models.BigIntegerField(null=True, blank=True)    
+    # Grouped Interest-related Fields
+    n_curr_interest_rate = models.DecimalField(max_digits=11, decimal_places=6, null=True, blank=True)  # Current interest rate
+    n_effective_interest_rate = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)  # Effective interest rate
+    v_interest_freq_unit = models.CharField(max_length=1, null=True, blank=True)  # Interest frequency unit
+    v_interest_method = models.CharField(max_length=5, null=True, blank=True)  # Interest computation method
+    n_accrued_interest = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  # Accrued interest
+    n_rate_chg_min = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)  # Rate change minimum
+    # Grouped exposure and balance fields
+    n_exposure_at_default = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  # Added for exposure at default
+    n_exposure_limit = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_eop_prin_bal = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  # Moved next to n_exposure_at_default
+    
+    # Grouped PD and LGD fields
+    n_lgd_percent = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_twelve_months_orig_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_lifetime_orig_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_twelve_months_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_lifetime_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_pd_term_structure_skey = models.BigIntegerField(null=True, blank=True)
+    n_12m_pd_change = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True) 
+    n_prod_code = models.CharField(max_length=50, null=True) 
+    n_prod_name= models.CharField(max_length=50, null=True) 
+    n_prod_type = models.CharField(max_length=50, null=True)
+    n_rating_impaired_state_skey = models.BigIntegerField(null=True, blank=True)
+    v_amrt_repayment_type = models.CharField(max_length=50, null=True)
+    n_remain_no_of_pmts = models.BigIntegerField(null=True, blank=True)
+    n_amrt_term = models.IntegerField(null=True, blank=True)
+    v_amrt_term_unit = models.CharField(max_length=1, null=True, blank=True)
+    v_ccy_code = models.CharField(max_length=3, null=True, blank=True)
+    v_common_coa_code = models.CharField(max_length=20, null=True, blank=True)
+    v_gl_code = models.CharField(max_length=20, null=True, blank=True)
+    n_stage_descr = models.CharField(max_length=50, null=True)
+    n_curr_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
+    n_prev_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
+    n_country = models.CharField(max_length=50, null=True)
+    n_segment_skey = models.BigIntegerField(null=True, blank=True)
+    n_ecl_compute_ind = models.IntegerField(default=0)
+    n_credit_rating_code=models.CharField(max_length=50, null=True)
+    n_org_credit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    n_curr_credit_score = models.IntegerField(null=True, blank=True)
+    n_acct_rating_movement = models.IntegerField(null=True, blank=True)
+    n_party_rating_movement = models.IntegerField(null=True, blank=True)
+    n_conditionally_cancel_flag = models.IntegerField(null=True, blank=True)
+    n_collateral_amount = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  # Added new column for collateral amount
+    n_loan_type = models.CharField(max_length=50, null=True)
+    class Meta:
+        db_table = "fct_stage_determination"  # Updated table name
+        unique_together = ('fic_mis_date', 'n_account_number') 

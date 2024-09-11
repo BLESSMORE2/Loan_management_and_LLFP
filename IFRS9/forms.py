@@ -84,3 +84,26 @@ def generate_filter_form(model_class):
 class FilterForm(forms.Form):
     filter_column = forms.CharField(widget=forms.HiddenInput())
     filter_value = forms.CharField(widget=forms.HiddenInput())
+
+    ######################
+
+class FSIProductSegmentForm(forms.ModelForm):
+    class Meta:
+        model = FSI_Product_Segment
+        fields = ['v_prod_segment', 'v_prod_type', 'v_prod_desc']
+
+    def __init__(self, *args, **kwargs):
+        super(FSIProductSegmentForm, self).__init__(*args, **kwargs)
+
+        # Fetch distinct values from Ldn_Bank_Product_Info and set choices for the form fields
+        self.fields['v_prod_segment'] = forms.ChoiceField(choices=[
+            (seg, seg) for seg in Ldn_Bank_Product_Info.objects.values_list('v_prod_segment', flat=True).distinct()
+        ])
+        
+        self.fields['v_prod_type'] = forms.ChoiceField(choices=[
+            (ptype, ptype) for ptype in Ldn_Bank_Product_Info.objects.values_list('v_prod_type', flat=True).distinct()
+        ])
+        
+        self.fields['v_prod_desc'] = forms.ChoiceField(choices=[
+            (pdesc, pdesc) for pdesc in Ldn_Bank_Product_Info.objects.values_list('v_prod_desc', flat=True).distinct()
+        ])
