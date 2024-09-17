@@ -102,6 +102,13 @@ class Ldn_Acct_Recovery_DetailsAdmin(admin.ModelAdmin):
     search_fields = ('v_account_number', 'v_recovery_type_code')
     list_filter = ('fic_mis_date', 'v_recovery_stage_code')
 
+
+
+@admin.register(FCT_Stage_Determination)
+class FCT_Stage_DeterminationAdmin(admin.ModelAdmin):
+    list_display = ('n_account_number', 'fic_mis_date','d_acct_start_date')
+    search_fields = ('n_account_number', )
+    list_filter = ('fic_mis_date', )
 @admin.register(TableMetadata)
 class TableMetadataAdmin(admin.ModelAdmin):
     list_display = ('table_name', 'table_type', 'description')

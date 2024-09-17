@@ -367,14 +367,12 @@ class fsi_Financial_Cash_Flow_Cal(models.Model):
 
 
 class FCT_Stage_Determination(models.Model):
-    fic_mis_date = models.BigIntegerField(null=False, blank=True)  # Part of composite key
-    n_account_number = models.BigIntegerField(null=False)  # Part of composite key
-    
+    fic_mis_date = models.DateField()
+    n_account_number = models.CharField(max_length=50, null=True)
     d_acct_start_date = models.DateField(null=True, blank=True)
     d_last_payment_date = models.DateField(null=True, blank=True)
-    d_last_reprice_date = models.DateField(null=True, blank=True)
     d_next_payment_date = models.DateField(null=True, blank=True)
-    d_revised_maturity_date = models.DateField(null=True, blank=True)
+    d_maturity_date = models.DateField(null=True, blank=True)
     n_accrual_basis_code = models.IntegerField(null=True, blank=True)
     n_acct_classification = models.IntegerField(null=True, blank=True)
     n_carrying_amount_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
@@ -431,3 +429,38 @@ class FCT_Stage_Determination(models.Model):
     class Meta:
         db_table = "fct_stage_determination"  # Updated table name
         unique_together = ('fic_mis_date', 'n_account_number') 
+
+
+# Credit Rating to Stage Mapping
+# Choices for Stages
+STAGE_CHOICES = [
+    ('Stage 1', 'Stage 1'),
+    ('Stage 2', 'Stage 2'),
+    ('Stage 3', 'Stage 3')
+]
+
+# Choices for Payment Frequency
+PAYMENT_FREQUENCY_CHOICES = [
+    ('monthly', 'Monthly'),
+    ('quarterly', 'Quarterly'),
+    ('half_yearly', 'Half-Yearly'),
+    ('yearly', 'Yearly')
+]
+
+# Credit Rating to Stage Mapping
+class FSI_CreditRating_Stage(models.Model):
+    credit_rating = models.CharField(max_length=50, unique=True)  # e.g., "AAA SNP"
+    stage = models.CharField(max_length=10, choices=STAGE_CHOICES)  # Use choices for stages
+
+    def __str__(self):
+        return f'{self.credit_rating} -> {self.stage}'
+
+# Days Past Due to Stage Mapping
+class FSI_DPD_Stage_Mapping(models.Model):
+    payment_frequency = models.CharField(max_length=50, choices=PAYMENT_FREQUENCY_CHOICES)  # Use choices for payment frequency
+    stage_1_threshold = models.IntegerField()  # DPD days for Stage 1
+    stage_2_threshold = models.IntegerField()  # DPD days for Stage 2
+    stage_3_threshold = models.IntegerField()  # DPD days for Stage 3
+
+    def __str__(self):
+        return f'{self.payment_frequency} -> Stage 1: {self.stage_1_threshold} days, Stage 2: {self.stage_2_threshold} days, Stage 3: {self.stage_3_threshold} days'

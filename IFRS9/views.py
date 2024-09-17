@@ -10,6 +10,8 @@ from .forms import *
 from .Functions.data import *
 from .Functions.cashflow import *
 from .Functions.pd_interpolation import *
+from .Functions.populate_stg_determination import *
+from datetime import datetime
 
 
 
@@ -17,30 +19,14 @@ from .Functions.pd_interpolation import *
 def dashboard_view(request):
     # Example data for financial graphs
     mis_date = '2024-08-31'  # Input date in 'YYYY-MM-DD' format
+    
     status = perform_interpolation(mis_date)
     print(status)  # Should print '1' for success or '0' for failure
 
+    # Insert records into FCT_Stage_Determination with the numeric date
+    insert_fct_stage(mis_date)
 
-    categories = ['January', 'February', 'March', 'April', 'May']
-    values = [2000, 3000, 4000, 5000, 6000]
-
-    # Create a bar chart
-    plt.figure(figsize=(10, 6))
-    plt.bar(categories, values, color='skyblue')
-    plt.xlabel('Month')
-    plt.ylabel('Amount')
-    plt.title('Monthly Financial Overview')
-
-    # Save the plot to a BytesIO object
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-    
-    # Encode the image in base64
-    image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-    buf.close()
-
-    return render(request, 'dashboard.html', {'graph': image_base64})
+    return render(request, 'dashboard.html')
 
 
 
