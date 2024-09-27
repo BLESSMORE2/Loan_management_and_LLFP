@@ -12,9 +12,9 @@ class Ldn_Financial_InstrumentsAdmin(admin.ModelAdmin):
 
 @admin.register(Ldn_Customer_Rating_Detail)
 class Ldn_Customer_Rating_DetailsAdmin(admin.ModelAdmin):
-    list_display = ('v_party_cd', 'v_rating_src_code', 'fic_mis_date')
-    search_fields = ('v_party_cd', 'v_rating_src_code')
-    list_filter = ('v_rating_src_code',)
+    list_display = ('v_party_cd', 'v_rating_code', 'fic_mis_date')
+    search_fields = ('v_party_cd', 'v_rating_code')
+    list_filter = ('v_rating_code',)
 
 @admin.register(Ldn_Bank_Product_Info)
 class Ldn_Bank_Product_InfoAdmin(admin.ModelAdmin):
@@ -32,9 +32,9 @@ class FSI_Product_SegmentAdmin(admin.ModelAdmin):
 
 @admin.register(Ldn_Customer_Info)
 class Ldn_Customer_InfoAdmin(admin.ModelAdmin):
-    list_display = ('v_party_id', 'v_partner_code', 'fic_mis_date')
-    search_fields = ('v_party_id', 'v_partner_code')
-    list_filter = ('v_partner_code',)
+    list_display = ('v_party_id', 'v_partner_name', 'fic_mis_date')
+    search_fields = ('v_party_id', 'v_partner_name')
+    list_filter = ('v_partner_name',)
 
 @admin.register(Ldn_PD_Term_Structure)
 class Ldn_PD_Term_StructureAdmin(admin.ModelAdmin):

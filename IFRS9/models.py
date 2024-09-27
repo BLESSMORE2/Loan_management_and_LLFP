@@ -54,12 +54,9 @@ class Ldn_Financial_Instrument(models.Model):
     
 class Ldn_Customer_Rating_Detail(models.Model):
     fic_mis_date = models.DateField(null=False)
-    v_rating_src_code = models.CharField(max_length=50)
     v_party_cd = models.CharField(max_length=50, null=False)
-    v_purpose = models.CharField(max_length=50)  # No choices, just a CharField
     v_rating_code = models.CharField(max_length=50)
-    v_data_origin = models.CharField(max_length=50)
-    v_credit_reason_code = models.CharField(max_length=50)
+    v_purpose = models.CharField(max_length=50)  # No choices, just a CharField
 
     class Meta:
         db_table = 'Ldn_Customer_Rating_Detail'
@@ -76,6 +73,8 @@ class Ldn_Bank_Product_Info(models.Model):
     v_balance_sheet_category_desc = models.CharField(max_length=255)
     v_prod_type_desc = models.CharField(max_length=255)
     v_prod_desc = models.CharField(max_length=50)
+    class Meta:
+        db_table = 'Ldn_Bank_Product_Info'
 
 class FSI_Product_Segment(models.Model):
     segment_id = models.AutoField(primary_key=True)  # Auto-incrementing ID   
@@ -94,9 +93,9 @@ class FSI_Product_Segment(models.Model):
 
         
 class Ldn_Customer_Info(models.Model):
-    v_party_id = models.CharField(max_length=50, unique=True)
     fic_mis_date = models.DateField()
-    v_partner_code = models.CharField(max_length=50)
+    v_party_id = models.CharField(max_length=50, unique=True) 
+    v_partner_name = models.CharField(max_length=50)
     v_party_type = models.CharField(max_length=50)
 
     class Meta:
@@ -189,6 +188,8 @@ class FSI_LLFP_APP_PREFERENCES(models.Model):
     # New column to determine interpolation level
     INTERPOLATION_LEVEL_CHOICES = [('ACCOUNT', 'Account Level'),('TERM_STRUCTURE', 'PD Term Structure Level')]
     interpolation_level = models.CharField( max_length=20,choices=INTERPOLATION_LEVEL_CHOICES,default='TERM_STRUCTURE' )
+    class Meta:
+        db_table = 'FSI_LLFP_APP_PREFERENCES'
    
 
 class Ldn_LGD_Term_Structure(models.Model):
@@ -209,8 +210,8 @@ class Ldn_LGD_Term_Structure(models.Model):
 
         super(Ldn_LGD_Term_Structure, self).save(*args, **kwargs)
 
-    def __str__(self):
-        return f"{self.v_lgd_term_structure_name.v_prod_segment} - {self.v_lgd_term_structure_desc}"
+    class Meta:
+        db_table = 'Ldn_LGD_Term_Structure'
 
     class Meta:
         db_table = 'ldn_lgd_term_structure'
@@ -222,7 +223,6 @@ class Ldn_Exchange_Rate(models.Model):
     v_from_ccy_code = models.CharField(max_length=3)
     v_to_ccy_code = models.CharField(max_length=3)
     n_exchange_rate = models.DecimalField(max_digits=15, decimal_places=6)
-
     class Meta:
         db_table = 'Ldn_exchange_rate'
         unique_together = ('fic_mis_date', 'v_from_ccy_code', 'v_to_ccy_code')
@@ -240,7 +240,7 @@ class Ldn_Expected_Cashflow(models.Model):
         unique_together = ('fic_mis_date', 'v_account_number', 'd_cash_flow_date')
 
 
-from django.db import models
+
 
 class Fsi_Interest_Method(models.Model):
     # Define choices for the interest method
@@ -248,10 +248,8 @@ class Fsi_Interest_Method(models.Model):
     
     v_interest_method = models.CharField( max_length=50, choices=INTEREST_METHOD_CHOICES,unique=True)
     description = models.TextField(blank=True)  # Optional description for documentation
-  
-
-    def __str__(self):
-        return self.v_interest_method
+    class Meta:
+        db_table = 'Fsi_Interest_Method'
 
     
 class FSI_Expected_Cashflow(models.Model):
@@ -278,6 +276,8 @@ class Ldn_Payment_Schedule(models.Model):
     n_interest_payment_amt = models.DecimalField(max_digits=22, decimal_places=3, null=True)
     n_amount = models.DecimalField(max_digits=22, decimal_places=3, null=True)
     v_payment_type_cd = models.CharField(max_length=20, null=True)  # Payment type code
+    class Meta:
+        db_table = 'Ldn_Payment_Schedule'
 
 
 
@@ -318,8 +318,8 @@ class TableMetadata(models.Model):
     description = models.TextField(null=True, blank=True)
     table_type = models.CharField(max_length=10, choices=TABLE_TYPE_CHOICES, default='OTHER')
 
-    def __str__(self):
-        return f"{self.table_name} ({self.get_table_type_display()})"
+    class Meta:
+        db_table = "TableMetadata"
 
 
 class fsi_Financial_Cash_Flow_Cal(models.Model):
@@ -378,7 +378,8 @@ class FCT_Stage_Determination(models.Model):
     n_carrying_amount_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
     n_curr_payment_recd = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
     n_cust_ref_code = models.CharField(max_length=50, null=True)
-    n_cust_type_skey = models.BigIntegerField(null=True, blank=True)
+    n_partner_name = models.CharField(max_length=50)
+    n_party_type = models.CharField(max_length=50)
     n_delinquent_days = models.IntegerField(null=True, blank=True)
     n_delq_band_skey = models.BigIntegerField(null=True, blank=True)    
     # Grouped Interest-related Fields
@@ -400,10 +401,10 @@ class FCT_Stage_Determination(models.Model):
     n_twelve_months_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
     n_lifetime_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
     n_pd_term_structure_skey = models.BigIntegerField(null=True, blank=True)
+    n_pd_term_structure_name = models.ForeignKey(FSI_Product_Segment, on_delete=models.CASCADE)  # Use ForeignKey to select segment by ID
+    n_pd_term_structure_desc = models.CharField(max_length=50, editable=False)  # Auto-filled from v_prod_desc in FSI_Product_Segment
+    
     n_12m_pd_change = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True) 
-    n_prod_code = models.CharField(max_length=50, null=True) 
-    n_prod_name= models.CharField(max_length=50, null=True) 
-    n_prod_type = models.CharField(max_length=50, null=True)
     n_rating_impaired_state_skey = models.BigIntegerField(null=True, blank=True)
     v_amrt_repayment_type = models.CharField(max_length=50, null=True)
     n_remain_no_of_pmts = models.BigIntegerField(null=True, blank=True)
@@ -417,6 +418,11 @@ class FCT_Stage_Determination(models.Model):
     n_prev_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
     n_country = models.CharField(max_length=50, null=True)
     n_segment_skey = models.BigIntegerField(null=True, blank=True)
+    n_prod_segment = models.CharField(max_length=255)
+    n_prod_code = models.CharField(max_length=50, null=True) 
+    n_prod_name= models.CharField(max_length=50, null=True) 
+    n_prod_type = models.CharField(max_length=50, null=True)
+    n_prod_desc = models.CharField(max_length=255)
     n_ecl_compute_ind = models.IntegerField(default=0)
     n_credit_rating_code=models.CharField(max_length=50, null=True)
     n_org_credit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
@@ -451,16 +457,15 @@ PAYMENT_FREQUENCY_CHOICES = [
 class FSI_CreditRating_Stage(models.Model):
     credit_rating = models.CharField(max_length=50, unique=True)  # e.g., "AAA SNP"
     stage = models.CharField(max_length=10, choices=STAGE_CHOICES)  # Use choices for stages
-
-    def __str__(self):
-        return f'{self.credit_rating} -> {self.stage}'
-
+    class Meta:
+        db_table = "FSI_CreditRating_Stage"  # Updated table name
 # Days Past Due to Stage Mapping
 class FSI_DPD_Stage_Mapping(models.Model):
     payment_frequency = models.CharField(max_length=50, choices=PAYMENT_FREQUENCY_CHOICES)  # Use choices for payment frequency
     stage_1_threshold = models.IntegerField()  # DPD days for Stage 1
     stage_2_threshold = models.IntegerField()  # DPD days for Stage 2
     stage_3_threshold = models.IntegerField()  # DPD days for Stage 3
+    class Meta:
+        db_table = "FSI_DPD_Stage_Mapping"  # Updated table name
 
-    def __str__(self):
-        return f'{self.payment_frequency} -> Stage 1: {self.stage_1_threshold} days, Stage 2: {self.stage_2_threshold} days, Stage 3: {self.stage_3_threshold} days'
+    

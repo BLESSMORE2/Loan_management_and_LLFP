@@ -1,5 +1,6 @@
 from django.db import transaction
 from concurrent.futures import ThreadPoolExecutor
+from ..models import *
 
 def update_cash_flow_with_account_pd_buckets(fic_mis_date, n_run_skey):
     """
