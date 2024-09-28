@@ -401,7 +401,7 @@ class FCT_Stage_Determination(models.Model):
     n_twelve_months_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
     n_lifetime_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
     n_pd_term_structure_skey = models.BigIntegerField(null=True, blank=True)
-    n_pd_term_structure_name = models.ForeignKey(FSI_Product_Segment, on_delete=models.CASCADE)  # Use ForeignKey to select segment by ID
+    n_pd_term_structure_name = models.ForeignKey(FSI_Product_Segment, on_delete=models.CASCADE,null=True, blank=True)  # Use ForeignKey to select segment by ID
     n_pd_term_structure_desc = models.CharField(max_length=50, editable=False)  # Auto-filled from v_prod_desc in FSI_Product_Segment
     
     n_12m_pd_change = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True) 
@@ -413,9 +413,17 @@ class FCT_Stage_Determination(models.Model):
     v_ccy_code = models.CharField(max_length=3, null=True, blank=True)
     v_common_coa_code = models.CharField(max_length=20, null=True, blank=True)
     v_gl_code = models.CharField(max_length=20, null=True, blank=True)
+     # Stage-related fields
     n_stage_descr = models.CharField(max_length=50, null=True)
     n_curr_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
     n_prev_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
+    
+    # Cooling Period Fields
+    d_cooling_start_date = models.DateField(null=True, blank=True)  # Start date of cooling period
+    n_target_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)  # Target stage after cooling period
+    n_in_cooling_period_flag = models.BooleanField(default=False)  # True for Yes, False for No
+    n_cooling_period_duration = models.IntegerField(null=True, blank=True)  # Duration of the cooling period in days
+    
     n_country = models.CharField(max_length=50, null=True)
     n_segment_skey = models.BigIntegerField(null=True, blank=True)
     n_prod_segment = models.CharField(max_length=255)
@@ -467,5 +475,12 @@ class FSI_DPD_Stage_Mapping(models.Model):
     stage_3_threshold = models.IntegerField()  # DPD days for Stage 3
     class Meta:
         db_table = "FSI_DPD_Stage_Mapping"  # Updated table name
+
+class CoolingPeriodDefinition(models.Model):
+    v_amrt_term_unit = models.CharField(max_length=2)  # M (Monthly), Q (Quarterly), H (Half-Yearly), Y (Yearly)
+    n_cooling_period_days = models.IntegerField()  # Number of days for cooling period
+
+    class Meta:
+        db_table = 'FSI_Cooling_Period_Definition'
 
     

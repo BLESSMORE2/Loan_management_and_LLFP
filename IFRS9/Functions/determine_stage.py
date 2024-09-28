@@ -47,19 +47,53 @@ def determine_stage_by_dpd(account):
         print(f"DPD stage mapping not found for payment frequency {payment_frequency} in account {account.n_account_number}.")
         return 'Unknown Stage'
 
-def update_stage_for_account(account):
+def get_latest_previous_fic_mis_date(account, current_fic_mis_date):
     """
-    Update the stage of a single account.
+    Get the latest previous fic_mis_date for the given account, excluding the current fic_mis_date.
+    """
+    try:
+        # Get the latest previous record for the account based on fic_mis_date
+        previous_account = FCT_Stage_Determination.objects.filter(
+            n_account_number=account.n_account_number,
+            fic_mis_date__lt=current_fic_mis_date
+        ).order_by('-fic_mis_date').first()  # Get the latest previous record
+        
+        return previous_account
+    except FCT_Stage_Determination.DoesNotExist:
+        return None
+
+def update_stage_for_account(account, fic_mis_date):
+    """
+    Update the stage of a single account, setting both the stage description and the numeric value.
+    Also updates n_prev_ifrs_stage_skey with the latest previous n_curr_ifrs_stage_skey.
     """
     stage = determine_stage_for_account(account)
+    
+    # Update current stage description and numeric stage key
     if stage:
         account.n_stage_descr = stage  # Update the stage description
-        account.save()  # Save the account with the new stage
-        print(f"Stage for account {account.n_account_number} updated to {stage}.")
+        
+        # Update the numeric value for n_curr_ifrs_stage_skey
+        if stage == 'Stage 1':
+            account.n_curr_ifrs_stage_skey = 1
+        elif stage == 'Stage 2':
+            account.n_curr_ifrs_stage_skey = 2
+        elif stage == 'Stage 3':
+            account.n_curr_ifrs_stage_skey = 3
+
+        # Find the latest previous record and update n_prev_ifrs_stage_skey
+        previous_account = get_latest_previous_fic_mis_date(account, fic_mis_date)
+        if previous_account:
+            account.n_prev_ifrs_stage_skey = previous_account.n_curr_ifrs_stage_skey
+        else:
+            account.n_prev_ifrs_stage_skey = None  # No previous record found
+
+        account.save()  # Save the account with the new stage and numeric values
+        print(f"Stage for account {account.n_account_number} updated to {stage} with n_curr_ifrs_stage_skey = {account.n_curr_ifrs_stage_skey}.")
     else:
         print(f"Failed to determine stage for account {account.n_account_number}.")
 
-def update_stage_for_fic_mis_date(fic_mis_date):
+def update_stage(fic_mis_date):
     """
     Update the stage of accounts in the FCT_Stage_Determination table for the provided fic_mis_date using multi-threading.
     """
@@ -69,7 +103,7 @@ def update_stage_for_fic_mis_date(fic_mis_date):
     # Use ThreadPoolExecutor to handle multiple accounts in parallel
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit each account update to a thread
-        futures = [executor.submit(update_stage_for_account, account) for account in accounts_to_update]
+        futures = [executor.submit(update_stage_for_account, account, fic_mis_date) for account in accounts_to_update]
         
         # Wait for all threads to complete
         for future in concurrent.futures.as_completed(futures):
@@ -79,5 +113,5 @@ def update_stage_for_fic_mis_date(fic_mis_date):
                 print(f"An error occurred during stage update: {exc}")
 
 # Example usage: Update all records with a specific fic_mis_date
-fic_mis_date = '2024-09-17'  # Use the required date here
-update_stage_for_fic_mis_date(fic_mis_date)
+fic_mis_date = '2024-09-17'  # Use the required current date here
+update_stage(fic_mis_date)

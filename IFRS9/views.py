@@ -11,6 +11,8 @@ from .Functions.data import *
 from .Functions.cashflow import *
 from .Functions.pd_interpolation import *
 from .Functions.populate_stg_determination import *
+from .Functions.determine_stage import *
+from .Functions.cooling_period import *
 from datetime import datetime
 
 
@@ -20,11 +22,15 @@ def dashboard_view(request):
     # Example data for financial graphs
     mis_date = '2024-08-31'  # Input date in 'YYYY-MM-DD' format
     
-    status = perform_interpolation(mis_date)
-    print(status)  # Should print '1' for success or '0' for failure
+    #status = perform_interpolation(mis_date)
+    #print(status)  # Should print '1' for success or '0' for failure
 
     # Insert records into FCT_Stage_Determination with the numeric date
-    insert_fct_stage(mis_date)
+    #insert_fct_stage(mis_date)
+
+    #determine stage
+    #update_stage(mis_date)
+    process_cooling_period_for_accounts(mis_date)
 
     return render(request, 'dashboard.html')
 
