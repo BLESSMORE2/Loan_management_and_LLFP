@@ -28,6 +28,7 @@ class Ldn_Financial_Instrument(models.Model):
     n_eop_curr_prin_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_eop_int_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_eop_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    n_curr_payment_recd= models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_collateral_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_delinquent_days = models.IntegerField(null=True)
     n_pd_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True)
@@ -42,6 +43,7 @@ class Ldn_Financial_Instrument(models.Model):
     v_credit_rating_code=models.CharField(max_length=50, null=True)
     v_org_credit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     v_curr_credit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    v_acct_rating_movement=models.DecimalField(max_digits=5, decimal_places=2, null=True)
     v_collateral_type = models.CharField(max_length=50, null=True)
     v_loan_desc = models.CharField(max_length=255, null=True)
     v_account_classification_cd = models.CharField(max_length=50, null=True)
@@ -129,17 +131,14 @@ class Ldn_PD_Term_Structure(models.Model):
         unique_together = ('v_pd_term_structure_id', 'fic_mis_date')
 
 class Ldn_PD_Term_Structure_Dtl(models.Model):
-    v_pd_term_structure_id = models.ForeignKey('Ldn_PD_Term_Structure',on_delete=models.CASCADE,related_name='term_structure_details')
+    v_pd_term_structure_id = models.ForeignKey('Ldn_PD_Term_Structure',on_delete=models.CASCADE,to_field='v_pd_term_structure_id' )
     fic_mis_date = models.DateField()
     v_credit_risk_basis_cd = models.CharField(max_length=100)
-    n_period_applicable = models.PositiveIntegerField()
     n_pd_percent = models.DecimalField(max_digits=5, decimal_places=4)
-    v_scenario_cd = models.CharField(max_length=50)
-    v_data_source_code = models.CharField(max_length=50)
 
     class Meta:
         db_table = 'Ldn_pd_term_structure_dtl'
-        unique_together = ('v_pd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd', 'n_period_applicable', 'v_scenario_cd')
+        unique_together = ('v_pd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd')
 
 
 class FSI_PD_Interpolated(models.Model):
@@ -373,16 +372,13 @@ class FCT_Stage_Determination(models.Model):
     d_last_payment_date = models.DateField(null=True, blank=True)
     d_next_payment_date = models.DateField(null=True, blank=True)
     d_maturity_date = models.DateField(null=True, blank=True)
-    n_accrual_basis_code = models.IntegerField(null=True, blank=True)
-    n_acct_classification = models.IntegerField(null=True, blank=True)
-    n_carrying_amount_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
-    n_curr_payment_recd = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_acct_classification = models.IntegerField(null=True, blank=True)    
     n_cust_ref_code = models.CharField(max_length=50, null=True)
     n_partner_name = models.CharField(max_length=50)
     n_party_type = models.CharField(max_length=50)
-    n_delinquent_days = models.IntegerField(null=True, blank=True)
-    n_delq_band_skey = models.BigIntegerField(null=True, blank=True)    
+      
     # Grouped Interest-related Fields
+    n_accrual_basis_code = models.IntegerField(null=True, blank=True)
     n_curr_interest_rate = models.DecimalField(max_digits=11, decimal_places=6, null=True, blank=True)  # Current interest rate
     n_effective_interest_rate = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)  # Effective interest rate
     v_interest_freq_unit = models.CharField(max_length=1, null=True, blank=True)  # Interest frequency unit
@@ -390,12 +386,14 @@ class FCT_Stage_Determination(models.Model):
     n_accrued_interest = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  # Accrued interest
     n_rate_chg_min = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)  # Rate change minimum
     # Grouped exposure and balance fields
+    n_carrying_amount_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
     n_exposure_at_default = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  # Added for exposure at default
     n_exposure_limit = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
     n_eop_prin_bal = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  # Moved next to n_exposure_at_default
     
     # Grouped PD and LGD fields
     n_lgd_percent = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_pd_percent = models.DecimalField(max_digits=15, decimal_places=4, null=True)
     n_twelve_months_orig_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
     n_lifetime_orig_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
     n_twelve_months_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
@@ -414,6 +412,8 @@ class FCT_Stage_Determination(models.Model):
     v_common_coa_code = models.CharField(max_length=20, null=True, blank=True)
     v_gl_code = models.CharField(max_length=20, null=True, blank=True)
      # Stage-related fields
+    n_delinquent_days = models.IntegerField(null=True, blank=True)
+    n_delq_band_code =  models.CharField(max_length=50, null=True) 
     n_stage_descr = models.CharField(max_length=50, null=True)
     n_curr_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
     n_prev_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
@@ -482,5 +482,30 @@ class CoolingPeriodDefinition(models.Model):
 
     class Meta:
         db_table = 'FSI_Cooling_Period_Definition'
+
+class Dim_Delinquency_Band(models.Model):
+    fic_mis_date = models.DateField()  # Date field for FIC_MIS_DATE
+    n_delq_band_code = models.CharField(max_length=20,primary_key=True)  # Primary Key for N_DELQ_BAND_CODE
+    v_delq_band_desc = models.CharField(max_length=20,null=True, blank=True)  # VARCHAR2(60 CHAR) for V_DELQ_BAND_DESC
+    n_delq_lower_value = models.PositiveIntegerField()  # Number(5,0) for N_DELQ_LOWER_VALUE
+    n_delq_upper_value = models.PositiveIntegerField()  # Number(5,0) for N_DELQ_UPPER_VALUE
+    v_amrt_term_unit = models.CharField(max_length=1, null=True, blank=True)
+
+    class Meta:
+        db_table = 'dim_delinquency_band'  # Custom table name
+
+    def __str__(self):
+        return f"{self.n_delq_band_code} - {self.v_delq_band_desc}"
+    
+class Credit_Rating_Code_Band(models.Model):
+    v_rating_code = models.CharField(max_length=10, primary_key=True)  # Primary Key for Credit Rating Code
+    v_rating_desc = models.CharField(max_length=100)  # Description for the rating code
+    fic_mis_date = models.DateField()  # Date field for FIC_MIS_DATE
+
+    class Meta:
+        db_table = 'dim_credit_rating_code_band'  # Custom table name
+
+    def __str__(self):
+        return f"{self.v_rating_code} - {self.v_rating_desc}"
 
     

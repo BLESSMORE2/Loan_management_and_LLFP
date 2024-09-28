@@ -13,7 +13,9 @@ def insert_records_chunk(records_chunk):
                     n_curr_interest_rate=record.n_curr_interest_rate,
                     n_effective_interest_rate=record.n_effective_interest_rate,
                     n_accrued_interest=record.n_accrued_interest,
-                    n_twelve_months_pd=record.n_pd_percent,
+                    n_rate_chg_min=record.n_interest_changing_rate,
+                    n_accrual_basis_code=record.v_day_count_ind,
+                    n_pd_percent=record.n_pd_percent,
                     n_lgd_percent=record.n_lgd_percent,
                     d_acct_start_date=record.d_start_date,
                     d_last_payment_date=record.d_last_payment_date,
@@ -21,7 +23,7 @@ def insert_records_chunk(records_chunk):
                     d_maturity_date=record.d_maturity_date,
                     v_ccy_code=record.v_ccy_code,
                     n_eop_prin_bal=record.n_eop_curr_prin_bal,
-                    n_exposure_at_default=record.n_eop_bal,
+                    n_carrying_amount_ncy=record.n_eop_bal,
                     n_collateral_amount=record.n_collateral_amount,
                     n_delinquent_days=record.n_delinquent_days,
                     v_amrt_repayment_type=record.v_amrt_repayment_type,
@@ -29,9 +31,11 @@ def insert_records_chunk(records_chunk):
                     n_prod_code = record.v_prod_code,
                     n_cust_ref_code=record.v_cust_ref_code,
                     n_loan_type=record.v_loan_type,
+                    n_acct_rating_movement=record.v_acct_rating_movement,
                     n_credit_rating_code=record.v_credit_rating_code,
                     n_org_credit_score=record.v_org_credit_score,
                     n_curr_credit_score=record.v_curr_credit_score,
+                    
                 )
             except Exception as e:
                 print(f"Error inserting record: {e}")

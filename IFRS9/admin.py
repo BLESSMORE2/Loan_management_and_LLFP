@@ -44,7 +44,7 @@ class Ldn_PD_Term_StructureAdmin(admin.ModelAdmin):
 
 @admin.register(Ldn_PD_Term_Structure_Dtl)
 class Ldn_PD_Term_Structure_DtlAdmin(admin.ModelAdmin):
-    list_display = ('v_pd_term_structure_id', 'v_credit_risk_basis_cd', 'n_period_applicable')
+    list_display = ('v_pd_term_structure_id', 'v_credit_risk_basis_cd')
     search_fields = ('v_pd_term_structure_id', 'v_credit_risk_basis_cd')
     list_filter = ('v_pd_term_structure_id',)
 
