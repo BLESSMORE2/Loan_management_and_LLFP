@@ -1,8 +1,33 @@
 import concurrent.futures
-from ..models import FSI_Expected_Cashflow, fsi_Financial_Cash_Flow_Cal
+from ..models import FSI_Expected_Cashflow, fsi_Financial_Cash_Flow_Cal, Dim_Run
 from django.db import transaction
+from django.db import models
 
-def insert_cash_flow_record(cashflow):
+def get_next_run_skey():
+    """
+    Retrieve the current n_run_skey from the RunKey table and return the next value.
+    If no records exist, start with 1.
+    """
+    # Get the current run_skey from the RunKey table
+    try:
+        run_key_record = Dim_Run.objects.first()
+        if run_key_record is None:
+            # If the RunKey table is empty, start with 1
+            return 1
+        else:
+            return run_key_record.latest_run_skey + 1
+    except Dim_Run.DoesNotExist:
+        return 1  # Start at 1 if the RunKey table doesn't exist or is empty
+
+def update_run_key(next_run_skey):
+    """
+    Update the RunKey table with the latest run_skey.
+    """
+    run_key_record, created = Dim_Run.objects.get_or_create(id=1)  # Ensure there's always one RunKey record
+    run_key_record.latest_run_skey = next_run_skey
+    run_key_record.save()
+
+def insert_cash_flow_record(cashflow, run_skey):
     """
     Function to insert a single cash flow record into fsi_Financial_Cash_Flow_Cal.
     This function is called by multiple threads.
@@ -12,7 +37,7 @@ def insert_cash_flow_record(cashflow):
         data_to_insert = {
             'v_account_number': cashflow.v_account_number,
             'd_cash_flow_date': cashflow.d_cash_flow_date,
-            'n_run_skey': -1,  # Default value
+            'n_run_skey': run_skey,  # Use the provided run_skey for all records in the batch
             'fic_mis_date': cashflow.fic_mis_date,
             'n_principal_run_off': cashflow.n_principal_payment,
             'n_interest_run_off': cashflow.n_interest_payment,
@@ -43,15 +68,22 @@ def insert_cash_flow_data(fic_mis_date):
     # Print the number of rows selected
     print(f"Number of rows selected: {total_selected}")
 
+    # Get the next run_skey
+    next_run_skey = get_next_run_skey()
+    print(f"Using n_run_skey = {next_run_skey} for this batch of inserts.")
+
     # Use ThreadPoolExecutor for multi-threading
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit tasks to the executor for each cashflow record
-        futures = [executor.submit(insert_cash_flow_record, cashflow) for cashflow in expected_cashflows]
+        futures = [executor.submit(insert_cash_flow_record, cashflow, next_run_skey) for cashflow in expected_cashflows]
 
         # Process the results as they complete
         for future in concurrent.futures.as_completed(futures):
             if future.result():  # If the insertion was successful
                 total_inserted += 1
+
+    # Update the RunKey table with the latest run_skey
+    update_run_key(next_run_skey)
 
     # Print the number of rows successfully inserted
     print(f"Number of rows inserted: {total_inserted}")

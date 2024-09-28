@@ -16,6 +16,8 @@ from .Functions.cooling_period import *
 from .Functions.update_stage_determination import *
 from .Functions.assign_acc_pd_level import *
 from .Functions.assign_acc_pd_term_level import *
+from .Functions.populate_cashflows import *
+from .Functions.pd_cumulative_term_str import *
 
 from datetime import datetime
 
@@ -29,14 +31,16 @@ def dashboard_view(request):
     #status = perform_interpolation(mis_date)
     #print(status)  # Should print '1' for success or '0' for failure
 
-    # Insert records into FCT_Stage_Determination with the numeric date
+    #Insert records into FCT_Stage_Determination with the numeric date
     #insert_fct_stage(mis_date)
 
     #determine stage
     #update_stage(mis_date)
     #process_cooling_period_for_accounts(mis_date)
-    update_stage_determination(mis_date)
-    calculate_pd_for_accounts(mis_date)
+    #update_stage_determination(mis_date)
+    #calculate_pd_for_accounts(mis_date)
+    #insert_cash_flow_data(mis_date)
+    update_cash_flow_with_pd_buckets(mis_date,3)
 
     return render(request, 'dashboard.html')
 

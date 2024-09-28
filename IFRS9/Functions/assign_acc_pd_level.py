@@ -6,69 +6,75 @@ def calculate_account_level_pd_for_account(account, fic_mis_date, term_unit_to_p
     """
     Function to calculate 12-month PD and Lifetime PD for a single account using account-level interpolated PD data.
     """
-    # Determine amortization frequency and periods per year
+    # Determine amortization frequency and periods per year based on v_amrt_term_unit
     amortization_periods = term_unit_to_periods.get(account.v_amrt_term_unit, 12)  # Default to 12 (monthly)
 
-    # Calculate the number of months to maturity
+    # Calculate the number of months and buckets to maturity
     if account.d_maturity_date and account.fic_mis_date:
         months_to_maturity = (account.d_maturity_date.year - account.fic_mis_date.year) * 12 + \
                              (account.d_maturity_date.month - account.fic_mis_date.month)
+        buckets_to_maturity = months_to_maturity // (12 // amortization_periods)  # Convert months to buckets
+        print(f"Account {account.n_prod_code}: Buckets to maturity = {buckets_to_maturity} (for {account.v_amrt_term_unit})")
     else:
+        print(f"Skipping account {account.n_prod_code}: Missing dates")
         return  # Skip if dates are not available
 
-    # Fetch account-level PD records for the account
-    pd_records = FSI_PD_Account_Interpolated.objects.filter(
+    # Calculate the number of buckets needed for 12 months
+    buckets_needed_for_12_months = 12 // (12 // amortization_periods)
+    print(f"Account {account.n_prod_code}: Buckets needed for 12-month PD = {buckets_needed_for_12_months}")
+
+    try:
+        # Fetch 12-Month PD record for the account (if maturity > 12 months)
+        if months_to_maturity > 12:
+            twelve_months_pd_record = FSI_PD_Account_Interpolated.objects.get(
                 v_account_number=account.n_account_number,
-                fic_mis_date=fic_mis_date
-                )
+                fic_mis_date=fic_mis_date,
+                v_cash_flow_bucket_id=buckets_needed_for_12_months
+            )
+            twelve_months_pd = twelve_months_pd_record.n_cumulative_default_prob
+            print(f"Account {account.n_prod_code}: 12-month PD = {twelve_months_pd}")
 
-    # Initialize PD values
-    twelve_months_pd = None
-    lifetime_pd = None
+            # Fetch Lifetime PD record for the account
+            lifetime_pd_record = FSI_PD_Account_Interpolated.objects.get(
+                v_account_number=account.n_account_number,
+                fic_mis_date=fic_mis_date,
+                v_cash_flow_bucket_id=buckets_to_maturity
+            )
+            lifetime_pd = lifetime_pd_record.n_cumulative_default_prob
+            print(f"Account {account.n_prod_code}: Lifetime PD = {lifetime_pd}")
 
-    # For accounts with maturity greater than 12 months
-    if months_to_maturity > 12:
-        for pd_record in pd_records:
-            # Convert cash flow bucket unit to monthly periods
-            if pd_record.v_cash_flow_bucket_unit == 'M':
-                periods_per_bucket = 1  # 1 month per bucket (monthly)
-            elif pd_record.v_cash_flow_bucket_unit == 'Q':
-                periods_per_bucket = 3  # 3 months per bucket (quarterly)
-            elif pd_record.v_cash_flow_bucket_unit == 'H':
-                periods_per_bucket = 6  # 6 months per bucket (half-yearly)
-            elif pd_record.v_cash_flow_bucket_unit == 'Y':
-                periods_per_bucket = 12  # 12 months per bucket (yearly)
-            else:
-                periods_per_bucket = 1  # Default to monthly
+        else:
+            # For accounts with maturity <= 12 months, 12-Month PD and Lifetime PD are the same
+            pd_record = FSI_PD_Account_Interpolated.objects.get(
+                v_account_number=account.n_account_number,
+                fic_mis_date=fic_mis_date,
+                v_cash_flow_bucket_id=buckets_to_maturity
+            )
+            twelve_months_pd = pd_record.n_cumulative_default_prob
+            lifetime_pd = pd_record.n_cumulative_default_prob
+            print(f"Account {account.n_prod_code}: 12-month and Lifetime PD (same for short maturity) = {twelve_months_pd}")
 
-            # Calculate 12-month PD if available
-            if pd_record.v_cash_flow_bucket_id * periods_per_bucket <= 12:
-                twelve_months_pd = pd_record.n_cumulative_default_prob
-
-            # Calculate Lifetime PD if it corresponds to the maturity period
-            if pd_record.v_cash_flow_bucket_id * periods_per_bucket >= months_to_maturity:
-                lifetime_pd = pd_record.n_cumulative_default_prob
-    else:
-        # For accounts with maturity less than or equal to 12 months
-        for pd_record in pd_records:
-            if pd_record.v_cash_flow_bucket_id * periods_per_bucket >= months_to_maturity:
-                twelve_months_pd = pd_record.n_cumulative_default_prob
-                lifetime_pd = pd_record.n_cumulative_default_prob
+    except FSI_PD_Account_Interpolated.DoesNotExist:
+        print(f"Account {account.n_prod_code}: No PD records found for bucket {buckets_needed_for_12_months} or {buckets_to_maturity}")
+        return
 
     # Update the FCT_Stage_Determination table with the calculated PDs
     if twelve_months_pd:
         account.n_twelve_months_pd = twelve_months_pd
+        print(f"Account {account.n_prod_code}: Updated 12-month PD = {twelve_months_pd}")
     if lifetime_pd:
         account.n_lifetime_pd = lifetime_pd
+        print(f"Account {account.n_prod_code}: Updated Lifetime PD = {lifetime_pd}")
 
+    # Save the updated account information
     account.save()
-
+    print(f"Account {account.n_prod_code}: PD values successfully saved.")
 
 def calculate_account_level_pd_for_accounts(fic_mis_date):
     """
     Main function to calculate the 12-month PD and Lifetime PD for accounts using multi-threading and account-level PDs.
     """
-    # Map v_amrt_term_unit to the number of periods in a year
+    # Map v_amrt_term_unit to the number of periods in a year (buckets per year)
     term_unit_to_periods = {
         'M': 12,  # Monthly
         'Q': 4,   # Quarterly
@@ -78,18 +84,29 @@ def calculate_account_level_pd_for_accounts(fic_mis_date):
 
     # Fetch all accounts for the given MIS date
     accounts = FCT_Stage_Determination.objects.filter(fic_mis_date=fic_mis_date)
+    total_accounts = accounts.count()
+
+    # Print the number of records found
+    print(f"Found {total_accounts} accounts for processing.")
 
     # Use ThreadPoolExecutor for multi-threading
+    updated_accounts = 0
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit tasks to the executor for each account
-        futures = [executor.submit(calculate_account_level_pd_for_account, account, fic_mis_date, term_unit_to_periods) for account in accounts]
+        futures = {executor.submit(calculate_account_level_pd_for_account, account, fic_mis_date, term_unit_to_periods): account for account in accounts}
 
         # Process the results as they complete
         for future in concurrent.futures.as_completed(futures):
+            account = futures[future]
             try:
                 future.result()  # This ensures any exceptions are raised
+                updated_accounts += 1
+                print(f"Successfully updated PD for account: {account.n_prod_code}")
             except Exception as e:
-                print(f"Error occurred: {e}")
+                print(f"Error occurred while processing account {account.n_prod_code}: {e}")
+
+    # Print summary at the end
+    print(f"{updated_accounts} out of {total_accounts} accounts were successfully updated.")
 
 # Example usage
 calculate_account_level_pd_for_accounts(fic_mis_date='2024-09-17')

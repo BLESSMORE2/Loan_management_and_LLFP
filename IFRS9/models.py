@@ -261,6 +261,7 @@ class FSI_Expected_Cashflow(models.Model):
     n_cash_flow_amount = models.DecimalField(max_digits=20, decimal_places=2)
     n_balance = models.DecimalField(max_digits=20, decimal_places=2)
     V_CASH_FLOW_TYPE = models.CharField(max_length=10)
+    management_fee_added = models.DecimalField(max_digits=20, decimal_places=2)
     V_CCY_CODE = models.CharField(max_length=3)
 
     class Meta:
@@ -322,9 +323,9 @@ class TableMetadata(models.Model):
 
 
 class fsi_Financial_Cash_Flow_Cal(models.Model):
+    n_run_skey = models.BigIntegerField(null=True,default=1)
     v_account_number = models.CharField(max_length=20, null=False)
     d_cash_flow_date = models.DateField(null=False)
-    n_run_skey = models.BigIntegerField(null=False, default=-1)
     fic_mis_date = models.DateField(null=False)
     n_principal_run_off = models.DecimalField(max_digits=22, decimal_places=3, null=True)
     n_interest_run_off = models.DecimalField(max_digits=22, decimal_places=3, null=True)
@@ -378,7 +379,7 @@ class FCT_Stage_Determination(models.Model):
     n_party_type = models.CharField(max_length=50)
       
     # Grouped Interest-related Fields
-    n_accrual_basis_code = models.IntegerField(null=True, blank=True)
+    n_accrual_basis_code =models.CharField(max_length=7, null=True, blank=True)
     n_curr_interest_rate = models.DecimalField(max_digits=11, decimal_places=6, null=True, blank=True)  # Current interest rate
     n_effective_interest_rate = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)  # Effective interest rate
     v_interest_freq_unit = models.CharField(max_length=1, null=True, blank=True)  # Interest frequency unit
@@ -507,5 +508,11 @@ class Credit_Rating_Code_Band(models.Model):
 
     def __str__(self):
         return f"{self.v_rating_code} - {self.v_rating_desc}"
+    
+class Dim_Run(models.Model):
+    latest_run_skey = models.BigIntegerField(default=1)
+
+    class Meta:
+        db_table = 'dim_run'
 
     

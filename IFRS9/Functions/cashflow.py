@@ -161,25 +161,31 @@ def calculate_cash_flows_for_loan(loan):
 
                 # Calculate Principal Payment based on the amortization type
                 if repayment_type == 'bullet':
-                    principal_payment = 0 if current_date < loan.d_maturity_date else balance
+                    if periods == 1:  # Check if it's the last bucket (last period)
+                        principal_payment = balance  # Pay the entire balance in the last bucket
+                    else:
+                        principal_payment = 0  # No principal payment before the last bucket
                 elif repayment_type =='amortized':
                     principal_payment = fixed_principal_payment
-                  # Last payment clears the balance
+                    # Last payment clears the balance
 
                 print(principal_payment)
                 print(repayment_type)
+                print(balance)
 
                 total_principal_paid += principal_payment  # Track total principal paid
 
                 # Check if the current date is the management fee date
                 management_fee_net = 0
-                if current_date == management_fee_date and management_fee_rate:
-                    management_fee = balance * management_fee_rate
-                    wht_management_fee = management_fee * withholding_tax  # WHT on management fee
-                    management_fee_net = management_fee - wht_management_fee  # Net management fee after WHT
-                    
+                if current_date.month == management_fee_date.month and current_date.year == management_fee_date.year and management_fee_rate:
+                    management_fee_net = balance * management_fee_rate
+                    wht_management_fee = management_fee_net * withholding_tax  # WHT on management fee
+                    management_fee_net -= wht_management_fee  # Net management fee after WHT
+                     # Add management fee to total payment
+
                     # Set the management fee date for the next year
                     management_fee_date = management_fee_date.replace(year=management_fee_date.year + 1)
+
 
                 # Total Payment (Principal + Net Interest + Management Fee if applicable)
                 total_payment = principal_payment + interest_payment_net + management_fee_net
@@ -194,6 +200,8 @@ def calculate_cash_flows_for_loan(loan):
                     n_interest_payment=interest_payment + management_fee_net,  # Include net management fee in interest
                     n_cash_flow_amount=total_payment,
                     n_balance=balance - principal_payment,
+                    V_CASH_FLOW_TYPE=repayment_type,
+                    management_fee_added=management_fee_net, 
                     V_CCY_CODE=loan.v_ccy_code,
                 )
 
@@ -203,21 +211,7 @@ def calculate_cash_flows_for_loan(loan):
                 cashflow_bucket += 1
                 periods -= 1  # Decrease the number of remaining periods
 
-            # Handle cases where management fee date does not coincide with any scheduled payment date
-            if management_fee_rate and current_date > management_fee_date:
-                # Create a separate entry for the management fee if no payment was made on the exact management fee date
-                FSI_Expected_Cashflow.objects.create(
-                    fic_mis_date=loan.fic_mis_date,
-                    v_account_number=loan.v_account_number,
-                    n_cash_flow_bucket=cashflow_bucket,
-                    d_cash_flow_date=management_fee_date,
-                    n_principal_payment=0,  # No principal repayment for management fee
-                    n_interest_payment=management_fee_net,  # Net management fee in interest column
-                    n_cash_flow_amount=management_fee_net,  # Total payment is the net management fee
-                    n_balance=balance,  # Balance remains unchanged
-                    V_CCY_CODE=loan.v_ccy_code,
-                )
-                cashflow_bucket += 1  # Increment bucket for separate management fee payment
+            
 
 
 ################################################3
