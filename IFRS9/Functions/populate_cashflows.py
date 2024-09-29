@@ -44,6 +44,7 @@ def insert_cash_flow_record(cashflow, run_skey):
             'n_cash_flow_bucket_id': cashflow.n_cash_flow_bucket,
             'n_cash_flow_amount': cashflow.n_cash_flow_amount,
             'v_ccy_code': cashflow.V_CCY_CODE,
+            'n_exposure_at_default':cashflow.n_exposure_at_default
         }
 
         # Insert the data into fsi_Financial_Cash_Flow_Cal

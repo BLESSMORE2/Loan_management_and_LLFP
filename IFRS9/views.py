@@ -9,6 +9,7 @@ from .forms import *
 
 from .Functions.data import *
 from .Functions.cashflow import *
+from .Functions.calculate_cash_flows_ead import *
 from .Functions.pd_interpolation import *
 from .Functions.populate_stg_determination import *
 from .Functions.determine_stage import *
@@ -18,6 +19,11 @@ from .Functions.assign_acc_pd_level import *
 from .Functions.assign_acc_pd_term_level import *
 from .Functions.populate_cashflows import *
 from .Functions.pd_cumulative_term_str import *
+from .Functions.calculate_fct_accrued_interest_and_ead import *
+from .Functions.calculate_eir import *
+from .Functions.update_fin_cashflw import *
+
+
 
 from datetime import datetime
 
@@ -30,7 +36,8 @@ def dashboard_view(request):
     
     #status = perform_interpolation(mis_date)
     #print(status)  # Should print '1' for success or '0' for failure
-
+    #project_cash_flows(mis_date)
+    #update_cash_flows_with_ead(mis_date)
     #Insert records into FCT_Stage_Determination with the numeric date
     #insert_fct_stage(mis_date)
 
@@ -38,9 +45,12 @@ def dashboard_view(request):
     #update_stage(mis_date)
     #process_cooling_period_for_accounts(mis_date)
     #update_stage_determination(mis_date)
+    #update_stage_determination_accrued_interest_and_ead(mis_date)
+    #update_stage_determination_eir(mis_date)
     #calculate_pd_for_accounts(mis_date)
     #insert_cash_flow_data(mis_date)
-    update_cash_flow_with_pd_buckets(mis_date,3)
+    update_financial_cash_flow(mis_date,42)
+    update_cash_flow_with_pd_buckets(mis_date,42)
 
     return render(request, 'dashboard.html')
 

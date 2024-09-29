@@ -260,6 +260,8 @@ class FSI_Expected_Cashflow(models.Model):
     n_interest_payment = models.DecimalField(max_digits=20, decimal_places=2)
     n_cash_flow_amount = models.DecimalField(max_digits=20, decimal_places=2)
     n_balance = models.DecimalField(max_digits=20, decimal_places=2)
+    n_accrued_interest = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  # Accrued interest
+    n_exposure_at_default = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True) 
     V_CASH_FLOW_TYPE = models.CharField(max_length=10)
     management_fee_added = models.DecimalField(max_digits=20, decimal_places=2)
     V_CCY_CODE = models.CharField(max_length=3)

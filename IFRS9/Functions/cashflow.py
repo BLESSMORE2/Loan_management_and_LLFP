@@ -169,9 +169,6 @@ def calculate_cash_flows_for_loan(loan):
                     principal_payment = fixed_principal_payment
                     # Last payment clears the balance
 
-                print(principal_payment)
-                print(repayment_type)
-                print(balance)
 
                 total_principal_paid += principal_payment  # Track total principal paid
 
