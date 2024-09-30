@@ -22,7 +22,10 @@ from .Functions.pd_cumulative_term_str import *
 from .Functions.calculate_fct_accrued_interest_and_ead import *
 from .Functions.calculate_eir import *
 from .Functions.update_fin_cashflw import *
-
+from .Functions.calculate_cash_flow_rate_and_amount1 import *
+from .Functions.cal_periodic_discount_Rate2 import *
+from .Functions.cal_exp_cash_n_cash_shortfall3 import *
+from .Functions.cal_forward_exposure4 import *
 
 
 from datetime import datetime
@@ -49,8 +52,12 @@ def dashboard_view(request):
     #update_stage_determination_eir(mis_date)
     #calculate_pd_for_accounts(mis_date)
     #insert_cash_flow_data(mis_date)
-    update_financial_cash_flow(mis_date,42)
-    update_cash_flow_with_pd_buckets(mis_date,42)
+    #update_financial_cash_flow(mis_date,42)
+    #update_cash_flow_with_pd_buckets(mis_date,42)
+    #calculate_expected_cash_flow(mis_date,42)
+    #calculate_discount_factors(mis_date,42)
+    #calculate_cashflow_fields(mis_date,42)
+    calculate_forward_loss_fields(mis_date,42)
 
     return render(request, 'dashboard.html')
 
