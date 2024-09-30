@@ -26,6 +26,7 @@ from .Functions.calculate_cash_flow_rate_and_amount1 import *
 from .Functions.cal_periodic_discount_Rate2 import *
 from .Functions.cal_exp_cash_n_cash_shortfall3 import *
 from .Functions.cal_forward_exposure4 import *
+from .Functions.calculate_marginal_pd import *
 
 
 from datetime import datetime
@@ -54,6 +55,7 @@ def dashboard_view(request):
     #insert_cash_flow_data(mis_date)
     #update_financial_cash_flow(mis_date,42)
     #update_cash_flow_with_pd_buckets(mis_date,42)
+    #update_marginal_pd(mis_date,42)
     #calculate_expected_cash_flow(mis_date,42)
     #calculate_discount_factors(mis_date,42)
     #calculate_cashflow_fields(mis_date,42)

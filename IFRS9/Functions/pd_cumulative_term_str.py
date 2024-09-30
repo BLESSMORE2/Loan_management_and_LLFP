@@ -99,5 +99,4 @@ def get_buckets_for_12_months(v_amrt_term_unit):
     return term_unit_to_buckets.get(v_amrt_term_unit, 12)
 
 
-# Example usage with multi-threading:
-update_cash_flow_with_pd_buckets(fic_mis_date='2024-09-17', n_run_skey=12345, max_workers=10, batch_size=1000)
+

@@ -78,8 +78,7 @@ def calculate_forward_loss_fields(fic_mis_date, run_skey, batch_size=1000, num_t
         with transaction.atomic():
             fsi_Financial_Cash_Flow_Cal.objects.bulk_update(updated_batches, [
                 'n_12m_fwd_expected_loss', 
-                'n_forward_expected_loss', 
-                'n_mitigant_fwd_exp_loss', 
+                'n_forward_expected_loss',  
                 'n_forward_expected_loss_pv', 
                 'n_12m_fwd_expected_loss_pv'
             ])
