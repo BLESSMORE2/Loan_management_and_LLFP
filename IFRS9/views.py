@@ -7,7 +7,7 @@ import  base64
 from .models import *
 from .forms import *
 
-from .Functions.data import *
+from .Functions_view.data import *
 from .Functions.cashflow import *
 from .Functions.calculate_cash_flows_ead import *
 from .Functions.pd_interpolation import *
@@ -27,7 +27,8 @@ from .Functions.cal_periodic_discount_Rate2 import *
 from .Functions.cal_exp_cash_n_cash_shortfall3 import *
 from .Functions.cal_forward_exposure4 import *
 from .Functions.calculate_marginal_pd import *
-
+from .Functions_view.Staging import *
+from .Functions_view.Cashflow_projections import *
 
 from datetime import datetime
 
@@ -86,11 +87,7 @@ def credit_risk_models_view(request):
     }
     return render(request, 'models/credit_risk_models.html', context)
 
-def cash_flow_generation_issues(request):
-    context = {
-        'title': 'Cash Flow Generation Issues and Solutions',
-    }
-    return render(request, 'models/cash_flow_generation_issues.html', context)
+
 
 #####################
 def cashflow_projection_view(request):

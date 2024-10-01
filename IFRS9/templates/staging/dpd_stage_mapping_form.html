@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">{{ view.title }}</h1>
+        <a href="{% url 'dpd_stage_mapping_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_payment_frequency" class="form-label">Payment Frequency</label>
+                        {{ form.payment_frequency }}  <!-- Class applied via widget -->
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_stage_1_threshold" class="form-label">Stage 1 Threshold (days)</label>
+                        {{ form.stage_1_threshold }}  <!-- Class applied via widget -->
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_stage_2_threshold" class="form-label">Stage 2 Threshold (days)</label>
+                        {{ form.stage_2_threshold }}  <!-- Class applied via widget -->
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_stage_3_threshold" class="form-label">Stage 3 Threshold (days)</label>
+                        {{ form.stage_3_threshold }}  <!-- Class applied via widget -->
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success me-2">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <a href="{% url 'dpd_stage_mapping_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

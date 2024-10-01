@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">{{ view.title }}</h1>
+        <a href="{% url 'credit_rating_code_band_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_v_rating_code" class="form-label">Rating Code</label>
+                        {{ form.v_rating_code }}  <!-- Render form field -->
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_v_rating_desc" class="form-label">Description</label>
+                        {{ form.v_rating_desc }}  <!-- Render form field -->
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success me-2">Save</button>
+                    <a href="{% url 'credit_rating_code_band_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

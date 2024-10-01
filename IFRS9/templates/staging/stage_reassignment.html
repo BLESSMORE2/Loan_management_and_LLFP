@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Display Success and Error Messages -->
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Back button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'configure_stages' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Stage Configuration
+        </a>
+    </div>
+
+    <h1 class="h3 text-primary">Stage Reassignment</h1>
+
+    <!-- Filter Form -->
+    <form id="filter-form" method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="fic_mis_date">Execution Date *</label>
+                {{ filter_form.fic_mis_date }}
+                {% if filter_form.fic_mis_date.errors %}
+                <div class="text-danger">{{ filter_form.fic_mis_date.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                <label for="n_cust_ref_code">Customer ID</label>
+                {{ filter_form.n_cust_ref_code }}
+                {% if filter_form.n_cust_ref_code.errors %}
+                <div class="text-danger">{{ filter_form.n_cust_ref_code.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                <label for="n_party_type">Customer Type</label>
+                {{ filter_form.n_party_type }}
+                {% if filter_form.n_party_type.errors %}
+                <div class="text-danger">{{ filter_form.n_party_type.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                <label for="n_account_number">Account ID/No</label>
+                {{ filter_form.n_account_number }}
+                {% if filter_form.n_account_number.errors %}
+                <div class="text-danger">{{ filter_form.n_account_number.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                <label for="n_partner_name">Customer Name</label>
+                {{ filter_form.n_partner_name }}
+                {% if filter_form.n_partner_name.errors %}
+                <div class="text-danger">{{ filter_form.n_partner_name.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Filter</button>
+    </form>
+
+    <!-- Table for stage reassignment -->
+    <form id="reassignment-form" method="post">
+        {% csrf_token %}
+        <table class="table table-bordered table-hover mt-4">
+            <thead class="thead-light">
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Customer Name</th>
+                    <th>Account ID/No</th>
+                    <th>Customer Type</th>
+                    <th>Current Stage</th>
+                    <th>Stage Reassigned</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record.n_cust_ref_code }}</td>
+                    <td>{{ record.n_partner_name }}</td>
+                    <td>{{ record.n_account_number }}</td>
+                    <td>{{ record.n_party_type }}</td>
+                    <td>{{ record.n_stage_descr }}</td>
+                    <td>
+                        <select name="n_curr_ifrs_stage_skey_{{ record.n_account_number }}" class="form-control">
+                            <option value="1" {% if record.n_curr_ifrs_stage_skey == 1 %}selected{% endif %}>Stage 1</option>
+                            <option value="2" {% if record.n_curr_ifrs_stage_skey == 2 %}selected{% endif %}>Stage 2</option>
+                            <option value="3" {% if record.n_curr_ifrs_stage_skey == 3 %}selected{% endif %}>Stage 3</option>
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-success mt-3">Reassign Stages</button>
+    </form>
+</div>
+
+<!-- Optional CSS -->
+<style>
+    .form-label {
+        font-weight: bold;
+    }
+    .btn-primary, .btn-success {
+        padding: 0.5rem 1.5rem;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    .thead-light th {
+        background-color: #f8f9fa;
+    }
+    .table {
+        width: 100%;
+    }
+</style>
+
+{% endblock %}
+
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- AJAX for form submission -->
+<script>
+$(document).ready(function() {
+    // Handle filter form submission
+    $('#filter-form').on('submit', function(event) {
+        event.preventDefault();  // Prevent page refresh
+        let formData = $(this).serialize();  // Get form data
+
+        $.ajax({
+            url: "{% url 'stage_reassignment' %}",
+            type: 'GET',  // Use 'GET' method for filtering
+            data: formData,
+            success: function(response) {
+                $('tbody').html($(response).find('tbody').html());  // Replace table body with filtered records
+            },
+            error: function(xhr, status, error) {
+                console.error('Filter Error:', error);
+            }
+        });
+    });
+
+    // Handle stage reassignment form submission
+    $('#reassignment-form').on('submit', function(event) {
+        event.preventDefault();  // Prevent page refresh
+        let formData = $(this).serialize();  // Get form data
+
+        $.ajax({
+            url: "{% url 'stage_reassignment' %}",
+            type: 'POST',  // Use 'POST' method for saving the reassigned stages
+            data: formData,
+            success: function(response) {
+                alert('Stages reassigned successfully!');
+                $('tbody').html($(response).find('tbody').html());  // Replace table body with updated records
+            },
+            error: function(xhr, status, error) {
+                console.error('Reassignment Error:', error);
+            }
+        });
+    });
+});
+</script>

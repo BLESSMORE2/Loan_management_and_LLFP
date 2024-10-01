@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-primary">{{ title }}</h1>
+        <a href="{% url 'credit_risk_models' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Credit Risk Models
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Stage Reassignment -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-exchange-alt fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Stage Reassignment</h5>
+                    <p class="card-text">Reassign stages for financial instruments based on new criteria.</p>
+                    <a href="{% url 'stage_reassignment' %}" class="btn btn-success">Reassign Stages</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staging Using Ratings -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Staging Using Ratings</h5>
+                    <p class="card-text">Configure stage determination based on ratings.</p>
+                    <a href="{% url 'staging_using_ratings' %}" class="btn btn-primary">Configure Ratings</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staging Using Delinquent Days -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-times fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Staging Using Delinquent Days</h5>
+                    <p class="card-text">Configure stage determination based on delinquent days.</p>
+                    <a href="{% url 'dpd_stage_mapping_list' %}" class="btn btn-success">Configure Delinquent Days</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Cooling Period Definitions -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-thermometer-half fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Cooling Period Definitions</h5>
+                    <p class="card-text">Configure cooling periods for stage transitions.</p>
+                    <a href="{% url 'cooling_period_definitions' %}" class="btn btn-primary">Configure Cooling Periods</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configure Dim Delinquency Band -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Configure Dim Delinquency Band</h5>
+                    <p class="card-text">Define and configure delinquency bands for the financial system.</p>
+                    <a href="{% url 'dim_delinquency_band_list' %}" class="btn btn-success">Configure Delinquency Bands</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Define Unique Rating Codes -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-key fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Define Unique Rating Codes</h5>
+                    <p class="card-text">Manage and configure unique rating codes for credit risk models.</p>
+                    <a href="{% url 'credit_rating_code_band_list' %}" class="btn btn-primary">Define Rating Codes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">{{ title }}</h1>
+    <!-- Back button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'credit_risk_models' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Cashflows Projections
+        </a>
+    </div>
+
+    <div class="row">
+        {% for option in options %}
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-book fa-3x text-info mb-3"></i> <!-- You can change the icon -->
+                    <h5 class="card-title">{{ option.name }}</h5>
+                    <a href="{% url option.url %}" class="btn btn-primary">View {{ option.name }}</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-
+from django.utils import timezone
 # Create your models here.
 
 class Ldn_Financial_Instrument(models.Model):
@@ -453,10 +453,10 @@ STAGE_CHOICES = [
 
 # Choices for Payment Frequency
 PAYMENT_FREQUENCY_CHOICES = [
-    ('monthly', 'Monthly'),
-    ('quarterly', 'Quarterly'),
-    ('half_yearly', 'Half-Yearly'),
-    ('yearly', 'Yearly')
+    ('M', 'Monthly'),
+    ('Q', 'Quarterly'),
+    ('H', 'Half-Yearly'),
+    ('Y', 'Yearly')
 ]
 
 # Credit Rating to Stage Mapping
@@ -474,15 +474,23 @@ class FSI_DPD_Stage_Mapping(models.Model):
     class Meta:
         db_table = "FSI_DPD_Stage_Mapping"  # Updated table name
 
+
+# Choices for Payment Frequency
+AMRT_CHOICES = [
+    ('M', 'Monthly'),
+    ('Q', 'Quarterly'),
+    ('H', 'Half-Yearly'),
+    ('Y', 'Yearly')
+]
 class CoolingPeriodDefinition(models.Model):
-    v_amrt_term_unit = models.CharField(max_length=2)  # M (Monthly), Q (Quarterly), H (Half-Yearly), Y (Yearly)
+    v_amrt_term_unit = models.CharField(max_length=1,choices=AMRT_CHOICES)  # M (Monthly), Q (Quarterly), H (Half-Yearly), Y (Yearly)
     n_cooling_period_days = models.IntegerField()  # Number of days for cooling period
 
     class Meta:
         db_table = 'FSI_Cooling_Period_Definition'
 
 class Dim_Delinquency_Band(models.Model):
-    fic_mis_date = models.DateField()  # Date field for FIC_MIS_DATE
+    date = models.DateField(default=timezone.now) # Date field for FIC_MIS_DATE
     n_delq_band_code = models.CharField(max_length=20,primary_key=True)  # Primary Key for N_DELQ_BAND_CODE
     v_delq_band_desc = models.CharField(max_length=20,null=True, blank=True)  # VARCHAR2(60 CHAR) for V_DELQ_BAND_DESC
     n_delq_lower_value = models.PositiveIntegerField()  # Number(5,0) for N_DELQ_LOWER_VALUE
@@ -496,9 +504,9 @@ class Dim_Delinquency_Band(models.Model):
         return f"{self.n_delq_band_code} - {self.v_delq_band_desc}"
     
 class Credit_Rating_Code_Band(models.Model):
+    date = models.DateField(default=timezone.now)
     v_rating_code = models.CharField(max_length=10, primary_key=True)  # Primary Key for Credit Rating Code
     v_rating_desc = models.CharField(max_length=100)  # Description for the rating code
-    fic_mis_date = models.DateField()  # Date field for FIC_MIS_DATE
 
     class Meta:
         db_table = 'dim_credit_rating_code_band'  # Custom table name
