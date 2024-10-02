@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">LGD Term Structures</h1>
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <a href="{% url 'lgd_configuration' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    
+    <br>
+    
+    <a href="{% url 'lgd_term_structure_create' %}" class="btn btn-success mb-4">Add LGD Term Structure</a>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>LGD Term Structure Name</th>
+                <th>LGD Percent</th>
+                <th>FIC MIS Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for structure in term_structures %}
+            <tr>
+                <td>{{ structure.v_lgd_term_structure_name.v_prod_segment }}</td>
+                <td>{{ structure.n_lgd_percent }}</td>
+                <td>{{ structure.fic_mis_date }}</td>
+                <td>
+                    <a href="{% url 'lgd_term_structure_edit' structure.v_lgd_term_structure_id %}" class="btn btn-primary btn-sm">Edit</a>
+                    <a href="{% url 'lgd_term_structure_delete' structure.v_lgd_term_structure_id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No LGD Term Structures found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

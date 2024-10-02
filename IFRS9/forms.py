@@ -281,6 +281,22 @@ class PDTermStructureDtlRatingForm(forms.ModelForm):
             for rating in Credit_Rating_Code_Band.objects.all()
         ])
 
+class LGDTermStructureForm(forms.ModelForm):
+    class Meta:
+        model = Ldn_LGD_Term_Structure
+        fields = ['v_lgd_term_structure_name', 'n_lgd_percent', 'fic_mis_date']
+
+        widgets = {
+            'fic_mis_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(LGDTermStructureForm, self).__init__(*args, **kwargs)
+        # Customize form labels if necessary
+        self.fields['v_lgd_term_structure_name'].label = "LGD Term Structure Name"
+        self.fields['n_lgd_percent'].label = "LGD Percent"
+        self.fields['fic_mis_date'].label = "FIC MIS Date"
+
 class InterpolationMethodForm(forms.ModelForm):
     class Meta:
         model = FSI_LLFP_APP_PREFERENCES

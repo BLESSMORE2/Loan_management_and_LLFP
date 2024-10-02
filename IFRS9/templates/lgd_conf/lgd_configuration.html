@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'credit_risk_models' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back 
+        </a>
+    </div>
+
+    <h1 class="h3 text-primary">Loss Given Default (LGD) Configuration</h1>
+
+    <div class="row">
+        <!-- LGD Modelling -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">LGD Modelling</h5>
+                    <p class="card-text">Set up LGD models for Loss Given Default calculations.</p>
+                    <a href="" class="btn btn-primary">Configure LGD Modelling</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Define LGD Term Structure -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-sitemap fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Define LGD Term Structure</h5>
+                    <p class="card-text">Define LGD term structures for loss modelling.</p>
+                    <a href="{% url 'lgd_term_structure_list' %}" class="btn btn-success">Define LGD Term Structure</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-title {
+        font-weight: bold;
+    }
+    .btn {
+        padding: 0.5rem 1.5rem;
+    }
+</style>
+
+{% endblock %}

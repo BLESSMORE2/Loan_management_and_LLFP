@@ -88,6 +88,11 @@ urlpatterns = [
     path('interpolation-methods/edit/<int:method_id>/', views.interpolation_method_edit, name='interpolation_method_edit'),
     path('interpolation-methods/delete/<int:method_id>/', views.interpolation_method_delete, name='interpolation_method_delete'),
 
+    path('lgd-configuration/', views.lgd_configuration, name='lgd_configuration'),
+    path('lgd-term-structure/', lgd_term_structure_list, name='lgd_term_structure_list'),
+    path('lgd-term-structure/create/', lgd_term_structure_create, name='lgd_term_structure_create'),
+    path('lgd-term-structure/edit/<int:term_id>/', lgd_term_structure_edit, name='lgd_term_structure_edit'),
+    path('lgd-term-structure/delete/<int:term_id>/', lgd_term_structure_delete, name='lgd_term_structure_delete'),
 
 
 

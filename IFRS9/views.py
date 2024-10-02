@@ -30,6 +30,7 @@ from .Functions.calculate_marginal_pd import *
 from .Functions_view.Staging import *
 from .Functions_view.Cashflow_projections import *
 from .Functions_view.Probability_conf import *
+from .Functions_view.Lgd_conf import *
 
 from datetime import datetime
 

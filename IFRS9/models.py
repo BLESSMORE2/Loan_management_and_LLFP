@@ -194,7 +194,6 @@ class Ldn_LGD_Term_Structure(models.Model):
     v_lgd_term_structure_desc = models.CharField(max_length=50, editable=False)  # Auto-filled from v_prod_desc in FSI_Product_Segment
     n_lgd_percent = models.DecimalField(max_digits=5, decimal_places=4)
     fic_mis_date = models.DateField()
-    v_data_source_code = models.CharField(max_length=50)
 
     def save(self, *args, **kwargs):
         # Automatically populate v_lgd_term_structure_id and v_lgd_term_structure_desc
