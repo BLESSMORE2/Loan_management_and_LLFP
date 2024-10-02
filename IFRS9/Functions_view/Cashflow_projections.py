@@ -10,12 +10,10 @@ def cashflow_projections(request):
     # This view will render the page that shows two options: Documentation and Interest Method
     context = {
         'title': 'Cashflow Projections',
-        'options': [
-            {'name': 'Documentation', 'url': 'cashflow_projections_documentation'},
-            {'name': 'Interest Method', 'url': 'interest_method_list'}
-        ]
+        # No need to pass the URLs from the view, as they're now hardcoded in the HTML
     }
     return render(request, 'cashflow_projections/index.html', context)
+
 
 def cashflow_projections_documentation(request):
     # You can pass any context data if needed
