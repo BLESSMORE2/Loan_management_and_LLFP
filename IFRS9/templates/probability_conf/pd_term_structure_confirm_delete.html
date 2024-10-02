@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-danger">Delete PD Term Structure</h1>
+
+    <div class="alert alert-warning">
+        <p>Are you sure you want to delete the PD Term Structure <strong>{{ term_structure.v_pd_term_structure_name.v_prod_segment }} - {{ term_structure.v_pd_term_structure_desc }}</strong>?</p>
+        <p>This action cannot be undone.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="{% url 'pd_term_structure_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

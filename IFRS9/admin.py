@@ -48,11 +48,7 @@ class Ldn_PD_Term_Structure_DtlAdmin(admin.ModelAdmin):
     search_fields = ('v_pd_term_structure_id', 'v_credit_risk_basis_cd')
     list_filter = ('v_pd_term_structure_id',)
 
-@admin.register(FSI_LLFP_APP_PREFERENCES)
-class FSI_LLFP_APP_PREFERENCESAdmin(admin.ModelAdmin):
-    list_display = ('pd_interpolation_method', 'n_pd_model_proj_cap', 'llfp_bucket_length')
-    search_fields = ('pd_interpolation_method', )
-    list_filter = ('pd_interpolation_method',)
+
 @admin.register(FSI_PD_Interpolated)
 class FSI_PD_InterpolatedAdmin(admin.ModelAdmin):
     list_display = ('v_pd_term_structure_id','v_pd_term_structure_type', 'v_delq_band_code','n_per_period_default_prob', 'n_cumulative_default_prob','v_cash_flow_bucket_id')

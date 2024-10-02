@@ -111,15 +111,13 @@ class Ldn_PD_Term_Structure(models.Model):
     v_pd_term_structure_type = models.CharField(max_length=1, choices=[('R', 'Rating'), ('D', 'DPD')])
     v_default_probability_type = models.CharField(max_length=1, choices=[('M', 'Marginal'), ('C', 'Cumulative')])
     fic_mis_date = models.DateField()
-    n_pd_term_frequency = models.PositiveIntegerField()
-    v_data_source_code = models.CharField(max_length=50)
 
     def save(self, *args, **kwargs):
         # Automatically populate v_pd_term_structure_id and v_pd_term_structure_desc
         product_segment = self.v_pd_term_structure_name  # Reference the FSI_Product_Segment object
         # Fill fields based on the selected segment
         self.v_pd_term_structure_id = product_segment.segment_id  # Use segment_id as ID
-        self.v_pd_term_structure_desc = product_segment.v_prod_desc  # Fill description from the product segment
+        self.v_pd_term_structure_desc = self.v_pd_term_structure_desc = f"{product_segment.v_prod_type} - {product_segment.v_prod_desc}"
 
         super(Ldn_PD_Term_Structure, self).save(*args, **kwargs)
 
@@ -183,7 +181,6 @@ class FSI_LLFP_APP_PREFERENCES(models.Model):
     PD_INTERPOLATION_METHOD_CHOICES = [ ('NL-POISSON', 'Non-Linear Poisson'),('NL-GEOMETRIC', 'Non-Linear Geometric'),('NL-ARITHMETIC', 'Non-Linear Arithmetic'),('EXPONENTIAL_DECAY', 'Exponential Decay'),]
     pd_interpolation_method = models.CharField(max_length=100,choices=PD_INTERPOLATION_METHOD_CHOICES,null=True,blank=True,default='NL-POISSON')
     n_pd_model_proj_cap = models.IntegerField(default=25)
-    llfp_bucket_length = models.CharField(max_length=1,choices=[ ('Y', 'Yearly'),('H', 'Half-Yearly'),('Q', 'Quarterly'),('M', 'Monthly'),],default='Y')
     # New column to determine interpolation level
     INTERPOLATION_LEVEL_CHOICES = [('ACCOUNT', 'Account Level'),('TERM_STRUCTURE', 'PD Term Structure Level')]
     interpolation_level = models.CharField( max_length=20,choices=INTERPOLATION_LEVEL_CHOICES,default='TERM_STRUCTURE' )

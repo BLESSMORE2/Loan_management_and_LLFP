@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">Segments</h1>
+    
+    <!-- Success and Error Messages -->
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message|safe }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+     <!-- Back Button -->
+     <a href="{% url 'probability_configuration' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    <br>
+    <a href="{% url 'segment_create' %}" class="btn btn-success mb-4">Add Segment</a>
+    
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Segment</th>
+                <th>Product Type</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for segment in segments %}
+                <tr>
+                    <td>{{ segment.v_prod_segment }}</td>
+                    <td>{{ segment.v_prod_type }}</td>
+                    <td>{{ segment.v_prod_desc }}</td>
+                    <td>
+                        <a href="{% url 'segment_edit' segment.segment_id %}" class="btn btn-primary btn-sm">Edit</a>
+                        <a href="{% url 'segment_delete' segment.segment_id %}" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No segments found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

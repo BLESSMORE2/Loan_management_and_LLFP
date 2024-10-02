@@ -61,6 +61,38 @@ urlpatterns = [
     path('interest-methods/<int:pk>/edit/', InterestMethodUpdateView.as_view(), name='interest_method_edit'),
     path('interest-methods/<int:pk>/delete/', InterestMethodDeleteView.as_view(), name='interest_method_delete'),
 
+    path('configurations/probability/', views.probability_configuration, name='probability_configuration'),
+    path('segments/', views.segment_list, name='segment_list'),
+    path('segments/create/', views.segment_create, name='segment_create'),
+    path('segments/<int:segment_id>/edit/', views.segment_edit, name='segment_edit'),
+    path('segments/<int:segment_id>/delete/', views.segment_delete, name='segment_delete'),
+
+    path('pd-term-structures/', pd_term_structure_list, name='pd_term_structure_list'),
+    path('pd-term-structures/create/', pd_term_structure_create, name='pd_term_structure_create'),
+    path('pd-term-structures/edit/<int:term_id>/', pd_term_structure_edit, name='pd_term_structure_edit'),
+    path('pd-term-structures/delete/<int:term_id>/', pd_term_structure_delete, name='pd_term_structure_delete'),
+
+    path('delinquent-pd/', delinquent_pd_list, name='delinquent_pd_list'),
+    path('delinquent-pd/create/', delinquent_pd_create, name='delinquent_pd_create'),
+    path('delinquent-pd/edit/<int:term_id>/', delinquent_pd_edit, name='delinquent_pd_edit'),
+    path('delinquent-pd/delete/<int:term_id>/', delinquent_pd_delete, name='delinquent_pd_delete'),
+
+    # List view for rating based PD terms
+    path('rating-pd/', views.rating_pd_list, name='rating_pd_list'),
+    path('rating-pd/create/', views.rating_pd_create, name='rating_pd_create'),
+    path('rating-pd/edit/<int:term_id>/', views.rating_pd_edit, name='rating_pd_edit'),
+    path('rating-pd/delete/<int:term_id>/', views.rating_pd_delete, name='rating_pd_delete'),
+
+    path('interpolation-methods/', views.interpolation_method_list, name='interpolation_method_list'),
+    path('interpolation-methods/create/', views.interpolation_method_create, name='interpolation_method_create'),
+    path('interpolation-methods/edit/<int:method_id>/', views.interpolation_method_edit, name='interpolation_method_edit'),
+    path('interpolation-methods/delete/<int:method_id>/', views.interpolation_method_delete, name='interpolation_method_delete'),
+
+
+
+
+
+
 
 
 ]

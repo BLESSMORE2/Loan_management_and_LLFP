@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">Interpolation Methods</h1>
+
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+     <!-- Back Button -->
+     <a href="{% url 'probability_configuration' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    
+    <br>
+
+    <a href="{% url 'interpolation_method_create' %}" class="btn btn-success mb-4">Add Interpolation Method</a>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Interpolation Method</th>
+                <th>PD Model Projection Cap</th>
+                <th>Interpolation Level</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for method in preferences %}
+            <tr>
+                <td>{{ method.get_pd_interpolation_method_display }}</td>
+                <td>{{ method.n_pd_model_proj_cap }}</td>
+                <td>{{ method.get_interpolation_level_display }}</td>
+                <td>
+                    <a href="{% url 'interpolation_method_edit' method.id %}" class="btn btn-primary btn-sm">Edit</a>
+                    <a href="{% url 'interpolation_method_delete' method.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No Interpolation Methods found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

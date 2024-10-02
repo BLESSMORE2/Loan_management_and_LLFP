@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">Rating Based PD Term Values</h1>
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+     <!-- Back Button -->
+     <a href="{% url 'probability_configuration' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    
+    <br>
+
+    <a href="{% url 'rating_pd_create' %}" class="btn btn-success mb-4">Add Rating PD Term</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Term Structure ID</th>
+                <th>FIC MIS Date</th>
+                <th>Rating Code</th>
+                <th>PD Percent</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pd_term in pd_term_details %}
+            <tr>
+                <td>{{ pd_term.v_pd_term_structure_id }}</td>
+                <td>{{ pd_term.fic_mis_date }}</td>
+                <td>{{ pd_term.v_credit_risk_basis_cd }}</td>
+                <td>{{ pd_term.n_pd_percent }}</td>
+                <td>
+                    <a href="{% url 'rating_pd_edit' pd_term.id %}" class="btn btn-primary btn-sm">Edit</a>
+                    <a href="{% url 'rating_pd_delete' pd_term.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No Rating PD Terms found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

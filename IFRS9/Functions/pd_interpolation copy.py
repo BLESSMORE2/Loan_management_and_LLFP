@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
 from ..models import *
 
+
 def perform_interpolation(mis_date):
     """
     Perform PD interpolation based on the interpolation level set in preferences.
@@ -10,16 +11,13 @@ def perform_interpolation(mis_date):
     :return: String, status of the interpolation process ('1' for success, '0' for failure').
     """
     try:
-        # Fetch preferences from FSI_LLFP_APP_PREFERENCES to check interpolation level
         preferences = FSI_LLFP_APP_PREFERENCES.objects.first()
         if preferences is None:
             print("No preferences found.")
             return '0'
 
-        # Get the interpolation level from preferences
         interpolation_level = preferences.interpolation_level
 
-        # Call the appropriate interpolation function based on the level
         if interpolation_level == 'ACCOUNT':
             print("Performing account-level interpolation")
             return pd_interpolation_account_level(mis_date)
@@ -39,33 +37,16 @@ def pd_interpolation(mis_date):
     Perform PD interpolation based on the term structure details and preferences.
     """
     try:
-        # Fetch preferences from FSI_LLFP_APP_PREFERENCES
         preferences = FSI_LLFP_APP_PREFERENCES.objects.first()
         pd_interpolation_method = preferences.pd_interpolation_method or 'NL-POISSON'
         pd_model_proj_cap = preferences.n_pd_model_proj_cap
-        bucket_length = preferences.llfp_bucket_length
-
-        # Set the bucket frequency and cash flow bucket unit based on bucket length
-        if bucket_length == 'M':
-            bucket_frequency = 12
-            cash_flow_bucket_unit = 'M'
-        elif bucket_length == 'H':
-            bucket_frequency = 2
-            cash_flow_bucket_unit = 'H'
-        elif bucket_length == 'Q':
-            bucket_frequency = 4
-            cash_flow_bucket_unit = 'Q'
-        else:
-            bucket_frequency = 1
-            cash_flow_bucket_unit = 'Y'
 
         # Filter Ldn_PD_Term_Structure_Dtl by the mis_date
         term_structure_details = Ldn_PD_Term_Structure_Dtl.objects.filter(fic_mis_date=mis_date)
 
-        # Use ThreadPoolExecutor to run interpolation in parallel
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = [
-                executor.submit(process_interpolation, detail, bucket_frequency, pd_model_proj_cap, pd_interpolation_method, cash_flow_bucket_unit)
+                executor.submit(process_interpolation, detail, pd_model_proj_cap, pd_interpolation_method)
                 for detail in term_structure_details
             ]
 
@@ -78,12 +59,28 @@ def pd_interpolation(mis_date):
         print(f"Error during interpolation: {e}")
         return '0'
 
-def process_interpolation(detail, bucket_frequency, pd_model_proj_cap, pd_interpolation_method, cash_flow_bucket_unit):
+def process_interpolation(detail, pd_model_proj_cap, pd_interpolation_method):
     """
     Process PD interpolation for a given term structure detail.
     """
     credit_risk_band = detail.v_credit_risk_basis_cd
     print(f"Processing interpolation for credit risk band: {credit_risk_band}")
+
+    bucket_length = detail.v_pd_term_structure_id.v_pd_term_frequency_unit
+
+    # Set the bucket frequency and cash flow bucket unit based on bucket length
+    if bucket_length == 'M':
+        bucket_frequency = 12
+        cash_flow_bucket_unit = 'M'
+    elif bucket_length == 'H':
+        bucket_frequency = 2
+        cash_flow_bucket_unit = 'H'
+    elif bucket_length == 'Q':
+        bucket_frequency = 4
+        cash_flow_bucket_unit = 'Q'
+    else:
+        bucket_frequency = 1
+        cash_flow_bucket_unit = 'Y'
 
     # Delete existing records with the same fic_mis_date before inserting new ones
     FSI_PD_Interpolated.objects.filter(fic_mis_date=detail.fic_mis_date).delete()
@@ -97,13 +94,10 @@ def process_interpolation(detail, bucket_frequency, pd_model_proj_cap, pd_interp
     elif pd_interpolation_method == 'EXPONENTIAL_DECAY':
         interpolate_exponential_decay(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit)
 
+# Poisson Interpolation
 def interpolate_poisson(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit):
-    """
-    Perform Poisson interpolation for a given term structure detail.
-    """
     periods = bucket_frequency * pd_model_proj_cap
-    pd_percent = detail.n_pd_percent
-    pd_percent=float(pd_percent)
+    pd_percent = float(detail.n_pd_percent)
     cumulative_pd = 0
 
     for bucket in range(1, periods + 1):
@@ -257,7 +251,7 @@ def process_account_interpolation(account, mis_date):
         print(f"No cashflow buckets found for account {account_number}")
         return
 
-    bucket_length = account.v_amrt_term_unit
+    bucket_length = account.v_interest_freq_unit
     if bucket_length == 'M':
         bucket_frequency = 12
         cash_flow_bucket_unit = 'M'

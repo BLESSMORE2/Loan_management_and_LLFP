@@ -96,17 +96,22 @@ class FSIProductSegmentForm(forms.ModelForm):
         super(FSIProductSegmentForm, self).__init__(*args, **kwargs)
 
         # Fetch distinct values from Ldn_Bank_Product_Info and set choices for the form fields
-        self.fields['v_prod_segment'] = forms.ChoiceField(choices=[
+        segment_choices = [('', '---')] + [
             (seg, seg) for seg in Ldn_Bank_Product_Info.objects.values_list('v_prod_segment', flat=True).distinct()
-        ])
-        
-        self.fields['v_prod_type'] = forms.ChoiceField(choices=[
+        ]
+        self.fields['v_prod_segment'] = forms.ChoiceField(choices=segment_choices)
+
+        type_choices = [('', '---')] + [
             (ptype, ptype) for ptype in Ldn_Bank_Product_Info.objects.values_list('v_prod_type', flat=True).distinct()
-        ])
-        
-        self.fields['v_prod_desc'] = forms.ChoiceField(choices=[
+        ]
+        self.fields['v_prod_type'] = forms.ChoiceField(choices=type_choices)
+
+        desc_choices = [('', '---')] + [
             (pdesc, pdesc) for pdesc in Ldn_Bank_Product_Info.objects.values_list('v_prod_desc', flat=True).distinct()
-        ])
+        ]
+        self.fields['v_prod_desc'] = forms.ChoiceField(choices=desc_choices)
+
+
 
 
 #staging forms
@@ -200,3 +205,93 @@ class InterestMethodForm(forms.ModelForm):
             'v_interest_method': forms.Select(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control'}),
         }
+
+
+#probability
+#term structure
+
+class PDTermStructureForm(forms.ModelForm):
+    class Meta:
+        model = Ldn_PD_Term_Structure
+        fields = [
+            'v_pd_term_structure_name', 'v_pd_term_frequency_unit', 
+            'v_pd_term_structure_type', 'v_default_probability_type',
+            'fic_mis_date'
+        ]
+
+        # Define widgets for fields
+        widgets = {
+            'fic_mis_date': forms.DateInput(attrs={'type': 'date'}),  # Using DateInput with 'date' type
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(PDTermStructureForm, self).__init__(*args, **kwargs)
+
+        # Customizing the display of the ForeignKey field 'v_pd_term_structure_name'
+        self.fields['v_pd_term_structure_name'].queryset = FSI_Product_Segment.objects.all()
+        self.fields['v_pd_term_structure_name'].label = "Term Structure Name"
+        
+        # Custom label for the fields
+        self.fields['v_pd_term_frequency_unit'].label = "Term Frequency Unit"
+        self.fields['v_pd_term_frequency_unit'].widget = forms.Select(choices=[
+            ('M', 'Monthly'), ('Q', 'Quarterly'), ('H', 'Half Yearly'), ('Y', 'Yearly'), ('D', 'Daily')
+        ])
+
+        self.fields['v_pd_term_structure_type'].label = "Term Structure Type"
+        self.fields['v_pd_term_structure_type'].widget = forms.Select(choices=[
+            ('R', 'Rating'), ('D', 'DPD')
+        ])
+
+        self.fields['v_default_probability_type'].label = "Default Probability Type"
+        self.fields['v_default_probability_type'].widget = forms.Select(choices=[
+            ('M', 'Marginal'), ('C', 'Cumulative')
+        ])
+
+        # Ensure 'fic_mis_date' displays as a date picker
+        self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
+        self.fields['fic_mis_date'].label = "Fic Mis Date"
+
+class PDTermStructureDtlForm(forms.ModelForm):
+    class Meta:
+        model = Ldn_PD_Term_Structure_Dtl
+        fields = ['v_pd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd', 'n_pd_percent']
+
+    def __init__(self, *args, **kwargs):
+        super(PDTermStructureDtlForm, self).__init__(*args, **kwargs)
+
+        # Populate v_credit_risk_basis_cd choices from Dim_Delinquency_Band
+        delinquency_bands = Dim_Delinquency_Band.objects.values_list('n_delq_band_code', 'v_delq_band_desc')
+        self.fields['v_credit_risk_basis_cd'] = forms.ChoiceField(choices=[(code, f"{desc}") for code, desc in delinquency_bands])
+
+        self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
+
+class PDTermStructureDtlRatingForm(forms.ModelForm):
+    class Meta:
+        model = Ldn_PD_Term_Structure_Dtl
+        fields = ['v_pd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd', 'n_pd_percent']
+
+    def __init__(self, *args, **kwargs):
+        super(PDTermStructureDtlRatingForm, self).__init__(*args, **kwargs)
+        self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
+        # Populate v_credit_risk_basis_cd from Credit_Rating_Code_Band
+        self.fields['v_credit_risk_basis_cd'].queryset = Credit_Rating_Code_Band.objects.all()
+        self.fields['v_credit_risk_basis_cd'].label = "Rating Code"
+        self.fields['v_credit_risk_basis_cd'].widget = forms.Select(choices=[
+            (rating.v_rating_code, f"{rating.v_rating_code} - {rating.v_rating_desc}") 
+            for rating in Credit_Rating_Code_Band.objects.all()
+        ])
+
+class InterpolationMethodForm(forms.ModelForm):
+    class Meta:
+        model = FSI_LLFP_APP_PREFERENCES
+        fields = [
+            'pd_interpolation_method', 
+            'n_pd_model_proj_cap', 
+            'interpolation_level'
+        ]
+    
+    def __init__(self, *args, **kwargs):
+        super(InterpolationMethodForm, self).__init__(*args, **kwargs)
+        self.fields['pd_interpolation_method'].label = "PD Interpolation Method"
+        self.fields['n_pd_model_proj_cap'].label = "PD Model Projection Cap"
+        self.fields['interpolation_level'].label = "Interpolation Level"
