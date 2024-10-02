@@ -297,6 +297,17 @@ class LGDTermStructureForm(forms.ModelForm):
         self.fields['n_lgd_percent'].label = "LGD Percent"
         self.fields['fic_mis_date'].label = "FIC MIS Date"
 
+class CollateralLGDForm(forms.ModelForm):
+    class Meta:
+        model = CollateralLGD
+        fields = ['can_calculate_lgd']
+        labels = {
+            'can_calculate_lgd': 'Can we calculate LGD using Collateral?',
+        }
+        widgets = {
+            'can_calculate_lgd': forms.CheckboxInput(),
+        }
+
 class InterpolationMethodForm(forms.ModelForm):
     class Meta:
         model = FSI_LLFP_APP_PREFERENCES

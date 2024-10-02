@@ -27,6 +27,7 @@ from .Functions.cal_periodic_discount_Rate2 import *
 from .Functions.cal_exp_cash_n_cash_shortfall3 import *
 from .Functions.cal_forward_exposure4 import *
 from .Functions.calculate_marginal_pd import *
+from .Functions.populate_reporting_table import *
 from .Functions_view.Staging import *
 from .Functions_view.Cashflow_projections import *
 from .Functions_view.Probability_conf import *
@@ -41,28 +42,29 @@ def dashboard_view(request):
     # Example data for financial graphs
     mis_date = '2024-08-31'  # Input date in 'YYYY-MM-DD' format
     
-    #status = perform_interpolation(mis_date)
-    #print(status)  # Should print '1' for success or '0' for failure
-    #project_cash_flows(mis_date)
-    #update_cash_flows_with_ead(mis_date)
-    #Insert records into FCT_Stage_Determination with the numeric date
-    #insert_fct_stage(mis_date)
+    status = perform_interpolation(mis_date)
+    print(status)  # Should print '1' for success or '0' for failure
+    # project_cash_flows(mis_date)
+    # update_cash_flows_with_ead(mis_date)
+    # #Insert records into FCT_Stage_Determination with the numeric date
+    # insert_fct_stage(mis_date)
 
-    #determine stage
-    #update_stage(mis_date)
-    #process_cooling_period_for_accounts(mis_date)
-    #update_stage_determination(mis_date)
-    #update_stage_determination_accrued_interest_and_ead(mis_date)
-    #update_stage_determination_eir(mis_date)
-    #calculate_pd_for_accounts(mis_date)
-    #insert_cash_flow_data(mis_date)
-    #update_financial_cash_flow(mis_date,42)
-    #update_cash_flow_with_pd_buckets(mis_date,42)
-    #update_marginal_pd(mis_date,42)
-    #calculate_expected_cash_flow(mis_date,42)
-    #calculate_discount_factors(mis_date,42)
-    #calculate_cashflow_fields(mis_date,42)
-    calculate_forward_loss_fields(mis_date,42)
+    # #determine stage
+    # update_stage(mis_date)
+    # process_cooling_period_for_accounts(mis_date)
+    # update_stage_determination(mis_date)
+    # update_stage_determination_accrued_interest_and_ead(mis_date)
+    # update_stage_determination_eir(mis_date)
+    # calculate_pd_for_accounts(mis_date)
+    # insert_cash_flow_data(mis_date)
+    # update_financial_cash_flow(mis_date,42)
+    # update_cash_flow_with_pd_buckets(mis_date,42)
+    # update_marginal_pd(mis_date,42)
+    # calculate_expected_cash_flow(mis_date,42)
+    # calculate_discount_factors(mis_date,42)
+    # calculate_cashflow_fields(mis_date,42)
+    # calculate_forward_loss_fields(mis_date,42)
+    # populate_fct_reporting_lines(mis_date)
 
     return render(request, 'dashboard.html')
 

@@ -93,6 +93,9 @@ urlpatterns = [
     path('lgd-term-structure/create/', lgd_term_structure_create, name='lgd_term_structure_create'),
     path('lgd-term-structure/edit/<int:term_id>/', lgd_term_structure_edit, name='lgd_term_structure_edit'),
     path('lgd-term-structure/delete/<int:term_id>/', lgd_term_structure_delete, name='lgd_term_structure_delete'),
+    path('lgd-calculation/view/', views.view_lgd_calculation, name='view_lgd_calculation'),
+    path('lgd-calculation/edit/', views.edit_lgd_calculation, name='edit_lgd_calculation'),
+
 
 
 

@@ -74,6 +74,23 @@ def process_product_info_update(entry):
     except Exception as e:
         print(f"Error updating segment key for entry {entry.n_prod_code}: {e}")
 
+    # Update collateral amount only if n_collateral_amount is null or zero
+    if entry.n_collateral_amount is None or entry.n_collateral_amount == 0:
+        try:
+            # Find collateral data from LgdCollateral using v_cust_ref_code and fic_mis_date
+            collateral = LgdCollateral.objects.get(v_cust_ref_code=entry.n_cust_ref_code, fic_mis_date=entry.fic_mis_date)
+
+            # Update n_collateral_amount with the total from LgdCollateral
+            entry.n_collateral_amount = collateral.total
+            entry.save(update_fields=['n_collateral_amount'])
+            print(f"Updated collateral amount for entry {entry.n_account_number}: n_collateral_amount={entry.n_collateral_amount}")
+
+        except LgdCollateral.DoesNotExist:
+            print(f"No collateral data found for customer {entry.n_cust_ref_code} and mis_date {entry.fic_mis_date}")
+        except Exception as e:
+            print(f"Error updating collateral amount for entry {entry.n_account_number}: {e}")
+
+
     # Update delinquency band code based on n_delinquent_days and v_amrt_term_unit
     try:
         delinquency_band = Dim_Delinquency_Band.objects.get(

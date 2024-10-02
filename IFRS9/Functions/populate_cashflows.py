@@ -2,30 +2,64 @@ import concurrent.futures
 from ..models import FSI_Expected_Cashflow, fsi_Financial_Cash_Flow_Cal, Dim_Run
 from django.db import transaction
 from django.db import models
+from django.utils import timezone
+
+
+
 
 def get_next_run_skey():
     """
-    Retrieve the current n_run_skey from the RunKey table and return the next value.
-    If no records exist, start with 1.
+    Retrieve the next n_run_skey from the Dim_Run table and return the next value.
+    If no records exist, start with 1 and return it.
     """
-    # Get the current run_skey from the RunKey table
     try:
-        run_key_record = Dim_Run.objects.first()
-        if run_key_record is None:
-            # If the RunKey table is empty, start with 1
-            return 1
-        else:
-            return run_key_record.latest_run_skey + 1
-    except Dim_Run.DoesNotExist:
-        return 1  # Start at 1 if the RunKey table doesn't exist or is empty
+        # Ensure that the latest_run_skey always increments by 1 and is updated in a transaction
+        with transaction.atomic():
+            # Get or create the single record in Dim_Run
+            run_key_record, created = Dim_Run.objects.get_or_create(id=1)
+
+            if created:
+                # If this is the first record, initialize run_skey to 1
+                run_key_record.latest_run_skey = 1
+            else:
+                # Increment latest_run_skey by 1 and store previous in last_run_skey
+                run_key_record.latest_run_skey += 1
+
+            # Update the date to the current date
+            run_key_record.date = timezone.now()
+
+            # Save the updated run_key_record
+            run_key_record.save()
+
+            # Return the updated latest_run_skey (which is now incremented)
+            return run_key_record.latest_run_skey
+
+    except Exception as e:
+        print(f"Error in getting next run skey: {e}")
+        return 1  # Default value in case of error
+
 
 def update_run_key(next_run_skey):
     """
-    Update the RunKey table with the latest run_skey.
+    Update the Dim_Run table with the next run_skey.
+    This is not typically needed as get_next_run_skey updates the key automatically,
+    but in case of specific updates, this function is provided.
     """
-    run_key_record, created = Dim_Run.objects.get_or_create(id=1)  # Ensure there's always one RunKey record
-    run_key_record.latest_run_skey = next_run_skey
-    run_key_record.save()
+    try:
+        with transaction.atomic():
+            # Ensure there is a run_key record
+            run_key_record, created = Dim_Run.objects.get_or_create(id=1)
+
+            # Update the latest_run_skey and last_run_skey manually
+            run_key_record.latest_run_skey = next_run_skey
+            run_key_record.date = timezone.now()
+
+            # Save the updated values
+            run_key_record.save()
+
+    except Exception as e:
+        print(f"Error in updating run key: {e}")
+
 
 def insert_cash_flow_record(cashflow, run_skey):
     """

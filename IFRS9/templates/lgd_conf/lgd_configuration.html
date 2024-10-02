@@ -5,33 +5,45 @@
     <!-- Back Button -->
     <div class="d-flex justify-content-start mb-4">
         <a href="{% url 'credit_risk_models' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Back 
+            <i class="fas fa-arrow-left"></i> Back to Credit Risk Models
         </a>
     </div>
 
-    <h1 class="h3 text-primary">Loss Given Default (LGD) Configuration</h1>
+    <h1 class="h3 text-primary mb-4">Loss Given Default (LGD) Configuration</h1>
 
-    <div class="row">
+    <div class="row g-4">
         <!-- LGD Modelling -->
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-lg-4 col-md-6">
+            <div class="card border-0 shadow h-100">
                 <div class="card-body text-center">
                     <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
-                    <h5 class="card-title">LGD Modelling</h5>
-                    <p class="card-text">Set up LGD models for Loss Given Default calculations.</p>
-                    <a href="" class="btn btn-primary">Configure LGD Modelling</a>
+                    <h5 class="card-title font-weight-bold">LGD Modelling</h5>
+                    <p class="card-text">Configure models for LGD calculations based on default scenarios.</p>
+                    <a href="" class="btn btn-primary btn-lg px-4">Configure</a>
                 </div>
             </div>
         </div>
 
         <!-- Define LGD Term Structure -->
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-lg-4 col-md-6">
+            <div class="card border-0 shadow h-100">
                 <div class="card-body text-center">
                     <i class="fas fa-sitemap fa-3x text-success mb-3"></i>
-                    <h5 class="card-title">Define LGD Term Structure</h5>
-                    <p class="card-text">Define LGD term structures for loss modelling.</p>
-                    <a href="{% url 'lgd_term_structure_list' %}" class="btn btn-success">Define LGD Term Structure</a>
+                    <h5 class="card-title font-weight-bold">Define LGD Term Structure</h5>
+                    <p class="card-text">Set up LGD term structures for effective loss modelling.</p>
+                    <a href="{% url 'lgd_term_structure_list' %}" class="btn btn-success btn-lg px-4">Define Structure</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Define LGD Collateral Based Calculations -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card border-0 shadow h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-balance-scale fa-3x text-info mb-3"></i>
+                    <h5 class="card-title font-weight-bold">Collateral Based LGD Calculations</h5>
+                    <p class="card-text">Specify if LGD can be calculated using collateral values.</p>
+                    <a href="{% url 'view_lgd_calculation' %}" class="btn btn-info btn-lg px-4">Define Calculations</a>
                 </div>
             </div>
         </div>
@@ -43,7 +55,16 @@
         font-weight: bold;
     }
     .btn {
-        padding: 0.5rem 1.5rem;
+        padding: 0.75rem 2rem;
+    }
+    .card {
+        transition: transform 0.3s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-10px);
+    }
+    .card-body i {
+        color: var(--primary);
     }
 </style>
 

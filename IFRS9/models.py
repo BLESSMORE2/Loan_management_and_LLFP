@@ -206,13 +206,52 @@ class Ldn_LGD_Term_Structure(models.Model):
         super(Ldn_LGD_Term_Structure, self).save(*args, **kwargs)
 
     class Meta:
-        db_table = 'Ldn_LGD_Term_Structure'
-
-    class Meta:
         db_table = 'ldn_lgd_term_structure'
         constraints = [
             models.UniqueConstraint(fields=['v_lgd_term_structure_id', 'fic_mis_date'], name='unique_term_structure_id_date')
         ]
+
+class LgdCollateral(models.Model):
+    fic_mis_date = models.DateField(null=False)
+    v_cust_ref_code = models.CharField(max_length=50, null=False)
+    v_ccy_code = models.CharField(max_length=50, blank=True, null=True)
+    cash = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    guarantees_corporate = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    guarantees_personal = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    insurance = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    land_and_buildings = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    floating_charge_debenture = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    notarial_bond = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    general_haircuts = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    project_specific_haircuts = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    total = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    class Meta:
+        db_table = 'lgd_collateral'
+        constraints = [
+            models.UniqueConstraint(fields=['v_cust_ref_code', 'fic_mis_date'], name='lgd_collateral_pk')
+        ]
+
+    def __str__(self):
+        return f"{self.v_cust_ref_code} - {self.fic_mis_date}"   
+class CollateralLGD(models.Model):
+    can_calculate_lgd = models.BooleanField(default=False)  # Yes/No field to allow LGD calculation   
+    created_at = models.DateTimeField(auto_now_add=True)  # Record creation timestamp
+    updated_at = models.DateTimeField(auto_now=True)  # Record update timestamp
+    class Meta:
+        db_table = 'collateral_lgd'
+
+    def save(self, *args, **kwargs):
+        # Check if there is already one record in the table
+        if CollateralLGD.objects.exists() and not self.pk:
+            raise ValidationError("Only one instance of CollateralLGD is allowed.")
+        
+        # If not, save the instance
+        super(CollateralLGD, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # Prevent deletion of the record
+        raise ValidationError("Cannot delete this record. The table must always have one record.")
+    
 class Ldn_Exchange_Rate(models.Model):
     fic_mis_date = models.DateField()
     v_from_ccy_code = models.CharField(max_length=3)
@@ -511,9 +550,97 @@ class Credit_Rating_Code_Band(models.Model):
         return f"{self.v_rating_code} - {self.v_rating_desc}"
     
 class Dim_Run(models.Model):
+    date = models.DateField(default=timezone.now)
     latest_run_skey = models.BigIntegerField(default=1)
 
     class Meta:
         db_table = 'dim_run'
 
+
+class FCT_Reporting_Lines(models.Model):
+    n_run_key = models.BigIntegerField(null=True, blank=True)
+    fic_mis_date = models.DateField()
+    n_account_number = models.CharField(max_length=50, null=True)
+    d_acct_start_date = models.DateField(null=True, blank=True)
+    d_last_payment_date = models.DateField(null=True, blank=True)
+    d_next_payment_date = models.DateField(null=True, blank=True)
+    d_maturity_date = models.DateField(null=True, blank=True)
+    n_acct_classification = models.IntegerField(null=True, blank=True)    
+    n_cust_ref_code = models.CharField(max_length=50, null=True)
+    n_partner_name = models.CharField(max_length=50)
+    n_party_type = models.CharField(max_length=50)
+      
+    # Grouped Interest-related Fields
+    n_accrual_basis_code = models.CharField(max_length=7, null=True, blank=True)
+    n_curr_interest_rate = models.DecimalField(max_digits=11, decimal_places=6, null=True, blank=True)
+    n_effective_interest_rate = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    v_interest_freq_unit = models.CharField(max_length=1, null=True, blank=True)
+    v_interest_method = models.CharField(max_length=5, null=True, blank=True)
+    n_accrued_interest = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_rate_chg_min = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
     
+    # Grouped exposure and balance fields
+    n_carrying_amount_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_carrying_amount_rcy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_exposure_at_default_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_exposure_at_default_rcy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True) 
+    n_pv_of_cash_flows = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_write_off_amount = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  
+    n_expected_recovery = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)  
+    # New Fields
+    n_lifetime_ecl_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_lifetime_ecl_rcy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_12m_ecl_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_12m_ecl_rcy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)   
+    # Grouped PD and LGD fields
+    n_lgd_percent = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_pd_percent = models.DecimalField(max_digits=15, decimal_places=4, null=True)
+    n_twelve_months_orig_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_lifetime_orig_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_twelve_months_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_lifetime_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
+    n_pd_term_structure_skey = models.BigIntegerField(null=True, blank=True)
+    n_pd_term_structure_name = models.ForeignKey(FSI_Product_Segment, on_delete=models.CASCADE, null=True, blank=True)
+    n_pd_term_structure_desc = models.CharField(max_length=50, editable=False)
+    
+    n_12m_pd_change = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    v_amrt_repayment_type = models.CharField(max_length=50, null=True)
+    n_remain_no_of_pmts = models.BigIntegerField(null=True, blank=True)
+    n_amrt_term = models.IntegerField(null=True, blank=True)
+    v_amrt_term_unit = models.CharField(max_length=1, null=True, blank=True)
+    v_ccy_code = models.CharField(max_length=3, null=True, blank=True)
+    
+    # Stage-related fields
+    n_delinquent_days = models.IntegerField(null=True, blank=True)
+    n_delq_band_code = models.CharField(max_length=50, null=True)
+    n_stage_descr = models.CharField(max_length=50, null=True)
+    n_curr_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
+    n_prev_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
+    
+    # Cooling Period Fields
+    d_cooling_start_date = models.DateField(null=True, blank=True)
+    n_target_ifrs_stage_skey = models.BigIntegerField(null=True, blank=True)
+    n_in_cooling_period_flag = models.BooleanField(default=False)
+    n_cooling_period_duration = models.IntegerField(null=True, blank=True)
+    
+    n_country = models.CharField(max_length=50, null=True)
+    n_segment_skey = models.BigIntegerField(null=True, blank=True)
+    n_prod_segment = models.CharField(max_length=255)
+    n_prod_code = models.CharField(max_length=50, null=True)
+    n_prod_name = models.CharField(max_length=50, null=True)
+    n_prod_type = models.CharField(max_length=50, null=True)
+    n_prod_desc = models.CharField(max_length=255)
+    n_credit_rating_code = models.CharField(max_length=50, null=True)
+    n_org_credit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    n_curr_credit_score = models.IntegerField(null=True, blank=True)
+    n_acct_rating_movement = models.IntegerField(null=True, blank=True)
+    n_party_rating_movement = models.IntegerField(null=True, blank=True)
+    n_conditionally_cancel_flag = models.IntegerField(null=True, blank=True)
+    n_collateral_amount = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
+    n_loan_type = models.CharField(max_length=50, null=True)
+    
+    class Meta:
+        db_table = 'fct_reporting_lines'  # Custom table name
+        constraints = [
+            models.UniqueConstraint(fields=['fic_mis_date', 'n_account_number', 'n_run_key'], name='unique_fct_reporting_lines')
+        ]
