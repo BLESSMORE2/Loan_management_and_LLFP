@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">ECL Methodology</h1>
+
+    <!-- Success and Error Messages -->
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <!-- Back Button -->
+    <a href="{% url 'ecl_methodology' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    
+    <br>
+
+    <!-- Add New ECL Methodology -->
+    <a href="{% url 'add_ecl_method' %}" class="btn btn-success mb-4">
+        <i class="fas fa-plus"></i> Add New ECL Methodology
+    </a>
+
+    <!-- Display Existing ECL Methodologies in a Table -->
+    <table class="table table-bordered table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Method Name</th>
+                <th>Uses Discounting</th>
+                <th>Created At</th>
+                <th>Updated At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for method in methods %}
+            <tr>
+                <td>{{ method.get_method_name_display }}</td>
+                <td>{{ method.uses_discounting|yesno:"Yes,No" }}</td>
+                <td>{{ method.created_at|date:"F j, Y, g:i a" }}</td>
+                <td>{{ method.updated_at|date:"F j, Y, g:i a" }}</td>
+                <td>
+                    <a href="{% url 'edit_ecl_method' method.id %}" class="btn btn-primary btn-sm">Edit</a>
+                    <a href="{% url 'delete_ecl_method' method.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No ECL Methodologies found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .btn-success, .btn-primary, .btn-danger {
+        padding: 0.5rem 1rem;
+    }
+</style>
+{% endblock %}

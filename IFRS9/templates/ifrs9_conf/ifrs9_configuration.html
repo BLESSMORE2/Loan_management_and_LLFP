@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center mb-4">IFRS9 Configuration</h1>
+
+    <!-- Back Button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'credit_risk_models' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back 
+        </a>
+    </div>
+
+    <!-- Configuration Options -->
+    <div class="row justify-content-center">
+        <!-- ECL Methodology -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="icon-circle bg-primary mb-3">
+                        <i class="fas fa-chart-line fa-3x text-white"></i>
+                    </div>
+                    <h5 class="card-title mt-2">ECL Methodology</h5>
+                    <p class="card-text">Configure Expected Credit Loss methodology settings for IFRS9 calculations.</p>
+                    <a href="{% url 'ecl_methodology' %}" class="btn btn-primary mt-3 w-100">Configure ECL Methodology</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Columns -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="icon-circle bg-success mb-3">
+                        <i class="fas fa-columns fa-3x text-white"></i>
+                    </div>
+                    <h5 class="card-title mt-2">Result Columns</h5>
+                    <p class="card-text">Configure the columns that will appear in the result reports.</p>
+                    <a href="" class="btn btn-success mt-3 w-100">Configure Result Columns</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styling for Cards -->
+<style>
+    .icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .card-title {
+        font-weight: bold;
+    }
+    .card-text {
+        color: #6c757d;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+    }
+</style>
+
+{% endblock %}

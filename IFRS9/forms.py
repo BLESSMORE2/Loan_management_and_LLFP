@@ -322,3 +322,11 @@ class InterpolationMethodForm(forms.ModelForm):
         self.fields['pd_interpolation_method'].label = "PD Interpolation Method"
         self.fields['n_pd_model_proj_cap'].label = "PD Model Projection Cap"
         self.fields['interpolation_level'].label = "Interpolation Level"
+
+
+from .models import ECLMethod
+
+class ECLMethodForm(forms.ModelForm):
+    class Meta:
+        model = ECLMethod
+        fields = ['method_name', 'uses_discounting']

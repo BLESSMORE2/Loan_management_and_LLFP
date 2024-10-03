@@ -1,17 +1,32 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from django.db import transaction
+from django.db.models import Sum
 from ..models import *
 
-def update_cash_flow_with_pd_buckets(fic_mis_date, n_run_skey, max_workers=5, batch_size=1000):
+def get_latest_run_skey():
+    """
+    Retrieve the latest_run_skey from Dim_Run table.
+    """
+    try:
+        run_record = Dim_Run.objects.first()
+        if not run_record:
+            raise ValueError("No run key is available in the Dim_Run table.")
+        return run_record.latest_run_skey
+    except Dim_Run.DoesNotExist:
+        raise ValueError("Dim_Run table is missing.")
+
+
+def update_cash_flow_with_pd_buckets(fic_mis_date, max_workers=5, batch_size=1000):
     """
     Optimized function using bulk_update to update cash flow records in batches to reduce database I/O.
     """
+    n_run_skey = get_latest_run_skey()
     # Fetch cash flow records in batches to avoid memory overload
     cash_flows = fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=n_run_skey)
 
     def process_batch(batch):
         try:
             updates = []
+            update_count = 0  # Counter for the number of records updated
             for cash_flow in batch:
                 account_data = FCT_Stage_Determination.objects.filter(
                     n_account_number=cash_flow.v_account_number,
@@ -52,6 +67,7 @@ def update_cash_flow_with_pd_buckets(fic_mis_date, n_run_skey, max_workers=5, ba
                                     cash_flow.n_12m_cumulative_pd = pd_record_12.n_cumulative_default_prob
 
                             updates.append(cash_flow)
+                            update_count += 1  # Increment the counter
 
             # Perform a bulk update for the batch
             if updates:
@@ -59,9 +75,13 @@ def update_cash_flow_with_pd_buckets(fic_mis_date, n_run_skey, max_workers=5, ba
                     updates, 
                     ['n_cumulative_loss_rate', 'n_cumulative_impaired_prob', 'n_12m_cumulative_pd']
                 )
+            return update_count
 
         except Exception as e:
             print(f"Error updating batch: {e}")
+            return 0  # Return 0 if the batch fails
+
+    total_updated_records = 0  # Overall count for all batches
 
     # Using ThreadPoolExecutor for multi-threading
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -77,13 +97,17 @@ def update_cash_flow_with_pd_buckets(fic_mis_date, n_run_skey, max_workers=5, ba
         if batch:
             futures.append(executor.submit(process_batch, batch))
 
+        # Process the results
         for future in as_completed(futures):
             try:
-                future.result()
+                updated_count = future.result()
+                total_updated_records += updated_count
+                print(f"Batch updated {updated_count} records.")
             except Exception as exc:
                 print(f"Error occurred in thread: {exc}")
 
-    print(f"Updated records for run_skey {n_run_skey} and fic_mis_date {fic_mis_date}")
+    # Print the total records updated for the given run key and mis date
+    print(f"Updated records for run_skey {n_run_skey} and fic_mis_date {fic_mis_date}: {total_updated_records}")
 
 
 def get_buckets_for_12_months(v_amrt_term_unit):
@@ -97,6 +121,4 @@ def get_buckets_for_12_months(v_amrt_term_unit):
         'Y': 1    # Yearly: 12 months = 1 bucket
     }
     return term_unit_to_buckets.get(v_amrt_term_unit, 12)
-
-
 

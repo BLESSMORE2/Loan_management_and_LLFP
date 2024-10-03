@@ -644,3 +644,26 @@ class FCT_Reporting_Lines(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['fic_mis_date', 'n_account_number', 'n_run_key'], name='unique_fct_reporting_lines')
         ]
+
+class ECLMethod(models.Model):
+    METHOD_CHOICES = [
+        ('forward_exposure', 'Forward Exposure Methodology'),
+        ('cash_flow', 'Cash Flow Calculations Methodology'),
+        ('simple_ead', 'Simple EAD Methodology')
+    ]
+    
+    method_name = models.CharField(max_length=50, choices=METHOD_CHOICES, unique=True, default='forward_exposure')
+    uses_discounting = models.BooleanField(default=True)  # Default to 'yes' for discounting (EIR)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if ECLMethod.objects.exists() and not self.pk:
+            raise ValidationError("You can only have one ECLMethod instance.")
+        super(ECLMethod, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.get_method_name_display()
+
+    class Meta:
+        db_table = 'dim_ecl_method'

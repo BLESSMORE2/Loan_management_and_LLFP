@@ -96,6 +96,16 @@ urlpatterns = [
     path('lgd-calculation/view/', views.view_lgd_calculation, name='view_lgd_calculation'),
     path('lgd-calculation/edit/', views.edit_lgd_calculation, name='edit_lgd_calculation'),
 
+    path('ifrs9-configuration/', views.ifrs9_configuration, name='ifrs9_configuration'),
+    path('ecl-methodology/', views.ecl_methodology_options, name='ecl_methodology'),
+    path('ecl-methodology/documentation/', views.ecl_methodology_documentation, name='ecl_methodology_documentation'),
+    path('ecl-methodology-list/', views.ecl_methodology_list, name='ecl_methodology_list'),
+    path('ecl-methodology/add/', views.add_ecl_method, name='add_ecl_method'),
+    path('ecl-methodology/edit/<int:method_id>/', views.edit_ecl_method, name='edit_ecl_method'),
+    path('ecl-methodology/delete/<int:method_id>/', views.delete_ecl_method, name='delete_ecl_method'),
+
+    path('ecl-methodology/choose/', views.choose_ecl_methodology, name='choose_ecl_methodology'),
+
 
 
 

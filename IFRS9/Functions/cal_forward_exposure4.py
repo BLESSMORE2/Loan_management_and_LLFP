@@ -3,6 +3,19 @@ from decimal import Decimal
 from django.db import transaction
 from ..models import *
 
+def get_latest_run_skey():
+    """
+    Retrieve the latest_run_skey from Dim_Run table.
+    """
+    try:
+        run_record = Dim_Run.objects.first()
+        if not run_record:
+            raise ValueError("No run key is available in the Dim_Run table.")
+        return run_record.latest_run_skey
+    except Dim_Run.DoesNotExist:
+        raise ValueError("Dim_Run table is missing.")
+
+
 def process_forward_loss_records(records, batch_number):
     """
     Function to process a batch of records and apply calculations for forward loss fields.
@@ -42,11 +55,14 @@ def process_forward_loss_records(records, batch_number):
     return updated_records
 
 
-def calculate_forward_loss_fields(fic_mis_date, run_skey, batch_size=1000, num_threads=4):
+def calculate_forward_loss_fields(fic_mis_date, batch_size=1000, num_threads=4):
     """
     Main function to calculate forward loss fields with multithreading and bulk update.
     """
+    # Get the latest run key from Dim_Run table
+    
     try:
+        run_skey = get_latest_run_skey()
         # Fetch the relevant records for the run_skey
         records = list(fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=run_skey))
 

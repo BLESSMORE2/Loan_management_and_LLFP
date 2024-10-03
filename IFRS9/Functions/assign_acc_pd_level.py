@@ -108,5 +108,3 @@ def calculate_account_level_pd_for_accounts(fic_mis_date):
     # Print summary at the end
     print(f"{updated_accounts} out of {total_accounts} accounts were successfully updated.")
 
-# Example usage
-calculate_account_level_pd_for_accounts(fic_mis_date='2024-09-17')

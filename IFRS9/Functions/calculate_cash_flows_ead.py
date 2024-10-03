@@ -137,5 +137,4 @@ def update_cash_flows_with_ead(fic_mis_date, max_workers=8, batch_size=1000):
     except Exception as e:
         print(f"Error updating cash flows for fic_mis_date {fic_mis_date}: {e}")
 
-# Example usage
-update_cash_flows_with_ead(fic_mis_date='2024-09-17')
+

@@ -112,6 +112,4 @@ def update_stage(fic_mis_date):
             except Exception as exc:
                 print(f"An error occurred during stage update: {exc}")
 
-# Example usage: Update all records with a specific fic_mis_date
-fic_mis_date = '2024-09-17'  # Use the required current date here
-update_stage(fic_mis_date)
+

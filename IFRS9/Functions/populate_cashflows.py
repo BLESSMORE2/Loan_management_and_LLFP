@@ -123,5 +123,4 @@ def insert_cash_flow_data(fic_mis_date):
     # Print the number of rows successfully inserted
     print(f"Number of rows inserted: {total_inserted}")
 
-# Example usage
-insert_cash_flow_data(fic_mis_date='2024-09-17')
+

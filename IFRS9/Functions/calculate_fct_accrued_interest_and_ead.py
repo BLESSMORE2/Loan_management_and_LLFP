@@ -3,10 +3,10 @@ from decimal import Decimal
 from concurrent.futures import ThreadPoolExecutor
 from ..models import FCT_Stage_Determination, FSI_Expected_Cashflow
 
-def calculate_total_exposure_and_accrued_interest(account_number, fic_mis_date, carrying_amount):
+def calculate_accrued_interest(account_number, fic_mis_date):
     """
-    This function calculates the total accrued interest and the exposure at default (EAD) for a specific account.
-    The accrued interest is summed, and EAD is calculated using the n_carrying_amount_ncy from FCT_Stage_Determination.
+    This function calculates the total accrued interest for a specific account.
+    The accrued interest is summed from the FSI_Expected_Cashflow table.
     """
     try:
         # Step 1: Retrieve all cash flow entries for this account from FSI_Expected_Cashflow
@@ -14,37 +14,47 @@ def calculate_total_exposure_and_accrued_interest(account_number, fic_mis_date, 
         
         if not cash_flows.exists():
             print(f"No cash flow records found for account {account_number} and fic_mis_date {fic_mis_date}")
-            return None, None
+            return Decimal(0)
         
         # Step 2: Sum accrued interest for the account
         total_accrued_interest = cash_flows.aggregate(Sum('n_accrued_interest'))['n_accrued_interest__sum'] or Decimal(0)
 
-        # Step 3: Calculate EAD as the sum of the carrying amount and accrued interest
-        total_exposure_at_default = carrying_amount + total_accrued_interest
-
-        print(f"Account {account_number}: Total accrued interest = {total_accrued_interest}, EAD = {total_exposure_at_default}")
-
-        return total_accrued_interest, total_exposure_at_default
+        print(f"Account {account_number}: Total accrued interest = {total_accrued_interest}")
+        return total_accrued_interest
 
     except Exception as e:
-        print(f"Error calculating total accrued interest and EAD for account {account_number}: {e}")
-        return None, None
+        print(f"Error calculating accrued interest for account {account_number}: {e}")
+        return Decimal(0)
+
+
+def calculate_exposure_at_default(carrying_amount, accrued_interest):
+    """
+    This function calculates the exposure at default (EAD) by summing the carrying amount and accrued interest.
+    """
+    try:
+        # Step 3: Calculate EAD as the sum of the carrying amount and accrued interest
+        total_exposure_at_default = carrying_amount + accrued_interest
+        return total_exposure_at_default
+
+    except Exception as e:
+        print(f"Error calculating EAD: {e}")
+        return None
+
 
 def update_stage_determination_accrued_interest_and_ead(fic_mis_date, max_workers=8, batch_size=1000):
     """
     This function updates the FCT_Stage_Determination table with the total accrued interest and exposure at default (EAD)
     for each account. The accrued interest and EAD are calculated from the FSI_Expected_Cashflow table, and EAD is 
     based on the n_carrying_amount_ncy field from FCT_Stage_Determination.
-    Only accounts with NULL or zero n_accrued_interest are processed.
     """
     try:
-        # Fetch all entries from FCT_Stage_Determination where n_accrued_interest is NULL or 0
+        # Fetch all entries from FCT_Stage_Determination where n_exposure_at_default is NULL
         stage_determination_entries = FCT_Stage_Determination.objects.filter(
             fic_mis_date=fic_mis_date
-        ).filter(Q(n_accrued_interest__isnull=True) | Q(n_accrued_interest=0)).exclude(n_prod_code__isnull=True)
+        ).filter(Q(n_exposure_at_default__isnull=True)).exclude(n_prod_code__isnull=True)
 
         if stage_determination_entries.count() == 0:
-            print(f"No records found in FCT_Stage_Determination for fic_mis_date {fic_mis_date} with NULL or zero n_accrued_interest.")
+            print(f"No records found in FCT_Stage_Determination for fic_mis_date {fic_mis_date} with NULL exposure at default.")
             return
         
         # Use ThreadPoolExecutor to process updates in parallel and accumulate bulk updates
@@ -62,10 +72,11 @@ def update_stage_determination_accrued_interest_and_ead(fic_mis_date, max_worker
             # Perform bulk update
             bulk_update_stage_determination(updated_entries)
 
-        print(f"Successfully updated {stage_determination_entries.count()} records with accrued interest and EAD.")
+        print(f"Successfully updated {len(updated_entries)} records with accrued interest and EAD.")
 
     except Exception as e:
         print(f"Error during update process: {e}")
+
 
 def process_accrued_interest_and_ead_for_account(entry, updated_entries):
     """
@@ -73,13 +84,14 @@ def process_accrued_interest_and_ead_for_account(entry, updated_entries):
     Add the entry to the updated_entries list if calculations are successful for bulk update.
     """
     try:
-        # Calculate total accrued interest and EAD
-        total_accrued_interest, total_exposure_at_default = calculate_total_exposure_and_accrued_interest(
-            entry.n_account_number, entry.fic_mis_date, entry.n_carrying_amount_ncy
-        )
+        # Step 1: If n_accrued_interest is null, calculate accrued interest
+        total_accrued_interest = entry.n_accrued_interest or calculate_accrued_interest(entry.n_account_number, entry.fic_mis_date)
+
+        # Step 2: Calculate EAD using the existing carrying amount and the accrued interest
+        total_exposure_at_default = calculate_exposure_at_default(entry.n_carrying_amount_ncy, total_accrued_interest)
 
         # Append entry to bulk update list if calculations are successful
-        if total_accrued_interest is not None and total_exposure_at_default is not None:
+        if total_exposure_at_default is not None:
             entry.n_accrued_interest = total_accrued_interest
             entry.n_exposure_at_default = total_exposure_at_default
             updated_entries.append(entry)
@@ -87,6 +99,7 @@ def process_accrued_interest_and_ead_for_account(entry, updated_entries):
 
     except Exception as e:
         print(f"Error processing accrued interest and EAD for account {entry.n_account_number}: {e}")
+
 
 def bulk_update_stage_determination(updated_entries, batch_size=1000):
     """
@@ -106,6 +119,3 @@ def bulk_update_stage_determination(updated_entries, batch_size=1000):
 
     except Exception as e:
         print(f"Error during bulk update: {e}")
-
-# Example usage
-update_stage_determination_accrued_interest_and_ead(fic_mis_date='2024-09-17')

@@ -1,9 +1,21 @@
 from django.db import transaction
 from concurrent.futures import ThreadPoolExecutor
-from ..models import FCT_Stage_Determination, fsi_Financial_Cash_Flow_Cal
+from ..models import FCT_Stage_Determination, fsi_Financial_Cash_Flow_Cal,Dim_Run
 
+def get_latest_run_skey():
+    """
+    Retrieve the latest_run_skey from Dim_Run table.
+    """
+    try:
+        run_record = Dim_Run.objects.first()
+        if not run_record:
+            raise ValueError("No run key is available in the Dim_Run table.")
+        return run_record.latest_run_skey
+    except Dim_Run.DoesNotExist:
+        raise ValueError("Dim_Run table is missing.")
+    
 # Function to fetch and update n_effective_interest_rate and n_lgd_percent from FCT_Stage_Determination
-def update_financial_cash_flow(fic_mis_date, n_run_skey, max_workers=5, batch_size=1000):
+def update_financial_cash_flow(fic_mis_date, max_workers=5, batch_size=1000):
     """
     This function updates the `n_effective_interest_rate` and `n_lgd_percent` fields in the `fsi_Financial_Cash_Flow_Cal`
     table using values from the `FCT_Stage_Determination` table, based on matching `v_account_number`, `fic_mis_date`,
@@ -15,6 +27,7 @@ def update_financial_cash_flow(fic_mis_date, n_run_skey, max_workers=5, batch_si
     :param batch_size: Size of each batch for processing records in bulk updates.
     """
     try:
+        n_run_skey = get_latest_run_skey()
         # Fetch all cash flow entries for the given fic_mis_date and n_run_skey
         cash_flows = fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=n_run_skey)
         
@@ -72,5 +85,4 @@ def update_financial_cash_flow(fic_mis_date, n_run_skey, max_workers=5, batch_si
     except Exception as e:
         print(f"Error updating financial cash flow records for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}: {e}")
 
-# Example usage
-update_financial_cash_flow(fic_mis_date='2024-09-17', n_run_skey=12345, max_workers=5)
+

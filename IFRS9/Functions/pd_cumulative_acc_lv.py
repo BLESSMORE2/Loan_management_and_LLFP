@@ -2,7 +2,21 @@ from django.db import transaction
 from concurrent.futures import ThreadPoolExecutor
 from ..models import *
 
-def update_cash_flow_with_account_pd_buckets(fic_mis_date, n_run_skey, batch_size=1000, max_workers=8):
+def get_latest_run_skey():
+    """
+    Retrieve the latest_run_skey from Dim_Run table.
+    """
+    try:
+        run_record = Dim_Run.objects.first()
+        if not run_record:
+            raise ValueError("No run key is available in the Dim_Run table.")
+        return run_record.latest_run_skey
+    except Dim_Run.DoesNotExist:
+        raise ValueError("Dim_Run table is missing.")
+
+
+
+def update_cash_flow_with_account_pd_buckets(fic_mis_date, batch_size=1000, max_workers=8):
     """
     This function updates the fsi_Financial_Cash_Flow_Cal table using account-level PD values from 
     FSI_PD_Account_Interpolated. It directly aligns the PD values to the cash flow buckets of each account.
@@ -13,6 +27,7 @@ def update_cash_flow_with_account_pd_buckets(fic_mis_date, n_run_skey, batch_siz
     No need for additional conversion, bucket adjustment, or delinquent bands. We handle the 12-month calculation
     based on the `v_amrt_term_unit` using the `get_buckets_for_12_months` function.
     """
+    n_run_skey = get_latest_run_skey()
     # Fetch the cash flow records that need to be updated in batches
     cash_flows = fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=n_run_skey)
 
@@ -93,5 +108,4 @@ def get_buckets_for_12_months(v_amrt_term_unit):
     return term_unit_to_buckets.get(v_amrt_term_unit, 12)  # Default to 12 months for monthly if not found
 
 
-# Example usage:
-update_cash_flow_with_account_pd_buckets(fic_mis_date='2024-09-17', n_run_skey=12345)
+
