@@ -330,3 +330,25 @@ class ECLMethodForm(forms.ModelForm):
     class Meta:
         model = ECLMethod
         fields = ['method_name', 'uses_discounting']
+
+class ColumnMappingForm(forms.Form):
+    def __init__(self, *args, selected_columns=None, model_fields=None, **kwargs):
+        super(ColumnMappingForm, self).__init__(*args, **kwargs)
+
+        # Create a field for each selected column, with options to map it to a model field or mark it as 'unmapped'
+        if selected_columns and model_fields:
+            for column in selected_columns:
+                self.fields[column] = forms.ChoiceField(
+                    choices=[(field, field) for field in model_fields] + [('unmapped', 'Unmapped')],
+                    required=False
+                )
+                # Set the initial value for each field if provided in kwargs['initial']
+                if 'initial' in kwargs and 'column_mappings' in kwargs['initial']:
+                    if column in kwargs['initial']['column_mappings']:
+                        self.fields[column].initial = kwargs['initial']['column_mappings'][column]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Construct a dictionary to map selected columns to their chosen model fields
+        column_mappings = {key: value for key, value in cleaned_data.items() if value != 'unmapped'}
+        return {'column_mappings': column_mappings}

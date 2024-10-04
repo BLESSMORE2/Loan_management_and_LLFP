@@ -1,8 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from ..models import ECLMethod
-from ..forms import ECLMethodForm
+from ..models import ECLMethod,FCT_Reporting_Lines,ReportColumnConfig
+from ..forms import ECLMethodForm, ColumnMappingForm
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
+
 
 
 def ifrs9_configuration(request):
@@ -69,3 +71,39 @@ def delete_ecl_method(request, method_id):
 def choose_ecl_methodology(request):
     # View to configure the ECL methodology
     return render(request, 'ifrs9_conf/choose_ecl_methodology.html')  
+
+
+
+def column_mapping_view(request):
+    # Dynamically retrieve all field names from the model
+    model_fields = [field.name for field in FCT_Reporting_Lines._meta.get_fields()]
+
+    selected_columns = request.POST.getlist('selected_columns_hidden', [])
+
+    if request.method == 'POST':
+        form = ColumnMappingForm(request.POST, selected_columns=selected_columns, model_fields=model_fields)
+        if form.is_valid():
+            report_name = form.cleaned_data.get('report_name', 'default_report')
+            
+            # Delete old mappings for the same report name before saving new ones
+            ReportColumnConfig.objects.filter(report_name=report_name).delete()
+
+            # Save the new mappings
+            column_mappings = form.cleaned_data['column_mappings']
+            ReportColumnConfig.objects.create(
+                report_name=report_name,
+                selected_columns=column_mappings,
+            )
+
+            # Add a success message
+            messages.success(request, f"Column mappings for {report_name} have been saved successfully.")
+
+            return redirect('ifrs9_configuration')  # Redirect to the configuration page
+    else:
+        form = ColumnMappingForm(selected_columns=selected_columns, model_fields=model_fields)
+
+    return render(request, 'ifrs9_conf/column_mapping.html', {
+        'form': form,
+        'available_columns': model_fields,
+        'selected_columns': selected_columns
+    })

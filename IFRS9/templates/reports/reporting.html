@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+     <!-- Back Button -->
+     <a href="{% url 'ifrs9_home' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    
+    <br>
+    <h1 class="h3 text-primary text-center mb-5">Reporting & Analytics</h1>
+
+    
+    <!-- Reporting & Analytics List -->
+    <div class="row justify-content-center">
+        
+        <!-- First Report Option (View Results and Extract) -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title text-dark mb-2">View Results and Extract</h5>
+                        <p class="text-muted">Analyze your reports and extract detailed insights for business decisions.</p>
+                    </div>
+                    <a href="{% url 'view_results_and_extract' %}" class="btn btn-outline-primary px-4">View</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Second Report Option (Reports) -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title text-dark mb-2">Reports</h5>
+                        <p class="text-muted">Access various reports to drive analytics and strategic decisions.</p>
+                    </div>
+                    <a href="#" class="btn btn-outline-success px-4">View</a>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .card {
+        border-radius: 15px;
+    }
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    .card-body p {
+        margin: 0;
+        font-size: 0.95rem;
+    }
+    .btn {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    .container h1 {
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+</style>
+{% endblock %}

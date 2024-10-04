@@ -667,3 +667,14 @@ class ECLMethod(models.Model):
 
     class Meta:
         db_table = 'dim_ecl_method'
+
+class ReportColumnConfig(models.Model):
+    report_name = models.CharField(max_length=20,default='default_report')
+    selected_columns = models.JSONField()  # Store the selected columns as a list in JSON format
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'dim_report_column_map'
+
+    def __str__(self):
+        return f"Report: {self.report_name}"

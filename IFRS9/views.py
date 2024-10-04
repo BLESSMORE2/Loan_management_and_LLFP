@@ -34,6 +34,7 @@ from .Functions_view.Cashflow_projections import *
 from .Functions_view.Probability_conf import *
 from .Functions_view.Lgd_conf import *
 from .Functions_view.Ifrs9_conf import *
+from .Functions_view.Reports import *
 
 from datetime import datetime
 

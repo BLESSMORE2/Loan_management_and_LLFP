@@ -105,6 +105,12 @@ urlpatterns = [
     path('ecl-methodology/delete/<int:method_id>/', views.delete_ecl_method, name='delete_ecl_method'),
 
     path('ecl-methodology/choose/', views.choose_ecl_methodology, name='choose_ecl_methodology'),
+    path('column_mapping/', column_mapping_view, name='column_mapping'),
+
+    path('reports-home/', views.reporting_home, name='reporting_home'),
+    path('report/', view_results_and_extract, name='view_results_and_extract'),
+    path('download_report/', views.download_report, name='download_report'),
+ 
 
 
 

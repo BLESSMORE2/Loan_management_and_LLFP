@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Display error messages -->
+    {% if messages %}
+    <div class="alert alert-danger" role="alert">
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+    </div>
+    {% endif %}
+    <!-- Back Button -->
+    <a href="{% url 'reporting_home' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    
+    <br>
+
+    <div class="row">
+        <!-- Sidebar Filter (Compact and Aligned to the Left) -->
+        <div class="col-lg-3 col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-3">
+                    <h4 class="mb-3">Filters</h4>
+                    <form method="GET" class="filter-form">
+                        <!-- FIC MIS Date (Mandatory Field with Flatpickr) -->
+                        <div class="form-group mb-2">
+                            <label for="fic_mis_date">FIC MIS Date:</label>
+                            <input type="text" id="fic_mis_date" name="fic_mis_date" class="form-control form-control-sm" value="{{ fic_mis_date }}" required>
+                        </div>
+
+                        <!-- Run Key (Mandatory Field) -->
+                        <div class="form-group mb-2">
+                            <label for="n_run_key">Run Key:</label>
+                            <input type="number" id="n_run_key" name="n_run_key" class="form-control form-control-sm" value="{{ n_run_key }}" required>
+                        </div>
+
+                        <!-- Product Code -->
+                        <div class="form-group mb-2">
+                            <label for="n_prod_code">Product Code:</label>
+                            <input type="text" id="n_prod_code" name="n_prod_code" class="form-control form-control-sm" value="{{ filters.n_prod_code }}">
+                        </div>
+
+                        <!-- Product Type -->
+                        <div class="form-group mb-2">
+                            <label for="n_prod_type">Product Type:</label>
+                            <input type="text" id="n_prod_type" name="n_prod_type" class="form-control form-control-sm" value="{{ filters.n_prod_type }}">
+                        </div>
+
+                        <!-- PD Term Structure Name -->
+                        <div class="form-group mb-2">
+                            <label for="n_pd_term_structure_name">PD Term Structure Name:</label>
+                            <input type="text" id="n_pd_term_structure_name" name="n_pd_term_structure_name" class="form-control form-control-sm" value="{{ filters.n_pd_term_structure_name }}">
+                        </div>
+
+                        <!-- IFRS Stage Key -->
+                        <div class="form-group mb-2">
+                            <label for="n_curr_ifrs_stage_skey">IFRS Stage Key:</label>
+                            <input type="number" id="n_curr_ifrs_stage_skey" name="n_curr_ifrs_stage_skey" class="form-control form-control-sm" value="{{ filters.n_curr_ifrs_stage_skey }}">
+                        </div>
+
+                        <!-- Apply Filters Button -->
+                        <button type="submit" class="btn btn-primary btn-sm btn-block">Apply Filters</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content (Report Table) -->
+        <div class="col-lg-9 col-md-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body d-flex flex-column">
+                    <h2 class="mb-3 text-center">Report</h2>
+
+                    {% if report_data %}
+                        <div class="table-responsive flex-grow-1" style="max-height: 550px; overflow-y: auto;">
+                            <table class="table table-bordered table-hover table-sm">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        {% for column in selected_columns %}
+                                            <th class="text-center">{{ column|capfirst }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in report_data %}
+                                        <tr>
+                                            {% for column in selected_columns %}
+                                                <td class="text-center">{{ row|get_item:column }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination Navigation -->
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <!-- First Page Button -->
+        <li class="page-item {% if not report_data.has_previous %}disabled{% endif %}">
+            <a class="page-link" href="?page=1&{{ request.GET.urlencode }}" tabindex="-1">First</a>
+        </li>
+
+        <!-- Previous Page Button -->
+        <li class="page-item {% if not report_data.has_previous %}disabled{% endif %}">
+            {% if report_data.has_previous %}
+                <a class="page-link" href="?page={{ report_data.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a>
+            {% else %}
+                <span class="page-link">Previous</span>
+            {% endif %}
+        </li>
+
+        <!-- Display current page number -->
+        <li class="page-item disabled">
+            <span class="page-link">
+                Page {{ report_data.number }} of {{ report_data.paginator.num_pages }}
+            </span>
+        </li>
+
+        <!-- Next Page Button -->
+        <li class="page-item {% if not report_data.has_next %}disabled{% endif %}">
+            {% if report_data.has_next %}
+                <a class="page-link" href="?page={{ report_data.next_page_number }}&{{ request.GET.urlencode }}">Next</a>
+            {% else %}
+                <span class="page-link">Next</span>
+            {% endif %}
+        </li>
+
+        <!-- Last Page Button -->
+        <li class="page-item {% if not report_data.has_next %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ report_data.paginator.num_pages }}&{{ request.GET.urlencode }}">Last</a>
+        </li>
+    </ul>
+</nav>
+
+                    {% else %}
+                        <div class="alert alert-info text-center" role="alert">
+                            No data available for this report.
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-4 d-flex justify-content-between">
+                        <a href="{% url 'reporting_home' %}" class="btn btn-outline-secondary btn-sm">Back to Reports</a>
+                        <a href="{% url 'download_report' %}" class="btn btn-primary btn-sm">Download Report</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Flatpickr CSS -->
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+
+<!-- Flatpickr JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!-- Initialize Flatpickr for the date input -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        flatpickr("#fic_mis_date", {
+            dateFormat: "Y-m-d",  // Format to match the expected date format
+            defaultDate: "{{ fic_mis_date|date:'Y-m-d' }}",  // Pre-populate with selected date
+            altInput: true,       // Display a more user-friendly version of the date
+            altFormat: "d/m/Y",   // User-friendly display format
+            allowInput: true,     // Allow manual input
+        });
+    });
+</script>
+
+{% endblock %}
