@@ -1,5 +1,8 @@
 from django import forms
 from .models import *
+from django.forms import inlineformset_factory
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Submit
 
 class UploadFileForm(forms.Form):
     file = forms.FileField(label='Select a file', widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
@@ -352,3 +355,49 @@ class ColumnMappingForm(forms.Form):
         # Construct a dictionary to map selected columns to their chosen model fields
         column_mappings = {key: value for key, value in cleaned_data.items() if value != 'unmapped'}
         return {'column_mappings': column_mappings}
+    
+
+# Form for Process
+# Process Form
+class ProcessForm(forms.ModelForm):
+    class Meta:
+        model = Process
+        fields = ['process_name']
+        widgets = {
+            'process_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Process Name'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(ProcessForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Save Process'))
+
+# RunProcess Form
+class RunProcessForm(forms.ModelForm):
+    class Meta:
+        model = RunProcess
+        fields = ['function', 'order']
+        widgets = {
+            'function': forms.Select(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Execution Order'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(RunProcessForm, self).__init__(*args, **kwargs)
+        self.fields['function'].empty_label = "Select Function"
+        self.helper = FormHelper(self)
+        self.helper.form_method = 'post'
+
+    # Custom validation (example)
+    def clean(self):
+        cleaned_data = super().clean()
+        order = cleaned_data.get('order')
+
+        # Validation: Order should be a positive number
+        if order <= 0:
+            raise forms.ValidationError("Order must be a positive number.")
+        if order <= 0:
+            raise forms.ValidationError("Order must be a positive number.")
+
+        return cleaned_data

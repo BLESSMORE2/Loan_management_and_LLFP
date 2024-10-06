@@ -1,0 +1,8 @@
+{% for run_process in run_processes %}
+<tr>
+    <td>{{ run_process.function.function_name }}</td>
+    <td>{{ run_process.execution_order }}</td>
+    <td>{{ run_process.status }}</td>
+    <td>{{ run_process.process_run_id }}</td>
+</tr>
+{% endfor %}

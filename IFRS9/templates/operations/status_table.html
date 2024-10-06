@@ -1,0 +1,28 @@
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Function Name</th>
+            <th>Execution Order</th>
+            <th>Status</th>
+            <th>Execution Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for status in function_statuses %}
+        <tr>
+            <td>{{ status.function.function_name }}</td>
+            <td>{{ status.order }}</td> <!-- Correct access to the order field -->
+            <td>
+                {% if status.status == 'Success' %}
+                    <span class="badge badge-success">{{ status.status }}</span>
+                {% elif status.status == 'Ongoing' %}
+                    <span class="badge badge-warning">{{ status.status }}</span>
+                {% else %}
+                    <span class="badge badge-danger">{{ status.status }}</span>
+                {% endif %}
+            </td>
+            <td>{{ status.execution_date|date:"M d, Y, g:i a" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

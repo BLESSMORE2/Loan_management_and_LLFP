@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="h3 text-primary text-center">Monitor Running Process</h1>
+
+    <!-- Back button -->
+    <a href="{% url 'operations' %}" class="btn btn-secondary mb-4">Back</a>
+
+    <!-- Date selection form -->
+    <form method="GET" action="{% url 'monitor_running_process_view' %}" class="mb-4">
+        <div class="form-inline">
+            <label for="date" class="mr-2">Select Process Date:</label>
+            <select name="selected_date" id="date" class="form-control mr-2" required>
+                <option value="" disabled selected>Select a date</option>
+                {% for date in available_dates %}
+                    <option value="{{ date|date:'Y-m-d' }}" {% if date == selected_date %}selected{% endif %}>
+                        {{ date|date:'Y-m-d' }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+    </form>
+
+    <!-- Conditionally show processes only if a date is selected -->
+    {% if selected_date %}
+    <!-- Select process from the list -->
+    <h4>Select a Process for {{ selected_date }}</h4>
+    <div class="table-responsive fixed-table-container">
+        <table id="process-table" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>Process Name</th>
+                    <th>Process ID</th>
+                    <th>Overall Status</th> <!-- Add column for overall status -->
+                </tr>
+            </thead>
+            <tbody>
+                {% if processes %}
+                    {% for process in processes %}
+                    <tr>
+                        <td>
+                            <input type="radio" name="process_id" value="{{ process.process_run_id }}" class="process-selector">
+                        </td>
+                        <td>{{ process.process__process_name }}</td>
+                        <td>{{ process.process_run_id }}</td>
+                        <td>{{ process.overall_status }}</td> <!-- Display the overall status -->
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4">No processes found for this date.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>Please select a date to view available processes.</p>
+{% endif %}
+
+
+    <!-- Display functions dynamically when a process is selected -->
+    <div id="function-status-section" class="mt-4" style="display: none;">  <!-- Initially hidden -->
+        <h4>Function Execution Status</h4>
+        <div class="table-responsive fixed-table-container">
+            <table id="function-status-table" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Function Name</th>
+                        <th>Execution Order</th>  <!-- Column for Execution Order -->
+                        <th>Status</th>
+                        <th>Process Run ID</th>  <!-- Display the process run ID -->
+                    </tr>
+                </thead>
+                <tbody id="function-status-tbody">
+                    <!-- Function statuses will be loaded dynamically here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Include jQuery and DataTables library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css"/>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTables for pagination in the process table
+    $('#process-table').DataTable({
+        "paging": true,
+        "lengthChange": true, // Enable the dropdown to select the number of rows
+        "pageLength": 5,  // Default number of rows per page
+        "lengthMenu": [5, 10, 25, 50],  // Options for number of rows per page
+        "searching": false,  // Disable DataTables' built-in search since we have a custom search
+        "ordering": true,  // Enable sorting by Process ID (desc)
+        "order": [[2, "desc"]],  // Sort by Process ID in descending order
+        "info": true,
+        "autoWidth": false,
+    });
+
+    var selectedProcessRunId = null;
+    var intervalId = null;
+
+    // Handle AJAX call to dynamically load function statuses
+    $('.process-selector').on('change', function() {
+        selectedProcessRunId = $(this).val();  // Get the selected process_run_id
+        loadFunctionStatuses();  // Initial load
+        $('#function-status-section').show();  // Show the function status section
+
+        // Clear any previous interval
+        clearInterval(intervalId);
+
+        // Set auto-refresh interval every 3 seconds
+        intervalId = setInterval(loadFunctionStatuses, 3000);  // Refresh every 3000ms (3 seconds)
+    });
+
+    // Function to load function statuses dynamically
+    function loadFunctionStatuses() {
+        if (selectedProcessRunId) {
+            $.ajax({
+                url: '/ajax/get_process_function_status/' + selectedProcessRunId,  // Adjust to your actual AJAX URL
+                type: 'GET',
+                success: function(data) {
+                    $('#function-status-tbody').html(data.html);  // Populate the tbody with new data
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error loading function statuses:", status, error);
+                }
+            });
+        }
+    }
+});
+</script>
+
+<style>
+/* Style to make the table fixed height with scrolling */
+.fixed-table-container {
+    max-height: 300px; /* Adjust height as needed */
+    overflow-y: auto;
+}
+
+/* Optional: Add some additional styling to make the table look nicer */
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+    z-index: 10;
+}
+</style>
+{% endblock %}

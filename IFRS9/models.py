@@ -678,3 +678,60 @@ class ReportColumnConfig(models.Model):
 
     def __str__(self):
         return f"Report: {self.report_name}"
+    
+
+
+class Function(models.Model):
+    function_name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'dim_function'
+
+    def __str__(self):
+        return self.function_name
+    
+class Process(models.Model):
+    process_name = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'dim_process'
+
+    def __str__(self):
+        return self.process_name
+
+class RunProcess(models.Model):
+    process = models.ForeignKey(Process, on_delete=models.CASCADE, related_name='run_processes')
+    function = models.ForeignKey(Function, on_delete=models.CASCADE)
+    order = models.PositiveIntegerField()  # Order in which the function will be executed
+
+    class Meta:
+        ordering = ['order']  # Ensures the functions are executed in the specified order
+        db_table = 'dim_process_dtl'
+
+    def __str__(self):
+        return f"{self.process.process_name} - {self.function.function_name} - Order: {self.order}"
+    
+class FunctionExecutionStatus(models.Model):
+    process = models.ForeignKey(Process, on_delete=models.CASCADE)
+    function = models.ForeignKey(Function, on_delete=models.CASCADE)
+    execution_date = models.DateTimeField(auto_now_add=True)
+    execution_order = models.PositiveIntegerField(null=True)
+    reporting_date = models.DateField(null=True)
+    status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Ongoing', 'Ongoing'), ('Success', 'Success'), ('Failed', 'Failed')], default='Pending')
+    
+    # Track process execution instances
+    process_run_id = models.CharField(max_length=50)  # Combined process_id, execution_date, and run_count
+    run_count = models.PositiveIntegerField()  # Tracks how many times this process has been executed on a particular date
+
+    class Meta:
+        db_table = 'dim_function_execution_status'
+        ordering = ['run_count', 'execution_date']
+        constraints = [
+            models.UniqueConstraint(fields=['execution_date', 'process_run_id','function'], name='unique_execution_process')
+        ]
+      
+
+    def __str__(self):
+        return f"{self.process.process_name} - {self.function.function_name} - {self.status}"

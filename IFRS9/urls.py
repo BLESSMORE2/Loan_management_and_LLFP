@@ -110,6 +110,23 @@ urlpatterns = [
     path('reports-home/', views.reporting_home, name='reporting_home'),
     path('report/', view_results_and_extract, name='view_results_and_extract'),
     path('download_report/', views.download_report, name='download_report'),
+
+    path('operations/', views.operations_view, name='operations'),
+    path('processes/', views.process_list, name='process_list'),
+    path('process/<int:process_id>/', views.process_detail, name='process_detail'),
+    path('process/create/', views.create_process, name='create_process'),
+    path('process/delete/<int:process_id>/', views.delete_process, name='delete_process'),
+    path('process/execute/', views.execute_process_view, name='execute_process_view'),
+    path('process/run/', views.run_process_execution, name='run_process_execution'),
+    path('ajax/get_process_functions/<int:process_id>/', views.get_process_functions, name='get_process_functions'),
+    path('process/monitor/', views.monitor_running_process_view, name='monitor_running_process_view'),
+    path('ajax/get_process_function_status/<str:process_run_id>/', views.get_process_function_status, name='get_process_function_status'),
+    path('process/monitor/<str:process_run_id>/', views.monitor_specific_process, name='monitor_specific_process'),
+    path('get-updated-status-table/', views.get_updated_status_table, name='get_updated_status_table'),
+
+    
+
+
  
 
 
