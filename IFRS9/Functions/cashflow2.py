@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
 from datetime import date, timedelta
 from ..models import *
+from ..Functions import save_log
 
 
 def get_payment_interval(repayment_type):

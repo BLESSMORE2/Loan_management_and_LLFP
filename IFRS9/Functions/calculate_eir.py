@@ -2,6 +2,7 @@ from decimal import Decimal
 from concurrent.futures import ThreadPoolExecutor
 from math import pow
 from ..models import FCT_Stage_Determination
+from ..Functions import save_log
 
 def calculate_eir_for_stage(entry):
     """
@@ -53,7 +54,7 @@ def update_stage_determination_eir(fic_mis_date, max_workers=8, batch_size=1000)
         total_entries = stage_determination_entries.count()
         if total_entries == 0:
             print(f"No entries found for fic_mis_date {fic_mis_date} requiring EIR update.")
-            return
+            return 0  # Return 0 if no entries are found
 
         # Process entries in batches
         batches = [stage_determination_entries[i:i + batch_size] for i in range(0, total_entries, batch_size)]
@@ -82,6 +83,7 @@ def update_stage_determination_eir(fic_mis_date, max_workers=8, batch_size=1000)
                     print(f"Successfully updated {len(bulk_updates)} records.")
                 except Exception as e:
                     print(f"Error during bulk update: {e}")
+                    return 0  # Return 0 if bulk update fails
 
         # Use ThreadPoolExecutor to process batches in parallel
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -93,11 +95,11 @@ def update_stage_determination_eir(fic_mis_date, max_workers=8, batch_size=1000)
                     future.result()
                 except Exception as exc:
                     print(f"Thread encountered an error: {exc}")
+                    return 0  # Return 0 if any thread encounters an error
 
         print(f"Successfully processed {total_entries} records.")
+        return 1  # Return 1 on successful completion
 
     except Exception as e:
         print(f"Error during EIR update process: {e}")
-
-# Example usage
-
+        return 0  # Return 0 in case of any exception

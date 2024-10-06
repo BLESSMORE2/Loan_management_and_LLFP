@@ -3,6 +3,7 @@ from ..models import FSI_Expected_Cashflow, fsi_Financial_Cash_Flow_Cal, Dim_Run
 from django.db import transaction
 from django.db import models
 from django.utils import timezone
+from ..Functions import save_log
 
 
 
@@ -95,32 +96,45 @@ def insert_cash_flow_data(fic_mis_date):
     Function to insert data from FSI_Expected_Cashflow into fsi_Financial_Cash_Flow_Cal, excluding fields that are None.
     Also prints the number of selected and inserted records. Multi-threading is used for faster inserts.
     """
-    # Fetch all records from FSI_Expected_Cashflow for the given MIS date
-    expected_cashflows = FSI_Expected_Cashflow.objects.filter(fic_mis_date=fic_mis_date)
-    total_selected = expected_cashflows.count()  # Get total number of selected rows
-    total_inserted = 0  # Counter for the number of rows inserted
+    try:
+        # Fetch all records from FSI_Expected_Cashflow for the given MIS date
+        expected_cashflows = FSI_Expected_Cashflow.objects.filter(fic_mis_date=fic_mis_date)
+        total_selected = expected_cashflows.count()  # Get total number of selected rows
 
-    # Print the number of rows selected
-    print(f"Number of rows selected: {total_selected}")
+        if total_selected == 0:
+            print(f"No cash flows found for fic_mis_date {fic_mis_date}.")
+            return '0'  # Return '0' if no rows are found
 
-    # Get the next run_skey
-    next_run_skey = get_next_run_skey()
-    print(f"Using n_run_skey = {next_run_skey} for this batch of inserts.")
+        total_inserted = 0  # Counter for the number of rows inserted
 
-    # Use ThreadPoolExecutor for multi-threading
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit tasks to the executor for each cashflow record
-        futures = [executor.submit(insert_cash_flow_record, cashflow, next_run_skey) for cashflow in expected_cashflows]
+        # Print the number of rows selected
+        print(f"Number of rows selected: {total_selected}")
 
-        # Process the results as they complete
-        for future in concurrent.futures.as_completed(futures):
-            if future.result():  # If the insertion was successful
-                total_inserted += 1
+        # Get the next run_skey
+        next_run_skey = get_next_run_skey()
+        print(f"Using n_run_skey = {next_run_skey} for this batch of inserts.")
 
-    # Update the RunKey table with the latest run_skey
-    update_run_key(next_run_skey)
+        # Use ThreadPoolExecutor for multi-threading
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Submit tasks to the executor for each cashflow record
+            futures = [executor.submit(insert_cash_flow_record, cashflow, next_run_skey) for cashflow in expected_cashflows]
 
-    # Print the number of rows successfully inserted
-    print(f"Number of rows inserted: {total_inserted}")
+            # Collect the results of each thread
+            for future in futures:
+                try:
+                    if future.result():  # If the insertion was successful
+                        total_inserted += 1
+                except Exception as exc:
+                    print(f"Error occurred during insertion: {exc}")
+                    return '0'  # Return '0' if any thread encounters an error
 
+        # Update the RunKey table with the latest run_skey
+        update_run_key(next_run_skey)
 
+        # Print the number of rows successfully inserted
+        print(f"Number of rows inserted: {total_inserted}")
+        return 1  # Return '1' on successful completion
+
+    except Exception as e:
+        print(f"Error during cash flow insertion process: {e}")
+        return 0  # Return '0' in case of any exception

@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from django.db.models import Sum
 from ..models import FCT_Reporting_Lines, fsi_Financial_Cash_Flow_Cal, ECLMethod, Dim_Run
+from ..Functions import save_log
 
 def get_latest_run_skey():
     """
@@ -19,11 +20,14 @@ def calculate_ecl_based_on_method(fic_mis_date):
     """
     Determines the ECL calculation method from the ECLMethod table and applies it.
     Applies discounting if required by the method, using the latest run key.
+    :param fic_mis_date: The financial MIS date used for filtering the records.
+    :return: String, status of the ECL calculation process ('1' for success, '0' for failure').
     """
     try:
         # Get the latest run key from Dim_Run table
         n_run_key = get_latest_run_skey()
 
+        # Fetch the ECL method from ECLMethod table
         ecl_method_record = ECLMethod.objects.first()
         if not ecl_method_record:
             raise ValueError("No ECL method is defined in the ECLMethod table.")
@@ -33,6 +37,7 @@ def calculate_ecl_based_on_method(fic_mis_date):
 
         print(f"Using ECL Method: {method_name}, Discounting: {uses_discounting}, Run Key: {n_run_key}")
 
+        # Determine and apply the appropriate ECL calculation method
         if method_name == 'forward_exposure':
             update_ecl_based_on_forward_loss(n_run_key, fic_mis_date, uses_discounting)
         elif method_name == 'cash_flow':
@@ -43,8 +48,14 @@ def calculate_ecl_based_on_method(fic_mis_date):
             raise ValueError(f"Unknown ECL method: {method_name}")
 
         print("ECL calculation completed successfully.")
+        return '1'  # Return '1' on successful completion
+
+    except ValueError as ve:
+        print(f"Configuration Error: {ve}")
+        return '0'  # Return '0' if there is a configuration error
     except Exception as e:
         print(f"Error calculating ECL: {e}")
+        return '0'  # Return '0' in case of any other exception
 
 
 def update_ecl_based_on_cash_shortfall(n_run_key, fic_mis_date, uses_discounting):

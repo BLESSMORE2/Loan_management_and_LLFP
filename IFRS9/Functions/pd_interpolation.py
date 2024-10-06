@@ -2,6 +2,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
 from ..models import *
+from ..Functions import save_log
 
 
 def perform_interpolation(mis_date):
@@ -215,6 +216,11 @@ def pd_interpolation_account_level(mis_date):
     try:
         # Fetch accounts from the Ldn_Financial_Instrument table for the given mis_date
         accounts = Ldn_Financial_Instrument.objects.filter(fic_mis_date=mis_date)
+
+        if not accounts.exists():
+            print(f"No accounts found for mis_date {mis_date}.")
+            return '0'  # Return '0' if no accounts are found
+
 
         # Use ThreadPoolExecutor to run interpolation in parallel
         with ThreadPoolExecutor(max_workers=4) as executor:

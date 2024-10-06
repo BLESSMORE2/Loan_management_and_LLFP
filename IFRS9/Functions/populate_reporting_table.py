@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
 from ..models import FCT_Stage_Determination, FCT_Reporting_Lines, Dim_Run
+from ..Functions import save_log
 
 # Helper function to split data into chunks
 def chunk_data(data, chunk_size):
@@ -96,6 +97,10 @@ def populate_fct_reporting_lines(mis_date, chunk_size=1000):
         # Fetch records from FCT_Stage_Determination where fic_mis_date matches the provided date
         stage_determination_records = list(FCT_Stage_Determination.objects.filter(fic_mis_date=mis_date))
 
+        if not stage_determination_records:
+            print(f"No records found in FCT_Stage_Determination for mis_date {mis_date}.")
+            return '0'  # Return '0' if no records are found
+
         # Split the records into chunks
         chunks = list(chunk_data(stage_determination_records, chunk_size))
 
@@ -103,11 +108,17 @@ def populate_fct_reporting_lines(mis_date, chunk_size=1000):
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = [executor.submit(process_chunk, chunk, last_run_skey) for chunk in chunks]
 
-            # Wait for all threads to complete
+            # Process the results
             for future in futures:
-                future.result()
+                try:
+                    future.result()  # This will raise any exceptions encountered in the threads
+                except Exception as exc:
+                    print(f"Error processing chunk: {exc}")
+                    return '0'  # Return '0' if any thread encounters an error
 
         print(f"Successfully populated FCT_Reporting_Lines for {len(stage_determination_records)} records.")
+        return 1  # Return '1' on successful completion
 
     except Exception as e:
         print(f"Error populating FCT_Reporting_Lines: {e}")
+        return '0'  # Return '0' in case of any exception

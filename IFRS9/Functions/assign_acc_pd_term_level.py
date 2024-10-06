@@ -1,6 +1,7 @@
 import concurrent.futures
 from ..models import FCT_Stage_Determination, FSI_PD_Interpolated
 from django.db.models import Q
+from ..Functions import save_log
 
 def calculate_pd_for_account(account, fic_mis_date, term_unit_to_periods):
     """
@@ -76,38 +77,50 @@ def calculate_pd_for_accounts(fic_mis_date):
     """
     Main function to calculate the 12-month PD and Lifetime PD for accounts using multi-threading.
     """
-    # Map v_amrt_term_unit to the number of periods in a year (buckets per year)
-    term_unit_to_periods = {
-        'M': 12,  # Monthly
-        'Q': 4,   # Quarterly
-        'H': 2,   # Half-Yearly
-        'Y': 1    # Yearly
-    }
+    try:
+        # Map v_amrt_term_unit to the number of periods in a year (buckets per year)
+        term_unit_to_periods = {
+            'M': 12,  # Monthly
+            'Q': 4,   # Quarterly
+            'H': 2,   # Half-Yearly
+            'Y': 1    # Yearly
+        }
 
-    # Fetch all accounts for the given MIS date
-    accounts = FCT_Stage_Determination.objects.filter(fic_mis_date=fic_mis_date)
-    total_accounts = accounts.count()
+        # Fetch all accounts for the given MIS date
+        accounts = FCT_Stage_Determination.objects.filter(fic_mis_date=fic_mis_date)
+        total_accounts = accounts.count()
 
-    # Print the number of records found
-    print(f"Found {total_accounts} accounts for processing.")
+        # Print the number of records found
+        print(f"Found {total_accounts} accounts for processing.")
 
-    # Use ThreadPoolExecutor for multi-threading
-    updated_accounts = 0
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit tasks to the executor for each account
-        futures = {executor.submit(calculate_pd_for_account, account, fic_mis_date, term_unit_to_periods): account for account in accounts}
+        if total_accounts == 0:
+            print("No accounts found for the given MIS date.")
+            return 0  # Return 0 if no accounts are found
 
-        # Process the results as they complete
-        for future in concurrent.futures.as_completed(futures):
-            account = futures[future]
-            try:
-                future.result()  # This ensures any exceptions are raised
-                updated_accounts += 1
-                print(f"Successfully updated PD for account: {account.n_prod_code}")
-            except Exception as e:
-                print(f"Error occurred while processing account {account.n_prod_code}: {e}")
+        # Use ThreadPoolExecutor for multi-threading
+        updated_accounts = 0
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Submit tasks to the executor for each account
+            futures = {executor.submit(calculate_pd_for_account, account, fic_mis_date, term_unit_to_periods): account for account in accounts}
 
-    # Print summary at the end
-    print(f"{updated_accounts} out of {total_accounts} accounts were successfully updated.")
+            # Process the results as they complete
+            for future in concurrent.futures.as_completed(futures):
+                account = futures[future]
+                try:
+                    future.result()  # This ensures any exceptions are raised
+                    updated_accounts += 1
+                    print(f"Successfully updated PD for account: {account.n_prod_code}")
+                except Exception as e:
+                    print(f"Error occurred while processing account {account.n_prod_code}: {e}")
+                    return 0  # Return 0 if any error occurs
 
+        # Print summary at the end
+        print(f"{updated_accounts} out of {total_accounts} accounts were successfully updated.")
 
+        # Return 1 if the function completes successfully without errors
+        return 1
+
+    except Exception as e:
+        # Handle any unexpected errors
+        print(f"An unexpected error occurred: {e}")
+        return 0  # Return 0 in case of any other exceptions

@@ -1,6 +1,7 @@
 import concurrent.futures
 from datetime import timedelta
 from ..models import CoolingPeriodDefinition, FCT_Stage_Determination
+from ..Functions import save_log
 
 def get_previous_stage_and_cooling_status(account, fic_mis_date):
     """
@@ -100,21 +101,34 @@ def process_cooling_period_for_accounts(fic_mis_date):
     Process cooling period logic for accounts based on a given fic_mis_date using multi-threading.
     It checks if the account is in a cooling period and whether it should be reclassified or continue in the previous stage.
     """
-    # Only query accounts where v_amrt_term_unit is defined in CoolingPeriodDefinition
-    valid_amrt_term_units = CoolingPeriodDefinition.objects.values_list('v_amrt_term_unit', flat=True)
-    accounts_to_process = FCT_Stage_Determination.objects.filter(
-        fic_mis_date=fic_mis_date,
-        v_amrt_term_unit__in=valid_amrt_term_units  # Filter only those with valid amortization units
-    )
+    try:
+        # Only query accounts where v_amrt_term_unit is defined in CoolingPeriodDefinition
+        valid_amrt_term_units = CoolingPeriodDefinition.objects.values_list('v_amrt_term_unit', flat=True)
+        accounts_to_process = FCT_Stage_Determination.objects.filter(
+            fic_mis_date=fic_mis_date,
+            v_amrt_term_unit__in=valid_amrt_term_units  # Filter only those with valid amortization units
+        )
 
-    # Use ThreadPoolExecutor to handle multiple accounts in parallel
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit each account to a thread for processing
-        futures = [executor.submit(process_single_account, account, fic_mis_date) for account in accounts_to_process]
-        
-        # Wait for all threads to complete
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()  # Get the result of the thread, if any exceptions occurred they will be raised here
-            except Exception as exc:
-                print(f"An error occurred during account processing: {exc}")
+        if not accounts_to_process.exists():
+            print(f"No accounts found for fic_mis_date {fic_mis_date} with valid amortization term units.")
+            return 0  # Return 0 if no accounts are found
+
+        # Use ThreadPoolExecutor to handle multiple accounts in parallel
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Submit each account to a thread for processing
+            futures = [executor.submit(process_single_account, account, fic_mis_date) for account in accounts_to_process]
+
+            # Wait for all threads to complete
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    future.result()  # Get the result of the thread, if any exceptions occurred they will be raised here
+                except Exception as exc:
+                    print(f"An error occurred during account processing: {exc}")
+                    return 0  # Return 0 if any thread encounters an error
+
+        print(f"Successfully processed cooling periods for accounts on fic_mis_date {fic_mis_date}.")
+        return 1  # Return 1 on successful completion
+
+    except Exception as e:
+        print(f"Error during cooling period processing for fic_mis_date {fic_mis_date}: {e}")
+        return 0  # Return 0 in case of any exception

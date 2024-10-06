@@ -13,6 +13,10 @@ def update_stage_determination(mis_date):
         # Fetch all entries from FCT_Stage_Determination for the given mis_date
         stage_determination_entries = FCT_Stage_Determination.objects.filter(fic_mis_date=mis_date).exclude(n_prod_code__isnull=True)
 
+        if not stage_determination_entries.exists():
+            print(f"No stage determination entries found for mis_date {mis_date}.")
+            return '0'  # Return '0' if no records are found
+
         # Use ThreadPoolExecutor to process updates in parallel
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = [
@@ -20,15 +24,19 @@ def update_stage_determination(mis_date):
                 for entry in stage_determination_entries
             ]
 
-            # Wait for all threads to complete
+            # Process each future and catch any exceptions
             for future in futures:
-                future.result()
+                try:
+                    future.result()  # Raises any exception that occurred in the thread
+                except Exception as exc:
+                    print(f"Error during update for an entry: {exc}")
+                    return '0'  # Return '0' if any thread encounters an error
 
-        return '1'
+        return '1'  # Return '1' on successful completion
 
     except Exception as e:
         print(f"Error during update process: {e}")
-        return '0'
+        return '0'  # Return '0' in case of any exception
 
 
 def process_product_info_update(entry):

@@ -2,6 +2,7 @@ from django.db import transaction
 from decimal import Decimal
 from concurrent.futures import ThreadPoolExecutor
 from ..models import FSI_Expected_Cashflow, Ldn_Financial_Instrument
+from ..Functions import save_log
 
 # Accrued interest calculation function based on day count convention
 def calculate_accrued_interest(principal, interest_rate, days, day_count_ind):
@@ -114,7 +115,7 @@ def update_cash_flows_with_ead(fic_mis_date, max_workers=8, batch_size=1000):
         total_cash_flows = cash_flows.count()
         if total_cash_flows == 0:
             print(f"No cash flows found for fic_mis_date {fic_mis_date}.")
-            return
+            return 0  # Return 0 if no cash flows are found
 
         # Split cash flows into batches
         cash_flow_batches = [cash_flows[i:i + batch_size] for i in range(0, total_cash_flows, batch_size)]
@@ -131,10 +132,11 @@ def update_cash_flows_with_ead(fic_mis_date, max_workers=8, batch_size=1000):
                     future.result()
                 except Exception as exc:
                     print(f"Thread encountered an error: {exc}")
+                    return 0  # Return 0 if any thread encounters an error
 
         print(f"Updated {total_cash_flows} cash flow buckets with Exposure at Default and Accrued Interest.")
+        return 1  # Return 1 on successful completion
 
     except Exception as e:
         print(f"Error updating cash flows for fic_mis_date {fic_mis_date}: {e}")
-
-
+        return 0  # Return 0 in case of any exception

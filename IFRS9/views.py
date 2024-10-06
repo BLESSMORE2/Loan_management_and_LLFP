@@ -47,7 +47,7 @@ def dashboard_view(request):
     mis_date = '2024-08-31'  # Input date in 'YYYY-MM-DD' format
     #status = perform_interpolation(mis_date)
     #print(status) 
-    project_cash_flows(mis_date)
+    #project_cash_flows(mis_date)
     # update_cash_flows_with_ead(mis_date)
     # # #Insert records into FCT_Stage_Determination with the numeric date
     # insert_fct_stage(mis_date)
@@ -58,7 +58,7 @@ def dashboard_view(request):
     # update_stage_determination_accrued_interest_and_ead(mis_date)
     # update_stage_determination_eir(mis_date)
     # calculate_pd_for_accounts(mis_date)
-    # insert_cash_flow_data(mis_date)
+    insert_cash_flow_data(mis_date)
     # update_financial_cash_flow(mis_date)
     # update_cash_flow_with_pd_buckets(mis_date)
     # update_marginal_pd(mis_date)

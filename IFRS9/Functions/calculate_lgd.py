@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
 from ..models import *
 from decimal import Decimal
+from ..Functions import save_log
 
 def update_lgd_for_stage_determination(mis_date):
     """
@@ -19,6 +20,10 @@ def update_lgd_for_stage_determination(mis_date):
             fic_mis_date=mis_date
         ).exclude(n_exposure_at_default__isnull=True).exclude(n_collateral_amount__isnull=True)
 
+        if not stage_determination_entries.exists():
+            print(f"No records found for mis_date {mis_date} with exposure and collateral.")
+            return 0  # Return 0 if no records are found
+
         # List to hold the updated entries for bulk update
         entries_to_update = []
 
@@ -31,14 +36,23 @@ def update_lgd_for_stage_determination(mis_date):
 
             # Wait for all threads to complete
             for future in futures:
-                future.result()
+                try:
+                    future.result()
+                except Exception as e:
+                    print(f"Thread encountered an error: {e}")
+                    return 0  # Return 0 if any thread encounters an error
 
         # Perform bulk update after all entries have been processed
         if entries_to_update:
             bulk_update_entries(entries_to_update)
 
+        print(f"Successfully updated LGD for {len(entries_to_update)} entries.")
+        return 1  # Return 1 on successful completion
+
     except Exception as e:
         print(f"Error during LGD update: {e}")
+        return 0  # Return 0 in case of any exception
+
 
 
 def process_lgd_updates(entry, entries_to_update):

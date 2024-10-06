@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from django.db import transaction
 from ..models import *
+from ..Functions import save_log
 
 def get_latest_run_skey():
     """
@@ -62,7 +63,7 @@ def calculate_expected_cash_flow(fic_mis_date, batch_size=1000, num_threads=4):
         
         if not records:
             print(f"No records found for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}.")
-            return
+            return 0  # Return 0 if no records are found
         
         print(f"Fetched {len(records)} records for processing.")
 
@@ -83,6 +84,7 @@ def calculate_expected_cash_flow(fic_mis_date, batch_size=1000, num_threads=4):
                     updated_batches.extend(future.result())
                 except Exception as e:
                     print(f"Error in thread execution: {e}")
+                    return 0  # Return 0 if any thread encounters an error
 
         # Perform a bulk update to save all the records at once
         with transaction.atomic():
@@ -93,9 +95,8 @@ def calculate_expected_cash_flow(fic_mis_date, batch_size=1000, num_threads=4):
             ])
         
         print(f"Successfully updated {len(updated_batches)} records.")
+        return 1  # Return 1 on successful completion
 
     except Exception as e:
         print(f"Error calculating expected cash flows for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}: {e}")
-
-
-
+        return 0  # Return 0 in case of any exception

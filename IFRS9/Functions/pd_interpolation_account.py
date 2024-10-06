@@ -2,6 +2,8 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
 from ..models import *
+from ..Functions import save_log
+
 
 def pd_interpolation(mis_date):
     """
@@ -12,6 +14,10 @@ def pd_interpolation(mis_date):
     try:
         # Fetch preferences from FSI_LLFP_APP_PREFERENCES
         preferences = FSI_LLFP_APP_PREFERENCES.objects.first()
+        if not preferences:
+            print("No preferences found in FSI_LLFP_APP_PREFERENCES.")
+            return '0'  # Return '0' if no preferences are found
+
         pd_interpolation_method = preferences.pd_interpolation_method or 'NL-POISSON'
         pd_model_proj_cap = preferences.n_pd_model_proj_cap
         bucket_length = preferences.llfp_bucket_length  # e.g., 'M' for Monthly, 'Y' for Yearly, etc.
@@ -27,11 +33,15 @@ def pd_interpolation(mis_date):
             bucket_frequency = 3  # Quarterly -> Monthly
             cash_flow_bucket_unit = 'Q'
         else:
-            bucket_frequency = 1  # Default is monthly
+            bucket_frequency = 1  # Default is yearly
             cash_flow_bucket_unit = 'Y'
 
         # Filter Ldn_PD_Term_Structure_Dtl by the mis_date
         term_structure_details = Ldn_PD_Term_Structure_Dtl.objects.filter(fic_mis_date=mis_date)
+
+        if not term_structure_details.exists():
+            print(f"No term structure details found for mis_date {mis_date}.")
+            return '0'  # Return '0' if no details are found
 
         # Use ThreadPoolExecutor to run interpolation in parallel
         with ThreadPoolExecutor() as executor:
@@ -43,13 +53,18 @@ def pd_interpolation(mis_date):
 
             # Wait for all threads to complete
             for future in futures:
-                future.result()  # This will raise any exceptions encountered in the threads
+                try:
+                    future.result()  # This will raise any exceptions encountered in the threads
+                except Exception as exc:
+                    print(f"Error occurred in thread: {exc}")
+                    return '0'  # Return '0' if any thread encounters an error
 
-        return '1'  # Success
+        return '1'  # Return '1' on successful completion
 
     except Exception as e:
         print(f"Error during interpolation: {e}")
-        return '0'  # Failure
+        return '0'  # Return '0' in case of any exception
+
 
 
 def process_interpolation(detail, bucket_frequency, pd_model_proj_cap, pd_interpolation_method, cash_flow_bucket_unit):
@@ -223,10 +238,7 @@ def interpolate_exponential_decay(detail, bucket_frequency, pd_model_proj_cap, c
             break
 
 
-import math
-from concurrent.futures import ThreadPoolExecutor
-from django.db import transaction
-from ..models import *
+
 
 def pd_interpolation_account_level(mis_date):
     """
@@ -238,6 +250,10 @@ def pd_interpolation_account_level(mis_date):
         # Fetch accounts from the Ldn_Financial_Instrument table for the given mis_date
         accounts = Ldn_Financial_Instrument.objects.filter(fic_mis_date=mis_date)
 
+        if not accounts.exists():
+            print(f"No accounts found for mis_date {mis_date}.")
+            return '0'  # Return '0' if no accounts are found
+
         # Use ThreadPoolExecutor to run interpolation in parallel
         with ThreadPoolExecutor() as executor:
             # Submit each account for parallel processing
@@ -248,13 +264,18 @@ def pd_interpolation_account_level(mis_date):
 
             # Wait for all threads to complete
             for future in futures:
-                future.result()  # This will raise any exceptions encountered in the threads
+                try:
+                    future.result()  # This will raise any exceptions encountered in the threads
+                except Exception as exc:
+                    print(f"Error occurred in thread: {exc}")
+                    return '0'  # Return '0' if any thread encounters an error
 
-        return '1'  # Success
+        return '1'  # Return '1' on successful completion
 
     except Exception as e:
         print(f"Error during account-level interpolation: {e}")
-        return '0'  # Failure
+        return '0'  # Return '0' in case of any exception
+
 
 
 def process_account_interpolation(account, mis_date):

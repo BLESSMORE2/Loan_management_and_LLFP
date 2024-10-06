@@ -22,7 +22,6 @@ def update_financial_cash_flow(fic_mis_date, max_workers=5, batch_size=1000):
     and `n_run_skey`.
     
     :param fic_mis_date: The financial MIS date used for filtering the records.
-    :param n_run_skey: The run key used for filtering the financial cash flow records.
     :param max_workers: Maximum number of threads for parallel processing.
     :param batch_size: Size of each batch for processing records in bulk updates.
     """
@@ -33,7 +32,7 @@ def update_financial_cash_flow(fic_mis_date, max_workers=5, batch_size=1000):
         
         if cash_flows.count() == 0:
             print(f"No financial cash flows found for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}.")
-            return
+            return '0'  # Return '0' if no records are found
 
         # Process cash flows in batches
         cash_flow_batches = [cash_flows[i:i + batch_size] for i in range(0, cash_flows.count(), batch_size)]
@@ -79,10 +78,13 @@ def update_financial_cash_flow(fic_mis_date, max_workers=5, batch_size=1000):
                     future.result()
                 except Exception as exc:
                     print(f"Thread encountered an error: {exc}")
+                    return '0'  # Return '0' if any thread encounters an error
 
         print(f"Successfully processed {cash_flows.count()} financial cash flow records for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}.")
+        return 1  # Return '1' on successful completion
 
     except Exception as e:
         print(f"Error updating financial cash flow records for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}: {e}")
+        return 0  # Return '0' in case of any exception
 
 

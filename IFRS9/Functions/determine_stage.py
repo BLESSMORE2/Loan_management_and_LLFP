@@ -1,5 +1,6 @@
 import concurrent.futures
 from ..models import FSI_CreditRating_Stage, FSI_DPD_Stage_Mapping, FCT_Stage_Determination
+from ..Functions import save_log
 
 def determine_stage_for_account(account):
     """
@@ -97,19 +98,30 @@ def update_stage(fic_mis_date):
     """
     Update the stage of accounts in the FCT_Stage_Determination table for the provided fic_mis_date using multi-threading.
     """
-    # Filter accounts based on fic_mis_date
-    accounts_to_update = FCT_Stage_Determination.objects.filter(fic_mis_date=fic_mis_date)
-    
-    # Use ThreadPoolExecutor to handle multiple accounts in parallel
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit each account update to a thread
-        futures = [executor.submit(update_stage_for_account, account, fic_mis_date) for account in accounts_to_update]
-        
-        # Wait for all threads to complete
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()  # Get the result of the thread, if any exceptions occurred they will be raised here
-            except Exception as exc:
-                print(f"An error occurred during stage update: {exc}")
+    try:
+        # Filter accounts based on fic_mis_date
+        accounts_to_update = FCT_Stage_Determination.objects.filter(fic_mis_date=fic_mis_date)
 
+        if not accounts_to_update.exists():
+            print(f"No accounts found for fic_mis_date {fic_mis_date}.")
+            return 0  # Return 0 if no accounts are found
 
+        # Use ThreadPoolExecutor to handle multiple accounts in parallel
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Submit each account update to a thread
+            futures = [executor.submit(update_stage_for_account, account, fic_mis_date) for account in accounts_to_update]
+
+            # Wait for all threads to complete
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    future.result()  # Get the result of the thread, if any exceptions occurred they will be raised here
+                except Exception as exc:
+                    print(f"An error occurred during stage update: {exc}")
+                    return 0  # Return 0 if any thread encounters an error
+
+        print(f"Successfully updated stages for accounts on fic_mis_date {fic_mis_date}.")
+        return 1  # Return 1 on successful completion
+
+    except Exception as e:
+        print(f"Error during stage update process for fic_mis_date {fic_mis_date}: {e}")
+        return 0  # Return 0 in case of any exception

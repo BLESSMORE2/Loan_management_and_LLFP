@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
 from datetime import timedelta, date
 from ..models import *
+from .save_log import save_log
 
 
 def get_payment_interval(repayment_type, day_count_ind):
@@ -213,19 +214,30 @@ def calculate_cash_flows_for_loan(loan):
 
 ################################################3
 def project_cash_flows(fic_mis_date):
+    try:
+        # Delete existing cash flows for the same fic_mis_date
+        FSI_Expected_Cashflow.objects.filter(fic_mis_date=fic_mis_date).delete()
+        # Filter loans by the given fic_mis_date
+        loans = Ldn_Financial_Instrument.objects.filter(fic_mis_date=fic_mis_date)
+        # If no loans exist, exit the function early
+        if not loans.exists():
+            save_log('project_cash_flows', 'ERROR',f"No loans found for the given fic_mis_date: {fic_mis_date}", status='FAILURE')
+            
 
-    # Delete existing cash flows for the same fic_mis_date
-    FSI_Expected_Cashflow.objects.filter(fic_mis_date=fic_mis_date).delete()
-    # Filter loans by the given fic_mis_date
-    loans = Ldn_Financial_Instrument.objects.filter(fic_mis_date=fic_mis_date)
+        # Define the number of threads based on the number of loans and system capability
+        num_threads = min(10, len(loans))  # Adjust number of threads as needed
 
-    # Define the number of threads based on the number of loans and system capability
-    num_threads = min(30, len(loans))  # Adjust number of threads as needed
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            # Submit all loans to be processed in separate threads
+            futures = [executor.submit(calculate_cash_flows_for_loan, loan) for loan in loans]
 
-    with ThreadPoolExecutor(max_workers=num_threads) as executor:
-        # Submit all loans to be processed in separate threads
-        futures = [executor.submit(calculate_cash_flows_for_loan, loan) for loan in loans]
+            # Ensure all threads are completed
+            for future in futures:
+                future.result()  # This will raise exceptions if any occurred in the thread
+        return 1
 
-        # Ensure all threads are completed
-        for future in futures:
-            future.result()  # This will raise exceptions if any occurred in the thread
+    except Exception as e:
+        
+        save_log('project_cash_flows', 'ERROR',f"Error occurred: {str(e)}", status='FAILURE')
+
+        return 0  # Return 0 if an error occurs

@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from django.db import transaction
 from ..models import *
+from ..Functions import save_log
 
 def get_latest_run_skey():
     """
@@ -59,16 +60,16 @@ def calculate_forward_loss_fields(fic_mis_date, batch_size=1000, num_threads=4):
     """
     Main function to calculate forward loss fields with multithreading and bulk update.
     """
-    # Get the latest run key from Dim_Run table
-    
     try:
+        # Get the latest run key from Dim_Run table
         run_skey = get_latest_run_skey()
+
         # Fetch the relevant records for the run_skey
         records = list(fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=run_skey))
 
         if not records:
             print(f"No records found for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}.")
-            return
+            return 0  # Return 0 if no records are found
 
         print(f"Fetched {len(records)} records for processing.")
 
@@ -89,6 +90,7 @@ def calculate_forward_loss_fields(fic_mis_date, batch_size=1000, num_threads=4):
                     updated_batches.extend(future.result())
                 except Exception as e:
                     print(f"Error in thread execution: {e}")
+                    return 0  # Return 0 if any thread encounters an error
 
         # Perform a bulk update to save all the records at once
         with transaction.atomic():
@@ -100,8 +102,8 @@ def calculate_forward_loss_fields(fic_mis_date, batch_size=1000, num_threads=4):
             ])
 
         print(f"Successfully updated {len(updated_batches)} records.")
+        return 1  # Return 1 on successful completion
 
     except Exception as e:
         print(f"Error calculating forward loss fields for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}: {e}")
-
-
+        return 0  # Return 0 in case of any exception

@@ -735,3 +735,23 @@ class FunctionExecutionStatus(models.Model):
 
     def __str__(self):
         return f"{self.process.process_name} - {self.function.function_name} - {self.status}"
+    
+class Log(models.Model):
+    LOG_LEVEL_CHOICES = [
+        ('INFO', 'Info'),
+        ('ERROR', 'Error'),
+    ]
+    id = models.BigAutoField(primary_key=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    function_name=models.CharField(max_length=20, choices=LOG_LEVEL_CHOICES)
+    log_level = models.CharField(max_length=50, choices=LOG_LEVEL_CHOICES)
+    message = models.TextField()
+    status = models.CharField(max_length=10, default='SUCCESS')
+
+    class Meta:
+        verbose_name = 'Log'
+        verbose_name_plural = 'Logs'
+        ordering = ['-timestamp']
+        db_table = 'dim_massage_logs'
+
+ 

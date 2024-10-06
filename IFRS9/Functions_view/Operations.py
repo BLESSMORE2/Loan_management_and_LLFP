@@ -165,7 +165,7 @@ def generate_process_run_id(process, execution_date):
     execution_date_str = execution_date.strftime('%Y%m%d')
     
     # Base run ID: process_id + execution_date
-    base_run_id = f"{process.id}_{execution_date_str}"
+    base_run_id = f"{process.process_name}_{execution_date_str}"
     
     # Check the database for existing entries with the same base_run_id
     existing_runs = FunctionExecutionStatus.objects.filter(process_run_id__startswith=base_run_id).order_by('-run_count')
@@ -198,22 +198,38 @@ def execute_functions_in_background(function_status_entries, process_run_id, mis
         try:
             if function_name in globals():
                 print(f"Executing function: {function_name} with date {mis_date}")
-                globals()[function_name](mis_date)  # Execute the function
-                status_entry.status = 'Success'
-                print(f"Function {function_name} executed successfully.")
+                result = globals()[function_name](mis_date)  # Execute the function and capture the return value
+                
+                # Update status based on the return value (1 = Success, 0 = Failed)
+                if result == 1 or result == '1' :
+                    status_entry.status = 'Success'
+                    print(f"Function {function_name} executed successfully.")
+                elif result == 0 or result == '0':
+                    status_entry.status = 'Failed'
+                    print(f"Function {function_name} execution failed.")
+                    status_entry.save()
+                    break  # Stop execution if the function returns 0 (failed)
+                else:
+                    status_entry.status = 'Failed'
+                    print(f"Unexpected return value {result} from function {function_name}.")
+                    status_entry.save()
+                    break  # Stop execution for any unexpected result
             else:
                 status_entry.status = 'Failed'
                 print(f"Function {function_name} not found in the global scope.")
+                status_entry.save()
                 break  # Stop execution if the function is not found
 
         except Exception as e:
             status_entry.status = 'Failed'
             print(f"Error executing {function_name}: {e}")
-            break  # Stop execution if any function fails
+            status_entry.save()
+            break  # Stop execution if any function throws an exception
 
         # Save the final status (Success or Failed)
         status_entry.save()
         print(f"Updated FunctionExecutionStatus for {function_name} to {status_entry.status}")
+
 
 def run_process_execution(request):
     if request.method == 'POST':

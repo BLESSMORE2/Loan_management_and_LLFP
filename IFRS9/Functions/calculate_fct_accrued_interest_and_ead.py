@@ -2,6 +2,7 @@ from django.db.models import Sum, Q
 from decimal import Decimal
 from concurrent.futures import ThreadPoolExecutor
 from ..models import FCT_Stage_Determination, FSI_Expected_Cashflow
+from ..Functions import save_log
 
 def calculate_accrued_interest(account_number, fic_mis_date):
     """
@@ -55,7 +56,7 @@ def update_stage_determination_accrued_interest_and_ead(fic_mis_date, max_worker
 
         if stage_determination_entries.count() == 0:
             print(f"No records found in FCT_Stage_Determination for fic_mis_date {fic_mis_date} with NULL exposure at default.")
-            return
+            return 0  # Return 0 if no records are found
         
         # Use ThreadPoolExecutor to process updates in parallel and accumulate bulk updates
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -67,16 +68,21 @@ def update_stage_determination_accrued_interest_and_ead(fic_mis_date, max_worker
             
             # Wait for all threads to complete
             for future in futures:
-                future.result()
+                try:
+                    future.result()
+                except Exception as e:
+                    print(f"Thread encountered an error: {e}")
+                    return 0  # Return 0 if any thread encounters an error
 
             # Perform bulk update
             bulk_update_stage_determination(updated_entries)
 
         print(f"Successfully updated {len(updated_entries)} records with accrued interest and EAD.")
+        return 1  # Return 1 on successful completion
 
     except Exception as e:
         print(f"Error during update process: {e}")
-
+        return 0  # Return 0 in case of any exception
 
 def process_accrued_interest_and_ead_for_account(entry, updated_entries):
     """
