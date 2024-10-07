@@ -197,6 +197,8 @@ class ColumnMappingView(View):
 #####################
 
 
+from datetime import datetime
+
 class SubmitToDatabaseView(View):
     template_name = 'load_data/file_upload_step4.html'
 
@@ -236,6 +238,15 @@ class SubmitToDatabaseView(View):
 
             # Rename the DataFrame columns based on the mappings
             df.rename(columns=mappings, inplace=True)
+
+            # Convert date columns to YYYY-MM-DD format
+            for column in df.columns:
+                if 'date' in column.lower():  # Check if the column name suggests it contains dates
+                    try:
+                        df[column] = pd.to_datetime(df[column], errors='coerce').dt.strftime('%Y-%m-%d')
+                    except Exception as e:
+                        messages.error(request, f"Error converting date format for column '{column}': {str(e)}")
+                        return render(request, self.template_name)
 
             # Get the model class dynamically based on the selected table
             try:
@@ -300,6 +311,7 @@ class SubmitToDatabaseView(View):
             messages.error(request, f"Unexpected Error: {str(e)}")
 
         return render(request, self.template_name)
+
     
     ####################################################################
 def data_entry_view(request):

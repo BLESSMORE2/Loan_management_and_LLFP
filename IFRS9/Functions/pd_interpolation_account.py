@@ -2,7 +2,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
 from ..models import *
-from ..Functions import save_log
+from .save_log import save_log
 
 
 def pd_interpolation(mis_date):

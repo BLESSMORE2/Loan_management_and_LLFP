@@ -52,10 +52,7 @@ def update_stage_determination_eir(fic_mis_date, max_workers=8, batch_size=1000)
         )
         
         total_entries = stage_determination_entries.count()
-        if total_entries == 0:
-            print(f"No entries found for fic_mis_date {fic_mis_date} requiring EIR update.")
-            return 0  # Return 0 if no entries are found
-
+       
         # Process entries in batches
         batches = [stage_determination_entries[i:i + batch_size] for i in range(0, total_entries, batch_size)]
         print(f"Processing {total_entries} entries in {len(batches)} batches...")

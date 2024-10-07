@@ -1,8 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from django.db import transaction
-from ..models import *
-from ..Functions import save_log
+from ..models import fsi_Financial_Cash_Flow_Cal, Dim_Run
+from .save_log import save_log
 
 def get_latest_run_skey():
     """
@@ -16,94 +16,139 @@ def get_latest_run_skey():
     except Dim_Run.DoesNotExist:
         raise ValueError("Dim_Run table is missing.")
 
+def process_12m_expected_loss(records):
+    """
+    Function to process a batch of records and apply calculations for 12-month forward loss fields.
+    """
+    updated_records = []
 
-def process_forward_loss_records(records, batch_number):
+    for record in records:
+        try:
+            # Calculate `n_12m_fwd_expected_loss`
+            if record.n_exposure_at_default is not None and record.n_12m_per_period_pd is not None and record.n_lgd_percent is not None:
+                record.n_12m_fwd_expected_loss = record.n_exposure_at_default * record.n_12m_per_period_pd * record.n_lgd_percent
+
+            # Calculate `n_12m_fwd_expected_loss_pv`
+            if record.n_discount_factor is not None and record.n_12m_fwd_expected_loss is not None:
+                record.n_12m_fwd_expected_loss_pv = record.n_discount_factor * record.n_12m_fwd_expected_loss
+
+            updated_records.append(record)
+
+        except Exception as e:
+            save_log('process_12m_expected_loss', 'ERROR', f"Error processing record {record.v_account_number}: {e}")
+
+    return updated_records
+
+def process_forward_expected_loss(records):
     """
     Function to process a batch of records and apply calculations for forward loss fields.
     """
     updated_records = []
-    print(f"Processing batch {batch_number} with {len(records)} records...")
 
     for record in records:
         try:
-            # 1. Calculate `n_12m_fwd_expected_loss`
-            if record.n_exposure_at_default is not None and record.n_12m_per_period_pd is not None and record.n_lgd_percent is not None:
-                record.n_12m_fwd_expected_loss = record.n_exposure_at_default * record.n_12m_per_period_pd * record.n_lgd_percent
-
-            # 2. Calculate `n_forward_expected_loss`
+            # Calculate `n_forward_expected_loss`
             if record.n_exposure_at_default is not None and record.n_per_period_impaired_prob is not None and record.n_lgd_percent is not None:
                 record.n_forward_expected_loss = record.n_exposure_at_default * record.n_per_period_impaired_prob * record.n_lgd_percent
 
-           
-            # 4. Calculate Present Value (PV) fields
-            if record.n_discount_factor is not None:
-                # Calculate `n_forward_expected_loss_pv`
-                if record.n_forward_expected_loss is not None:
-                    record.n_forward_expected_loss_pv = record.n_discount_factor * record.n_forward_expected_loss
+            # Calculate `n_forward_expected_loss_pv`
+            if record.n_discount_factor is not None and record.n_forward_expected_loss is not None:
+                record.n_forward_expected_loss_pv = record.n_discount_factor * record.n_forward_expected_loss
 
-                # Calculate `n_12m_fwd_expected_loss_pv`
-                if record.n_12m_fwd_expected_loss is not None:
-                    record.n_12m_fwd_expected_loss_pv = record.n_discount_factor * record.n_12m_fwd_expected_loss
-
-               
-            # Add the updated record to the list
             updated_records.append(record)
 
         except Exception as e:
-            print(f"Error processing record for account {record.v_account_number}: {e}")
+            save_log('process_forward_expected_loss', 'ERROR', f"Error processing record {record.v_account_number}: {e}")
 
-    print(f"Finished processing batch {batch_number}.")
     return updated_records
 
-
-def calculate_forward_loss_fields(fic_mis_date, batch_size=1000, num_threads=4):
+def calculate_12m_expected_loss_fields(fic_mis_date, batch_size=1000, num_threads=4):
     """
-    Main function to calculate forward loss fields with multithreading and bulk update.
+    Calculate 12-month expected loss fields with multithreading and bulk update.
     """
     try:
-        # Get the latest run key from Dim_Run table
         run_skey = get_latest_run_skey()
-
-        # Fetch the relevant records for the run_skey
         records = list(fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=run_skey))
 
         if not records:
-            print(f"No records found for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}.")
-            return 0  # Return 0 if no records are found
+            save_log('calculate_12m_expected_loss_fields', 'INFO', f"No records found for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}.")
+            return 0
 
-        print(f"Fetched {len(records)} records for processing.")
+        save_log('calculate_12m_expected_loss_fields', 'INFO', f"Fetched {len(records)} records for processing.")
 
-        # Split the records into batches
         def chunker(seq, size):
             return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
-        # Process records in parallel using ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            futures = []
-            for i, batch in enumerate(chunker(records, batch_size)):
-                futures.append(executor.submit(process_forward_loss_records, batch, i + 1))
-
-            # Wait for all threads to complete and gather the results
+            futures = [executor.submit(process_12m_expected_loss, batch) for batch in chunker(records, batch_size)]
             updated_batches = []
             for future in futures:
                 try:
                     updated_batches.extend(future.result())
                 except Exception as e:
-                    print(f"Error in thread execution: {e}")
-                    return 0  # Return 0 if any thread encounters an error
+                    save_log('calculate_12m_expected_loss_fields', 'ERROR', f"Error in thread execution: {e}")
+                    return 0
 
-        # Perform a bulk update to save all the records at once
         with transaction.atomic():
             fsi_Financial_Cash_Flow_Cal.objects.bulk_update(updated_batches, [
                 'n_12m_fwd_expected_loss', 
-                'n_forward_expected_loss',  
-                'n_forward_expected_loss_pv', 
                 'n_12m_fwd_expected_loss_pv'
             ])
 
-        print(f"Successfully updated {len(updated_batches)} records.")
-        return 1  # Return 1 on successful completion
+        save_log('calculate_12m_expected_loss_fields', 'INFO', f"Successfully updated {len(updated_batches)} records.")
+        return 1
 
     except Exception as e:
-        print(f"Error calculating forward loss fields for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}: {e}")
-        return 0  # Return 0 in case of any exception
+        save_log('calculate_12m_expected_loss_fields', 'ERROR', f"Error calculating 12-month forward loss fields for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}: {e}")
+        return 0
+
+def calculate_forward_expected_loss_fields(fic_mis_date, batch_size=1000, num_threads=4):
+    """
+    Calculate forward expected loss fields with multithreading and bulk update.
+    """
+    try:
+        run_skey = get_latest_run_skey()
+        records = list(fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=run_skey))
+
+        if not records:
+            save_log('calculate_forward_expected_loss_fields', 'INFO', f"No records found for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}.")
+            return 0
+
+        save_log('calculate_forward_expected_loss_fields', 'INFO', f"Fetched {len(records)} records for processing.")
+
+        def chunker(seq, size):
+            return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            futures = [executor.submit(process_forward_expected_loss, batch) for batch in chunker(records, batch_size)]
+            updated_batches = []
+            for future in futures:
+                try:
+                    updated_batches.extend(future.result())
+                except Exception as e:
+                    save_log('calculate_forward_expected_loss_fields', 'ERROR', f"Error in thread execution: {e}")
+                    return 0
+
+        with transaction.atomic():
+            fsi_Financial_Cash_Flow_Cal.objects.bulk_update(updated_batches, [
+                'n_forward_expected_loss',  
+                'n_forward_expected_loss_pv'
+            ])
+
+        save_log('calculate_forward_expected_loss_fields', 'INFO', f"Successfully updated {len(updated_batches)} records.")
+        return 1
+
+    except Exception as e:
+        save_log('calculate_forward_expected_loss_fields', 'ERROR', f"Error calculating forward loss fields for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}: {e}")
+        return 0
+
+def calculate_forward_loss_fields(fic_mis_date, batch_size=1000, num_threads=4):
+    """
+    Main function to calculate forward loss fields in two stages.
+    """
+    result = calculate_12m_expected_loss_fields(fic_mis_date, batch_size, num_threads)
+    if result == 1:
+        return calculate_forward_expected_loss_fields(fic_mis_date, batch_size, num_threads)
+    else:
+        save_log('calculate_forward_loss_fields', 'ERROR', f"Failed to complete 12-month expected loss calculation for fic_mis_date {fic_mis_date}.")
+        return 0

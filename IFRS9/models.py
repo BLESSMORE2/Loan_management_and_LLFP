@@ -743,7 +743,7 @@ class Log(models.Model):
     ]
     id = models.BigAutoField(primary_key=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    function_name=models.CharField(max_length=20, choices=LOG_LEVEL_CHOICES)
+    function_name=models.CharField(max_length=50, choices=LOG_LEVEL_CHOICES)
     log_level = models.CharField(max_length=50, choices=LOG_LEVEL_CHOICES)
     message = models.TextField()
     status = models.CharField(max_length=10, default='SUCCESS')

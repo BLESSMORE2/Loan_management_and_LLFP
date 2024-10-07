@@ -2,7 +2,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
 from ..models import *
-from ..Functions import save_log
+from .save_log import save_log
 
 
 def perform_interpolation(mis_date):
@@ -14,22 +14,22 @@ def perform_interpolation(mis_date):
     try:
         preferences = FSI_LLFP_APP_PREFERENCES.objects.first()
         if preferences is None:
-            print("No preferences found.")
+            save_log('perform_interpolation', 'ERROR', "No preferences found.")
             return '0'
 
         interpolation_level = preferences.interpolation_level
 
         if interpolation_level == 'ACCOUNT':
-            print("Performing account-level interpolation")
+            save_log('perform_interpolation', 'INFO', "Performing account-level interpolation")
             return pd_interpolation_account_level(mis_date)
         elif interpolation_level == 'TERM_STRUCTURE':
-            print("Performing term structure-level interpolation")
+            save_log('perform_interpolation', 'INFO', "Performing term structure-level interpolation")
             return pd_interpolation(mis_date)
         else:
-            print(f"Unknown interpolation level: {interpolation_level}")
+            save_log('perform_interpolation', 'ERROR', f"Unknown interpolation level: {interpolation_level}")
             return '0'
     except Exception as e:
-        print(f"Error during interpolation: {e}")
+        save_log('perform_interpolation', 'ERROR', f"Error during interpolation: {e}")
         return '0'
 
 # Term structure interpolation functions
@@ -42,10 +42,9 @@ def pd_interpolation(mis_date):
         pd_interpolation_method = preferences.pd_interpolation_method or 'NL-POISSON'
         pd_model_proj_cap = preferences.n_pd_model_proj_cap
 
-        # Filter Ldn_PD_Term_Structure_Dtl by the mis_date
         term_structure_details = Ldn_PD_Term_Structure_Dtl.objects.filter(fic_mis_date=mis_date)
-
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        
+        with ThreadPoolExecutor(max_workers=6) as executor:
             futures = [
                 executor.submit(process_interpolation, detail, pd_model_proj_cap, pd_interpolation_method)
                 for detail in term_structure_details
@@ -54,10 +53,11 @@ def pd_interpolation(mis_date):
             for future in futures:
                 future.result()
 
+        save_log('pd_interpolation', 'INFO', "Term structure interpolation completed successfully.")
         return '1'
 
     except Exception as e:
-        print(f"Error during interpolation: {e}")
+        save_log('pd_interpolation', 'ERROR', f"Error during interpolation: {e}")
         return '0'
 
 def process_interpolation(detail, pd_model_proj_cap, pd_interpolation_method):
@@ -65,11 +65,10 @@ def process_interpolation(detail, pd_model_proj_cap, pd_interpolation_method):
     Process PD interpolation for a given term structure detail.
     """
     credit_risk_band = detail.v_credit_risk_basis_cd
-    print(f"Processing interpolation for credit risk band: {credit_risk_band}")
+    save_log('process_interpolation', 'INFO', f"Processing interpolation for credit risk band: {credit_risk_band}")
 
     bucket_length = detail.v_pd_term_structure_id.v_pd_term_frequency_unit
 
-    # Set the bucket frequency and cash flow bucket unit based on bucket length
     if bucket_length == 'M':
         bucket_frequency = 12
         cash_flow_bucket_unit = 'M'
@@ -83,7 +82,6 @@ def process_interpolation(detail, pd_model_proj_cap, pd_interpolation_method):
         bucket_frequency = 1
         cash_flow_bucket_unit = 'Y'
 
-    # Delete existing records with the same fic_mis_date before inserting new ones
     FSI_PD_Interpolated.objects.filter(fic_mis_date=detail.fic_mis_date).delete()
 
     if pd_interpolation_method == 'NL-POISSON':
@@ -100,9 +98,16 @@ def interpolate_poisson(detail, bucket_frequency, pd_model_proj_cap, cash_flow_b
     periods = bucket_frequency * pd_model_proj_cap
     pd_percent = float(detail.n_pd_percent)
     cumulative_pd = 0
+    epsilon = 1e-6  # Small value to adjust pd_percent
+
+    pd_percent = min(max(pd_percent, epsilon), 1 - epsilon)
 
     for bucket in range(1, periods + 1):
-        marginal_pd = 1 - math.exp(math.log(1 - pd_percent) / bucket_frequency)
+        try:
+            marginal_pd = 1 - math.exp(math.log(1 - pd_percent) / bucket_frequency)
+        except ValueError as e:
+            save_log('interpolate_poisson', 'ERROR', f"Error calculating marginal_pd: {e}")
+            return
         cumulative_pd = 1 - (1 - cumulative_pd) * (1 - marginal_pd)
 
         FSI_PD_Interpolated.objects.create(
@@ -117,7 +122,6 @@ def interpolate_poisson(detail, bucket_frequency, pd_model_proj_cap, cash_flow_b
             v_cash_flow_bucket_id=bucket,
             v_cash_flow_bucket_unit=cash_flow_bucket_unit
         )
-
 def interpolate_geometric(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit):
     """
     Perform Geometric interpolation for a given term structure detail.
@@ -214,15 +218,11 @@ def pd_interpolation_account_level(mis_date):
     Perform PD interpolation at the account level based on the PD details and cashflow buckets.
     """
     try:
-        # Fetch accounts from the Ldn_Financial_Instrument table for the given mis_date
         accounts = Ldn_Financial_Instrument.objects.filter(fic_mis_date=mis_date)
-
         if not accounts.exists():
-            print(f"No accounts found for mis_date {mis_date}.")
-            return '0'  # Return '0' if no accounts are found
+            save_log('pd_interpolation_account_level', 'ERROR', f"No accounts found for mis_date {mis_date}.")
+            return '0'
 
-
-        # Use ThreadPoolExecutor to run interpolation in parallel
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = [
                 executor.submit(process_account_interpolation, account, mis_date)
@@ -232,10 +232,11 @@ def pd_interpolation_account_level(mis_date):
             for future in futures:
                 future.result()
 
+        save_log('pd_interpolation_account_level', 'INFO', "Account-level PD interpolation completed successfully.")
         return '1'
 
     except Exception as e:
-        print(f"Error during account-level interpolation: {e}")
+        save_log('pd_interpolation_account_level', 'ERROR', f"Error during account-level interpolation: {e}")
         return '0'
 
 def process_account_interpolation(account, mis_date):
@@ -243,18 +244,18 @@ def process_account_interpolation(account, mis_date):
     Process PD interpolation for a given account-level PD detail.
     """
     account_number = account.v_account_number
-    print(f"Processing interpolation for account: {account_number}")
+    save_log('process_account_interpolation', 'INFO', f"Processing interpolation for account: {account_number}")
 
     try:
         pd_percent = Ldn_Financial_Instrument.objects.get(fic_mis_date=account.fic_mis_date, v_account_number=account_number).n_pd_percent
-        pd_percent =float(pd_percent)
+        pd_percent = float(pd_percent)
     except Ldn_Financial_Instrument.DoesNotExist:
-        print(f"No PD found for account {account_number}")
+        save_log('process_account_interpolation', 'ERROR', f"No PD found for account {account_number}")
         return
 
     max_bucket = FSI_Expected_Cashflow.objects.filter(v_account_number=account_number, fic_mis_date=mis_date).aggregate(max_bucket=models.Max('n_cash_flow_bucket'))['max_bucket']
     if max_bucket is None:
-        print(f"No cashflow buckets found for account {account_number}")
+        save_log('process_account_interpolation', 'ERROR', f"No cashflow buckets found for account {account_number}")
         return
 
     bucket_length = account.v_interest_freq_unit
@@ -271,7 +272,6 @@ def process_account_interpolation(account, mis_date):
         bucket_frequency = 1
         cash_flow_bucket_unit = 'Y'
 
-    # Delete existing records with the same fic_mis_date and account number before inserting new ones
     FSI_PD_Account_Interpolated.objects.filter(fic_mis_date=account.fic_mis_date, v_account_number=account_number).delete()
 
     preferences = FSI_LLFP_APP_PREFERENCES.objects.first()
@@ -285,6 +285,7 @@ def process_account_interpolation(account, mis_date):
         interpolate_arithmetic_account(account, bucket_frequency, max_bucket, pd_percent, cash_flow_bucket_unit)
     elif pd_interpolation_method == 'EXPONENTIAL_DECAY':
         interpolate_exponential_decay_account(account, bucket_frequency, max_bucket, pd_percent, cash_flow_bucket_unit)
+
 
 def interpolate_poisson_account(account, bucket_frequency, max_bucket, pd_percent, cash_flow_bucket_unit):
     """

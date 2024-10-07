@@ -1,6 +1,7 @@
 from django.db import transaction
-from concurrent.futures import ThreadPoolExecutor
-from ..models import FCT_Stage_Determination, fsi_Financial_Cash_Flow_Cal,Dim_Run
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from ..models import FCT_Stage_Determination, fsi_Financial_Cash_Flow_Cal, Dim_Run
+from .save_log import save_log
 
 def get_latest_run_skey():
     """
@@ -13,78 +14,63 @@ def get_latest_run_skey():
         return run_record.latest_run_skey
     except Dim_Run.DoesNotExist:
         raise ValueError("Dim_Run table is missing.")
-    
-# Function to fetch and update n_effective_interest_rate and n_lgd_percent from FCT_Stage_Determination
+
 def update_financial_cash_flow(fic_mis_date, max_workers=5, batch_size=1000):
     """
-    This function updates the `n_effective_interest_rate` and `n_lgd_percent` fields in the `fsi_Financial_Cash_Flow_Cal`
+    Updates the `n_effective_interest_rate` and `n_lgd_percent` fields in the `fsi_Financial_Cash_Flow_Cal`
     table using values from the `FCT_Stage_Determination` table, based on matching `v_account_number`, `fic_mis_date`,
     and `n_run_skey`.
-    
-    :param fic_mis_date: The financial MIS date used for filtering the records.
-    :param max_workers: Maximum number of threads for parallel processing.
-    :param batch_size: Size of each batch for processing records in bulk updates.
     """
     try:
         n_run_skey = get_latest_run_skey()
-        # Fetch all cash flow entries for the given fic_mis_date and n_run_skey
         cash_flows = fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=n_run_skey)
         
-        if cash_flows.count() == 0:
-            print(f"No financial cash flows found for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}.")
-            return '0'  # Return '0' if no records are found
+        total_cash_flows = cash_flows.count()
+        if total_cash_flows == 0:
+            save_log('update_financial_cash_flow', 'INFO', f"No financial cash flows found for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}.")
+            return '0'
 
-        # Process cash flows in batches
-        cash_flow_batches = [cash_flows[i:i + batch_size] for i in range(0, cash_flows.count(), batch_size)]
-        print(f"Processing {cash_flows.count()} cash flow records in {len(cash_flow_batches)} batches...")
+        cash_flow_batches = [cash_flows[i:i + batch_size] for i in range(0, total_cash_flows, batch_size)]
+        updated_records = 0
 
         def process_batch(batch):
             bulk_updates = []
-
             for cash_flow in batch:
                 try:
-                    # Fetch the corresponding stage determination record
                     stage_entry = FCT_Stage_Determination.objects.filter(
                         n_account_number=cash_flow.v_account_number,
                         fic_mis_date=cash_flow.fic_mis_date
                     ).first()
 
                     if stage_entry:
-                        # Update n_effective_interest_rate and n_lgd_percent in cash flow entry
                         cash_flow.n_effective_interest_rate = stage_entry.n_effective_interest_rate
                         cash_flow.n_lgd_percent = stage_entry.n_lgd_percent
                         bulk_updates.append(cash_flow)
-                    else:
-                        print(f"Stage entry not found for account {cash_flow.v_account_number} on fic_mis_date {cash_flow.fic_mis_date}")
-
                 except Exception as e:
-                    print(f"Error processing account {cash_flow.v_account_number}: {e}")
+                    save_log('update_financial_cash_flow', 'ERROR', f"Error processing account {cash_flow.v_account_number}: {e}")
 
-            # Bulk update the batch
             if bulk_updates:
                 try:
                     fsi_Financial_Cash_Flow_Cal.objects.bulk_update(bulk_updates, ['n_effective_interest_rate', 'n_lgd_percent'])
-                    print(f"Successfully updated {len(bulk_updates)} records.")
+                    return len(bulk_updates)
                 except Exception as e:
-                    print(f"Error during bulk update: {e}")
+                    save_log('update_financial_cash_flow', 'ERROR', f"Error during bulk update: {e}")
+                    return 0
+            return 0
 
-        # Use multi-threading to process batches in parallel
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [executor.submit(process_batch, batch) for batch in cash_flow_batches]
+            futures = {executor.submit(process_batch, batch): batch for batch in cash_flow_batches}
 
-            # Wait for all threads to complete
-            for future in futures:
+            for future in as_completed(futures):
                 try:
-                    future.result()
+                    updated_records += future.result()
                 except Exception as exc:
-                    print(f"Thread encountered an error: {exc}")
-                    return '0'  # Return '0' if any thread encounters an error
+                    save_log('update_financial_cash_flow', 'ERROR', f"Thread encountered an error: {exc}")
+                    return '0'
 
-        print(f"Successfully processed {cash_flows.count()} financial cash flow records for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}.")
-        return 1  # Return '1' on successful completion
+        save_log('update_financial_cash_flow', 'INFO', f"Successfully updated {updated_records} out of {total_cash_flows} financial cash flow records for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}.")
+        return '1' if updated_records > 0 else '0'
 
     except Exception as e:
-        print(f"Error updating financial cash flow records for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}: {e}")
-        return 0  # Return '0' in case of any exception
-
-
+        save_log('update_financial_cash_flow', 'ERROR', f"Error updating financial cash flow records for fic_mis_date {fic_mis_date} and n_run_skey {n_run_skey}: {e}")
+        return '0'

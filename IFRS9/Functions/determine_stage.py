@@ -7,34 +7,28 @@ def determine_stage_for_account(account):
     Determine the stage for an account based on credit rating or DPD.
     Priority is given to the credit rating if available, otherwise, DPD is used.
     """
-    # Check if the account has a credit rating code
     credit_rating_code = account.n_credit_rating_code
     if credit_rating_code:
         try:
-            # Look up the stage based on the credit rating
             credit_rating_stage = FSI_CreditRating_Stage.objects.get(credit_rating=credit_rating_code)
             return credit_rating_stage.stage  # Return the stage based on the credit rating
         except FSI_CreditRating_Stage.DoesNotExist:
-            # Log or handle the missing credit rating entry
-            print(f"Credit rating {credit_rating_code} not found for account {account.n_account_number}. Falling back to DPD.")
-    
+            save_log('determine_stage_for_account', 'WARNING', f"Credit rating {credit_rating_code} not found for account {account.n_account_number}. Falling back to DPD.")
+
     # Fallback to DPD stage determination if no valid credit rating found
     return determine_stage_by_dpd(account)
 
 def determine_stage_by_dpd(account):
     """
     Determine the stage for an account based on Days Past Due (DPD) and payment frequency.
-    This method is only called if no valid credit rating is found.
     """
     delinquent_days = account.n_delinquent_days
-    payment_frequency = account.v_amrt_term_unit  # Using v_amrt_term_unit for frequency (e.g., 'M', 'Q', 'H', 'Y')
+    payment_frequency = account.v_amrt_term_unit
 
     if delinquent_days is None or not payment_frequency:
-        # Log or handle missing DPD data
-        print(f"Missing DPD or payment frequency for account {account.n_account_number}. Cannot determine stage.")
+        save_log('determine_stage_by_dpd', 'WARNING', f"Missing DPD or payment frequency for account {account.n_account_number}. Cannot determine stage.")
         return 'Unknown Stage'
 
-    # Try to find the DPD stage mapping for the given payment frequency
     try:
         dpd_stage_mapping = FSI_DPD_Stage_Mapping.objects.get(payment_frequency=payment_frequency)
         if delinquent_days <= dpd_stage_mapping.stage_1_threshold:
@@ -44,84 +38,62 @@ def determine_stage_by_dpd(account):
         else:
             return 'Stage 3'
     except FSI_DPD_Stage_Mapping.DoesNotExist:
-        # Log or handle missing DPD stage mapping entry
-        print(f"DPD stage mapping not found for payment frequency {payment_frequency} in account {account.n_account_number}.")
+        save_log('determine_stage_by_dpd', 'WARNING', f"DPD stage mapping not found for payment frequency {payment_frequency} in account {account.n_account_number}.")
         return 'Unknown Stage'
 
 def get_latest_previous_fic_mis_date(account, current_fic_mis_date):
     """
     Get the latest previous fic_mis_date for the given account, excluding the current fic_mis_date.
     """
-    try:
-        # Get the latest previous record for the account based on fic_mis_date
-        previous_account = FCT_Stage_Determination.objects.filter(
-            n_account_number=account.n_account_number,
-            fic_mis_date__lt=current_fic_mis_date
-        ).order_by('-fic_mis_date').first()  # Get the latest previous record
-        
-        return previous_account
-    except FCT_Stage_Determination.DoesNotExist:
-        return None
+    return FCT_Stage_Determination.objects.filter(
+        n_account_number=account.n_account_number,
+        fic_mis_date__lt=current_fic_mis_date
+    ).order_by('-fic_mis_date').first()
 
 def update_stage_for_account(account, fic_mis_date):
     """
     Update the stage of a single account, setting both the stage description and the numeric value.
-    Also updates n_prev_ifrs_stage_skey with the latest previous n_curr_ifrs_stage_skey.
     """
     stage = determine_stage_for_account(account)
-    
-    # Update current stage description and numeric stage key
+
     if stage:
-        account.n_stage_descr = stage  # Update the stage description
-        
-        # Update the numeric value for n_curr_ifrs_stage_skey
-        if stage == 'Stage 1':
-            account.n_curr_ifrs_stage_skey = 1
-        elif stage == 'Stage 2':
-            account.n_curr_ifrs_stage_skey = 2
-        elif stage == 'Stage 3':
-            account.n_curr_ifrs_stage_skey = 3
+        account.n_stage_descr = stage
+        account.n_curr_ifrs_stage_skey = {'Stage 1': 1, 'Stage 2': 2, 'Stage 3': 3}.get(stage)
 
-        # Find the latest previous record and update n_prev_ifrs_stage_skey
         previous_account = get_latest_previous_fic_mis_date(account, fic_mis_date)
-        if previous_account:
-            account.n_prev_ifrs_stage_skey = previous_account.n_curr_ifrs_stage_skey
-        else:
-            account.n_prev_ifrs_stage_skey = None  # No previous record found
+        account.n_prev_ifrs_stage_skey = previous_account.n_curr_ifrs_stage_skey if previous_account else None
 
-        account.save()  # Save the account with the new stage and numeric values
-        print(f"Stage for account {account.n_account_number} updated to {stage} with n_curr_ifrs_stage_skey = {account.n_curr_ifrs_stage_skey}.")
+        return account
     else:
-        print(f"Failed to determine stage for account {account.n_account_number}.")
+        save_log('update_stage_for_account', 'WARNING', f"Failed to determine stage for account {account.n_account_number}.")
+        return None
 
 def update_stage(fic_mis_date):
     """
     Update the stage of accounts in the FCT_Stage_Determination table for the provided fic_mis_date using multi-threading.
     """
     try:
-        # Filter accounts based on fic_mis_date
         accounts_to_update = FCT_Stage_Determination.objects.filter(fic_mis_date=fic_mis_date)
-
         if not accounts_to_update.exists():
-            print(f"No accounts found for fic_mis_date {fic_mis_date}.")
-            return 0  # Return 0 if no accounts are found
+            save_log('update_stage', 'INFO', f"No accounts found for fic_mis_date {fic_mis_date}.")
+            return 0
 
-        # Use ThreadPoolExecutor to handle multiple accounts in parallel
+        updated_accounts = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            # Submit each account update to a thread
-            futures = [executor.submit(update_stage_for_account, account, fic_mis_date) for account in accounts_to_update]
-
-            # Wait for all threads to complete
+            futures = {executor.submit(update_stage_for_account, account, fic_mis_date): account for account in accounts_to_update}
             for future in concurrent.futures.as_completed(futures):
-                try:
-                    future.result()  # Get the result of the thread, if any exceptions occurred they will be raised here
-                except Exception as exc:
-                    print(f"An error occurred during stage update: {exc}")
-                    return 0  # Return 0 if any thread encounters an error
+                result = future.result()
+                if result:
+                    updated_accounts.append(result)
 
-        print(f"Successfully updated stages for accounts on fic_mis_date {fic_mis_date}.")
-        return 1  # Return 1 on successful completion
+        if updated_accounts:
+            FCT_Stage_Determination.objects.bulk_update(updated_accounts, ['n_stage_descr', 'n_curr_ifrs_stage_skey', 'n_prev_ifrs_stage_skey'])
+            save_log('update_stage', 'INFO', f"Successfully updated stages for {len(updated_accounts)} accounts on fic_mis_date {fic_mis_date}.")
+        else:
+            save_log('update_stage', 'WARNING', f"No stages were updated for accounts on fic_mis_date {fic_mis_date}.")
+
+        return 1
 
     except Exception as e:
-        print(f"Error during stage update process for fic_mis_date {fic_mis_date}: {e}")
-        return 0  # Return 0 in case of any exception
+        save_log('update_stage', 'ERROR', f"Error during stage update process for fic_mis_date {fic_mis_date}: {str(e)}")
+        return 0

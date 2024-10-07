@@ -1,8 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from django.db import transaction
-from ..models import *
-from ..Functions import save_log
+from ..models import fsi_Financial_Cash_Flow_Cal, Dim_Run
+from .save_log import save_log
 
 def get_latest_run_skey():
     """
@@ -16,12 +16,11 @@ def get_latest_run_skey():
     except Dim_Run.DoesNotExist:
         raise ValueError("Dim_Run table is missing.")
     
-def process_cashflow_records(records, batch_number):
+def process_cashflow_records(records):
     """
     Function to process a batch of records and apply calculations for cash flow fields.
     """
     updated_records = []
-    print(f"Processing batch {batch_number} with {len(records)} records...")
 
     for record in records:
         try:
@@ -52,9 +51,8 @@ def process_cashflow_records(records, batch_number):
             # Add the updated record to the list
             updated_records.append(record)
         except Exception as e:
-            print(f"Error processing record for account {record.v_account_number}: {e}")
+            save_log('process_cashflow_records', 'ERROR', f"Error processing record {record.v_account_number}: {e}")
 
-    print(f"Finished processing batch {batch_number}.")
     return updated_records
 
 
@@ -68,10 +66,10 @@ def calculate_cashflow_fields(fic_mis_date, batch_size=1000, num_threads=4):
         records = list(fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=run_skey))
 
         if not records:
-            print(f"No records found for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}.")
+            save_log('calculate_cashflow_fields', 'INFO', f"No records found for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}.")
             return 0  # Return 0 if no records are found
 
-        print(f"Fetched {len(records)} records for processing.")
+        save_log('calculate_cashflow_fields', 'INFO', f"Fetched {len(records)} records for processing.")
 
         # Split the records into batches
         def chunker(seq, size):
@@ -79,9 +77,7 @@ def calculate_cashflow_fields(fic_mis_date, batch_size=1000, num_threads=4):
 
         # Process records in parallel using ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            futures = []
-            for i, batch in enumerate(chunker(records, batch_size)):
-                futures.append(executor.submit(process_cashflow_records, batch, i + 1))
+            futures = [executor.submit(process_cashflow_records, batch) for batch in chunker(records, batch_size)]
 
             # Wait for all threads to complete and gather the results
             updated_batches = []
@@ -89,7 +85,7 @@ def calculate_cashflow_fields(fic_mis_date, batch_size=1000, num_threads=4):
                 try:
                     updated_batches.extend(future.result())
                 except Exception as e:
-                    print(f"Error in thread execution: {e}")
+                    save_log('calculate_cashflow_fields', 'ERROR', f"Error in thread execution: {e}")
                     return 0  # Return 0 if any thread encounters an error
 
         # Perform a bulk update to save all the records at once
@@ -103,9 +99,9 @@ def calculate_cashflow_fields(fic_mis_date, batch_size=1000, num_threads=4):
                 'n_12m_cash_shortfall_pv'
             ])
 
-        print(f"Successfully updated {len(updated_batches)} records.")
+        save_log('calculate_cashflow_fields', 'INFO', f"Successfully updated {len(updated_batches)} records.")
         return 1  # Return 1 on successful completion
 
     except Exception as e:
-        print(f"Error calculating cash flow fields for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}: {e}")
-        return 0  # Return 0 in case of any exception
+        save_log('calculate_cashflow_fields', 'ERROR', f"Error calculating cash flow fields for fic_mis_date {fic_mis_date} and n_run_skey {run_skey}: {e}")
+        return 0
