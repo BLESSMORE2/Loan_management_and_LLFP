@@ -3,12 +3,17 @@ from ..models import FCT_Reporting_Lines, ReportColumnConfig
 from django.db.models import Max
 from django.contrib import messages
 import csv
+from datetime import datetime
 from django.http import HttpResponse
-from django.http import HttpResponseRedirect
+from django.http import JsonResponse
+from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def reporting_home(request):
     return render(request, 'reports/reporting.html')
+def list_reports(request):
+    # This view will render the list of available reports
+    return render(request, 'reports/list_reports.html')
 
 def view_results_and_extract(request):
     # Get the latest `fic_mis_date` and `n_run_key`
@@ -129,3 +134,67 @@ def download_report(request):
         writer.writerow([row[column] for column in selected_columns])
 
     return response
+
+
+############################################
+
+
+def ecl_summary_report(request):
+   
+
+    # Main filter form fields
+    fic_mis_date = request.GET.get('fic_mis_date')
+    n_run_key = request.GET.get('n_run_key')
+
+    # Sub-filter form fields
+    v_ccy_code = request.GET.get('v_ccy_code')
+    n_prod_segment = request.GET.get('n_prod_segment')
+    n_prod_type = request.GET.get('n_prod_type')
+    n_stage_descr = request.GET.get('n_stage_descr')
+    n_loan_type = request.GET.get('n_loan_type')
+
+    ecl_data = None  # No data until main filter is applied
+
+    # Only fetch ecl_data when both fic_mis_date and n_run_key are provided
+    if fic_mis_date and n_run_key:
+        ecl_data = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date, n_run_key=n_run_key)
+
+        # Distinct values for sub-filters, ordered alphabetically
+        distinct_currency_codes = ecl_data.values_list('v_ccy_code', flat=True).distinct().order_by('v_ccy_code')
+        distinct_prod_segments = ecl_data.values_list('n_prod_segment', flat=True).distinct().order_by('n_prod_segment')
+        distinct_prod_types = ecl_data.values_list('n_prod_type', flat=True).distinct().order_by('n_prod_type')
+        distinct_stage_descrs = ecl_data.values_list('n_stage_descr', flat=True).distinct().order_by('n_stage_descr')
+        distinct_loan_types = ecl_data.values_list('n_loan_type', flat=True).distinct().order_by('n_loan_type')
+
+        # Apply sub-filters if provided
+        if v_ccy_code:
+            ecl_data = ecl_data.filter(v_ccy_code=v_ccy_code)
+        if n_prod_segment:
+            ecl_data = ecl_data.filter(n_prod_segment=n_prod_segment)
+        if n_prod_type:
+            ecl_data = ecl_data.filter(n_prod_type=n_prod_type)
+        if n_stage_descr:
+            ecl_data = ecl_data.filter(n_stage_descr=n_stage_descr)
+        if n_loan_type:
+            ecl_data = ecl_data.filter(n_loan_type=n_loan_type)
+
+    # Check for an AJAX request to dynamically update the dropdowns
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        field_name = request.GET.get('field')
+        field_value = request.GET.get('value')
+
+        if field_name == 'fic_mis_date':
+            # Get corresponding run keys based on the selected fic_mis_date
+            n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=field_value).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
+            return JsonResponse({'n_run_keys': list(n_run_keys)})
+    
+    context = {
+        'fic_mis_dates': FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct(),
+        'distinct_currency_codes': distinct_currency_codes if fic_mis_date and n_run_key else [],
+        'distinct_prod_segments': distinct_prod_segments if fic_mis_date and n_run_key else [],
+        'distinct_prod_types': distinct_prod_types if fic_mis_date and n_run_key else [],
+        'distinct_stage_descrs': distinct_stage_descrs if fic_mis_date and n_run_key else [],
+        'distinct_loan_types': distinct_loan_types if fic_mis_date and n_run_key else [],
+        'ecl_data': ecl_data,
+    }
+    return render(request, 'reports/ecl_summary_report.html', context)

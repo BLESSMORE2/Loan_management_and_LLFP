@@ -1,6 +1,6 @@
 import concurrent.futures
 from ..models import FSI_CreditRating_Stage, FSI_DPD_Stage_Mapping, FCT_Stage_Determination
-from ..Functions import save_log
+from .save_log import save_log
 
 def determine_stage_for_account(account):
     """

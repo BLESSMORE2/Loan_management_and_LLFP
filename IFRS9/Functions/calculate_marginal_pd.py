@@ -1,12 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from django.db import transaction
-from ..models import fsi_Financial_Cash_Flow_Cal, FSI_PD_Interpolated, Dim_Run
+from django.db.models import F
+from ..models import fsi_Financial_Cash_Flow_Cal, Dim_Run
 from .save_log import save_log
 
 def get_latest_run_skey():
-    """
-    Retrieve the latest_run_skey from Dim_Run table.
-    """
     try:
         run_record = Dim_Run.objects.first()
         if not run_record:
@@ -16,51 +13,42 @@ def get_latest_run_skey():
         raise ValueError("Dim_Run table is missing.")
 
 def update_marginal_pd(fic_mis_date, max_workers=5, batch_size=1000):
-    """
-    Calculates and updates n_per_period_impaired_prob and n_12m_per_period_pd in the 
-    fsi_Financial_Cash_Flow_Cal table.
-    
-    :param fic_mis_date: Financial MIS date used for filtering the records.
-    :param max_workers: Maximum number of threads for parallel processing.
-    :param batch_size: Size of each batch for processing records in bulk updates.
-    """
     try:
         n_run_skey = get_latest_run_skey()
-        cash_flows = fsi_Financial_Cash_Flow_Cal.objects.filter(fic_mis_date=fic_mis_date, n_run_skey=n_run_skey)
-
+        cash_flows = fsi_Financial_Cash_Flow_Cal.objects.filter(
+            fic_mis_date=fic_mis_date, n_run_skey=n_run_skey
+        ).order_by('v_account_number', 'n_cash_flow_bucket_id')
+        
         if not cash_flows.exists():
             save_log('update_marginal_pd', 'INFO', f"No cash flows found for fic_mis_date {fic_mis_date} and run_skey {n_run_skey}.")
             return 0
 
         total_updated_records = 0
+        cash_flow_dict = {}
+        
+        # Populate dictionary with all cash flows for quick access
+        for cash_flow in cash_flows:
+            account_key = (cash_flow.v_account_number, cash_flow.n_cash_flow_bucket_id)
+            cash_flow_dict[account_key] = cash_flow
 
         def process_batch(batch):
             try:
                 updates = []
                 for cash_flow in batch:
+                    prev_key = (cash_flow.v_account_number, cash_flow.n_cash_flow_bucket_id - 1)
+                    previous_cash_flow = cash_flow_dict.get(prev_key)
+
+                    # Calculate n_per_period_impaired_prob
                     if cash_flow.n_cumulative_impaired_prob is not None:
-                        if cash_flow.n_cash_flow_bucket_id > 1:
-                            previous_cash_flow = fsi_Financial_Cash_Flow_Cal.objects.filter(
-                                fic_mis_date=fic_mis_date,
-                                n_run_skey=n_run_skey,
-                                v_account_number=cash_flow.v_account_number,
-                                n_cash_flow_bucket_id=cash_flow.n_cash_flow_bucket_id - 1
-                            ).first()
-                            if previous_cash_flow and previous_cash_flow.n_cumulative_impaired_prob is not None:
-                                cash_flow.n_per_period_impaired_prob = abs(cash_flow.n_cumulative_impaired_prob - previous_cash_flow.n_cumulative_impaired_prob)
+                        if previous_cash_flow and previous_cash_flow.n_cumulative_impaired_prob is not None:
+                            cash_flow.n_per_period_impaired_prob = abs(cash_flow.n_cumulative_impaired_prob - previous_cash_flow.n_cumulative_impaired_prob)
                         else:
                             cash_flow.n_per_period_impaired_prob = abs(cash_flow.n_cumulative_impaired_prob)
 
+                    # Calculate n_12m_per_period_pd
                     if cash_flow.n_12m_cumulative_pd is not None:
-                        if cash_flow.n_cash_flow_bucket_id > 1:
-                            previous_cash_flow = fsi_Financial_Cash_Flow_Cal.objects.filter(
-                                fic_mis_date=fic_mis_date,
-                                n_run_skey=n_run_skey,
-                                v_account_number=cash_flow.v_account_number,
-                                n_cash_flow_bucket_id=cash_flow.n_cash_flow_bucket_id - 1
-                            ).first()
-                            if previous_cash_flow and previous_cash_flow.n_12m_cumulative_pd is not None:
-                                cash_flow.n_12m_per_period_pd = abs(cash_flow.n_12m_cumulative_pd - previous_cash_flow.n_12m_cumulative_pd)
+                        if previous_cash_flow and previous_cash_flow.n_12m_cumulative_pd is not None:
+                            cash_flow.n_12m_per_period_pd = abs(cash_flow.n_12m_cumulative_pd - previous_cash_flow.n_12m_cumulative_pd)
                         else:
                             cash_flow.n_12m_per_period_pd = abs(cash_flow.n_12m_cumulative_pd)
 

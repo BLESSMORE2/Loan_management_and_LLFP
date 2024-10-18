@@ -6,9 +6,7 @@
     <!-- Back Button -->
     <div class="row mb-1">
         <div class="col-12">
-            <a href="javascript:history.back()" class="btn btn-secondary">
-                <i class="bi bi-arrow-left-circle"></i> Back
-            </a>
+            <a href="{% url 'ifrs9_home' %}" class="btn btn-secondary mt-3">Back </a>
         </div>
     </div>
     <h1 class="h3 text-primary text-center">Operations</h1>
@@ -29,7 +27,7 @@
                         <a href="{% url 'process_list' %}" class="btn btn-primary btn-block">Create Run Process</a>
                         <a href="{% url 'execute_process_view' %}" class="btn btn-primary btn-block">Run Execution Process</a>
                         <a href="{% url 'monitor_running_process_view' %}" class="btn btn-primary btn-block">Monitor Running Process</a>
-                        <a href="#" class="btn btn-danger btn-block">Cancel Running Process</a>
+                        <a href="{% url 'running_processes' %}" class="btn btn-danger btn-block">Cancel Running Process</a>
                     </div>
 
                 </div>

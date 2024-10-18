@@ -44,7 +44,7 @@ def pd_interpolation(mis_date):
 
         term_structure_details = Ldn_PD_Term_Structure_Dtl.objects.filter(fic_mis_date=mis_date)
         
-        with ThreadPoolExecutor(max_workers=6) as executor:
+        with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [
                 executor.submit(process_interpolation, detail, pd_model_proj_cap, pd_interpolation_method)
                 for detail in term_structure_details
@@ -82,7 +82,10 @@ def process_interpolation(detail, pd_model_proj_cap, pd_interpolation_method):
         bucket_frequency = 1
         cash_flow_bucket_unit = 'Y'
 
-    FSI_PD_Interpolated.objects.filter(fic_mis_date=detail.fic_mis_date).delete()
+    FSI_PD_Interpolated.objects.filter(
+        fic_mis_date=detail.fic_mis_date,
+        v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id
+    ).delete()
 
     if pd_interpolation_method == 'NL-POISSON':
         interpolate_poisson(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit)
@@ -101,7 +104,7 @@ def interpolate_poisson(detail, bucket_frequency, pd_model_proj_cap, cash_flow_b
     epsilon = 1e-6  # Small value to adjust pd_percent
 
     pd_percent = min(max(pd_percent, epsilon), 1 - epsilon)
-
+    records = []
     for bucket in range(1, periods + 1):
         try:
             marginal_pd = 1 - math.exp(math.log(1 - pd_percent) / bucket_frequency)
@@ -110,18 +113,20 @@ def interpolate_poisson(detail, bucket_frequency, pd_model_proj_cap, cash_flow_b
             return
         cumulative_pd = 1 - (1 - cumulative_pd) * (1 - marginal_pd)
 
-        FSI_PD_Interpolated.objects.create(
-            v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id,
-            fic_mis_date=detail.v_pd_term_structure_id.fic_mis_date,
-            v_int_rating_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'R' else None,
-            v_delq_band_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'D' else None,
-            v_pd_term_structure_type=detail.v_pd_term_structure_id.v_pd_term_structure_type,
-            n_pd_percent=detail.n_pd_percent,
-            n_per_period_default_prob=marginal_pd,
-            n_cumulative_default_prob=cumulative_pd,
-            v_cash_flow_bucket_id=bucket,
-            v_cash_flow_bucket_unit=cash_flow_bucket_unit
-        )
+        records.append(FSI_PD_Interpolated(
+        v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id,
+        fic_mis_date=detail.v_pd_term_structure_id.fic_mis_date,
+        v_int_rating_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'R' else None,
+        v_delq_band_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'D' else None,
+        v_pd_term_structure_type=detail.v_pd_term_structure_id.v_pd_term_structure_type,
+        n_pd_percent=detail.n_pd_percent,
+        n_per_period_default_prob=marginal_pd,
+        n_cumulative_default_prob=cumulative_pd,
+        v_cash_flow_bucket_id=bucket,
+        v_cash_flow_bucket_unit=cash_flow_bucket_unit
+    ))
+    FSI_PD_Interpolated.objects.bulk_create(records)
+
 def interpolate_geometric(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit):
     """
     Perform Geometric interpolation for a given term structure detail.
@@ -129,23 +134,24 @@ def interpolate_geometric(detail, bucket_frequency, pd_model_proj_cap, cash_flow
     periods = bucket_frequency * pd_model_proj_cap
     pd_percent = float(detail.n_pd_percent)
     cumulative_pd = 0
-
+    records = []
     for bucket in range(1, periods + 1):
         marginal_pd = (1 + pd_percent) ** (1 / bucket_frequency) - 1
         cumulative_pd = 1 - (1 - cumulative_pd) * (1 - marginal_pd)
 
-        FSI_PD_Interpolated.objects.create(
-            v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id,
-            fic_mis_date=detail.v_pd_term_structure_id.fic_mis_date,
-            v_int_rating_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'R' else None,
-            v_delq_band_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'D' else None,
-            v_pd_term_structure_type=detail.v_pd_term_structure_id.v_pd_term_structure_type,
-            n_pd_percent=detail.n_pd_percent,
-            n_per_period_default_prob=marginal_pd,
-            n_cumulative_default_prob=cumulative_pd,
-            v_cash_flow_bucket_id=bucket,
-            v_cash_flow_bucket_unit=cash_flow_bucket_unit
-        )
+        records.append(FSI_PD_Interpolated(
+        v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id,
+        fic_mis_date=detail.v_pd_term_structure_id.fic_mis_date,
+        v_int_rating_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'R' else None,
+        v_delq_band_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'D' else None,
+        v_pd_term_structure_type=detail.v_pd_term_structure_id.v_pd_term_structure_type,
+        n_pd_percent=detail.n_pd_percent,
+        n_per_period_default_prob=marginal_pd,
+        n_cumulative_default_prob=cumulative_pd,
+        v_cash_flow_bucket_id=bucket,
+        v_cash_flow_bucket_unit=cash_flow_bucket_unit
+    ))
+    FSI_PD_Interpolated.objects.bulk_create(records)
 
 def interpolate_arithmetic(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit):
     """
@@ -156,22 +162,23 @@ def interpolate_arithmetic(detail, bucket_frequency, pd_model_proj_cap, cash_flo
     pd_percent=float(pd_percent)
     cumulative_pd = 0
     marginal_pd = pd_percent / bucket_frequency
-
+    records = []
     for bucket in range(1, periods + 1):
         cumulative_pd = 1 - (1 - cumulative_pd) * (1 - marginal_pd)
 
-        FSI_PD_Interpolated.objects.create(
-            v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id,
-            fic_mis_date=detail.v_pd_term_structure_id.fic_mis_date,
-            v_int_rating_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'R' else None,
-            v_delq_band_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'D' else None,
-            v_pd_term_structure_type=detail.v_pd_term_structure_id.v_pd_term_structure_type,
-            n_pd_percent=detail.n_pd_percent,
-            n_per_period_default_prob=marginal_pd,
-            n_cumulative_default_prob=cumulative_pd,
-            v_cash_flow_bucket_id=bucket,
-            v_cash_flow_bucket_unit=cash_flow_bucket_unit
-        )
+        records.append(FSI_PD_Interpolated(
+        v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id,
+        fic_mis_date=detail.v_pd_term_structure_id.fic_mis_date,
+        v_int_rating_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'R' else None,
+        v_delq_band_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'D' else None,
+        v_pd_term_structure_type=detail.v_pd_term_structure_id.v_pd_term_structure_type,
+        n_pd_percent=detail.n_pd_percent,
+        n_per_period_default_prob=marginal_pd,
+        n_cumulative_default_prob=cumulative_pd,
+        v_cash_flow_bucket_id=bucket,
+        v_cash_flow_bucket_unit=cash_flow_bucket_unit
+    ))
+    FSI_PD_Interpolated.objects.bulk_create(records)
 
 def interpolate_exponential_decay(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit):
     """
@@ -189,24 +196,25 @@ def interpolate_exponential_decay(detail, bucket_frequency, pd_model_proj_cap, c
 
     cumulative_pd = 0
     population_remaining = 1
-
+    records = []
     for bucket in range(1, periods + 1):
         marginal_pd = round(population_remaining * pd_percent, 4)
         population_remaining = round(population_remaining - marginal_pd, 4)
         cumulative_pd = round(cumulative_pd + marginal_pd, 4)
 
-        FSI_PD_Interpolated.objects.create(
-            v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id,
-            fic_mis_date=detail.v_pd_term_structure_id.fic_mis_date,
-            v_int_rating_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'R' else None,
-            v_delq_band_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'D' else None,
-            v_pd_term_structure_type=detail.v_pd_term_structure_id.v_pd_term_structure_type,
-            n_pd_percent=detail.n_pd_percent,
-            n_per_period_default_prob=marginal_pd,
-            n_cumulative_default_prob=cumulative_pd,
-            v_cash_flow_bucket_id=bucket,
-            v_cash_flow_bucket_unit=cash_flow_bucket_unit
-        )
+        records.append(FSI_PD_Interpolated(
+        v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id,
+        fic_mis_date=detail.v_pd_term_structure_id.fic_mis_date,
+        v_int_rating_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'R' else None,
+        v_delq_band_code=detail.v_credit_risk_basis_cd if detail.v_pd_term_structure_id.v_pd_term_structure_type == 'D' else None,
+        v_pd_term_structure_type=detail.v_pd_term_structure_id.v_pd_term_structure_type,
+        n_pd_percent=detail.n_pd_percent,
+        n_per_period_default_prob=marginal_pd,
+        n_cumulative_default_prob=cumulative_pd,
+        v_cash_flow_bucket_id=bucket,
+        v_cash_flow_bucket_unit=cash_flow_bucket_unit
+        ))
+        FSI_PD_Interpolated.objects.bulk_create(records)
 
         # Stop the loop if the population reaches 0
         if population_remaining <= 0:
@@ -292,11 +300,12 @@ def interpolate_poisson_account(account, bucket_frequency, max_bucket, pd_percen
     Perform Poisson interpolation for a given account-level PD detail.
     """
     cumulative_pd = 0
+    records = []
     for bucket in range(1, max_bucket + 1):
         marginal_pd = 1 - math.exp(math.log(1 - pd_percent) / bucket_frequency)
         cumulative_pd = 1 - (1 - cumulative_pd) * (1 - marginal_pd)
 
-        FSI_PD_Account_Interpolated.objects.create(
+        records.append(FSI_PD_Interpolated(
             fic_mis_date=account.fic_mis_date,
             v_account_number=account.v_account_number,
             n_pd_percent=pd_percent,
@@ -304,18 +313,21 @@ def interpolate_poisson_account(account, bucket_frequency, max_bucket, pd_percen
             n_cumulative_default_prob=cumulative_pd,
             v_cash_flow_bucket_id=bucket,
             v_cash_flow_bucket_unit=cash_flow_bucket_unit
-        )
+        ))
+        FSI_PD_Interpolated.objects.bulk_create(records)
+
 
 def interpolate_geometric_account(account, bucket_frequency, max_bucket, pd_percent, cash_flow_bucket_unit):
     """
     Perform Geometric interpolation for a given account-level PD detail.
     """
     cumulative_pd = 0
+    records = []
     for bucket in range(1, max_bucket + 1):
         marginal_pd = (1 + pd_percent) ** (1 / bucket_frequency) - 1
         cumulative_pd = 1 - (1 - cumulative_pd) * (1 - marginal_pd)
 
-        FSI_PD_Account_Interpolated.objects.create(
+        records.append(FSI_PD_Interpolated(
             fic_mis_date=account.fic_mis_date,
             v_account_number=account.v_account_number,
             n_pd_percent=pd_percent,
@@ -323,7 +335,8 @@ def interpolate_geometric_account(account, bucket_frequency, max_bucket, pd_perc
             n_cumulative_default_prob=cumulative_pd,
             v_cash_flow_bucket_id=bucket,
             v_cash_flow_bucket_unit=cash_flow_bucket_unit
-        )
+        ))
+        FSI_PD_Interpolated.objects.bulk_create(records)
 
 def interpolate_arithmetic_account(account, bucket_frequency, max_bucket, pd_percent, cash_flow_bucket_unit):
     """
@@ -331,10 +344,11 @@ def interpolate_arithmetic_account(account, bucket_frequency, max_bucket, pd_per
     """
     cumulative_pd = 0
     marginal_pd = pd_percent / bucket_frequency
+    records = []
     for bucket in range(1, max_bucket + 1):
         cumulative_pd = 1 - (1 - cumulative_pd) * (1 - marginal_pd)
 
-        FSI_PD_Account_Interpolated.objects.create(
+        records.append(FSI_PD_Interpolated(
             fic_mis_date=account.fic_mis_date,
             v_account_number=account.v_account_number,
             n_pd_percent=pd_percent,
@@ -342,7 +356,8 @@ def interpolate_arithmetic_account(account, bucket_frequency, max_bucket, pd_per
             n_cumulative_default_prob=cumulative_pd,
             v_cash_flow_bucket_id=bucket,
             v_cash_flow_bucket_unit=cash_flow_bucket_unit
-        )
+        ))
+        FSI_PD_Interpolated.objects.bulk_create(records)
 
 def interpolate_exponential_decay_account(account, bucket_frequency, max_bucket, pd_percent, cash_flow_bucket_unit):
     """
@@ -357,13 +372,13 @@ def interpolate_exponential_decay_account(account, bucket_frequency, max_bucket,
 
     cumulative_pd = 0
     population_remaining = 1
-
+    records = []
     for bucket in range(1, max_bucket + 1):
         marginal_pd = round(population_remaining * pd_percent, 4)
         population_remaining = round(population_remaining - marginal_pd, 4)
         cumulative_pd = round(cumulative_pd + marginal_pd, 4)
 
-        FSI_PD_Account_Interpolated.objects.create(
+        records.append(FSI_PD_Interpolated(
             fic_mis_date=account.fic_mis_date,
             v_account_number=account.v_account_number,
             n_pd_percent=pd_percent,
@@ -371,7 +386,8 @@ def interpolate_exponential_decay_account(account, bucket_frequency, max_bucket,
             n_cumulative_default_prob=cumulative_pd,
             v_cash_flow_bucket_id=bucket,
             v_cash_flow_bucket_unit=cash_flow_bucket_unit
-        )
+        ))
+        FSI_PD_Interpolated.objects.bulk_create(records)
 
         if population_remaining <= 0:
             break

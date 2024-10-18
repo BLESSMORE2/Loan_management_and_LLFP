@@ -23,6 +23,7 @@ from ..Functions.populate_stg_determination import *
 from ..Functions.determine_stage import *
 from ..Functions.cooling_period import *
 from ..Functions.update_stage_determination import *
+from ..Functions.calculate_lgd import *
 from ..Functions.assign_acc_pd_level import *
 from ..Functions.assign_acc_pd_term_level import *
 from ..Functions.populate_cashflows import *
@@ -156,6 +157,8 @@ def execute_process_view(request):
 # Handle execution
 # Function to generate the process run ID and count
 
+running_threads = {}
+cancel_flags = {}
 
 def generate_process_run_id(process, execution_date):
     """
@@ -186,6 +189,13 @@ def generate_process_run_id(process, execution_date):
 # Background function for running the process
 def execute_functions_in_background(function_status_entries, process_run_id, mis_date):
     for status_entry in function_status_entries:
+
+        if cancel_flags.get(process_run_id):  # Check if cancellation was requested
+            status_entry.status = 'Cancelled'
+            status_entry.save()
+            print(f"Process {process_run_id} was cancelled.")
+            break  # Stop execution if cancelled
+
         function_name = status_entry.function.function_name
         print(f"Preparing to execute function: {function_name}")
 
@@ -310,6 +320,8 @@ def monitor_running_process_view(request):
             # Determine the overall status based on the function statuses
             if function_statuses.filter(status='Failed').exists():
                 process['overall_status'] = 'Failed'
+            elif function_statuses.filter(status='Cancelled').exists():
+                process['overall_status'] = 'Cancelled'
             elif function_statuses.filter(status='Ongoing').exists():
                 process['overall_status'] = 'Ongoing'
             else:
@@ -351,3 +363,36 @@ def get_process_function_status(request, process_run_id):
     run_processes = FunctionExecutionStatus.objects.filter(process_run_id=process_run_id).order_by('execution_order')  # ordering by execution order
     functions_html = render_to_string('operations/_function_status_list.html', {'run_processes': run_processes})
     return JsonResponse({'html': functions_html})
+
+
+def running_processes_view(request):
+    # Fetch all ongoing (running) processes from the FunctionExecutionStatus model
+    running_processes = FunctionExecutionStatus.objects.filter(status='Ongoing')
+
+    context = {
+        'running_processes': running_processes
+    }
+
+    return render(request, 'operations/running_processes.html', context)
+
+# Updated function to handle cancellation request
+def cancel_running_process(request, process_run_id):
+    # Check if the process is running
+    try:
+        # Get all functions related to the given process_run_id
+        functions = FunctionExecutionStatus.objects.filter(
+            process_run_id=process_run_id,
+            status__in=['Pending', 'Ongoing']
+        )
+        
+        if functions.exists():
+            # Update the status of all "Pending" and "Ongoing" functions to "Cancelled"
+            functions.update(status='Cancelled')
+            messages.success(request, f"Process '{process_run_id}' and all pending functions have been cancelled.")
+        else:
+            messages.info(request, f"No running process found with the given ID '{process_run_id}'.")
+    
+    except FunctionExecutionStatus.DoesNotExist:
+        messages.error(request, f"An error occurred while cancelling the process '{process_run_id}'.")
+
+    return redirect('running_processes')  # Redirect to the running processes list

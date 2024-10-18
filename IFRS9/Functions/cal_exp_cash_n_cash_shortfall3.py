@@ -56,7 +56,7 @@ def process_cashflow_records(records):
     return updated_records
 
 
-def calculate_cashflow_fields(fic_mis_date, batch_size=1000, num_threads=4):
+def calculate_cashflow_fields(fic_mis_date, batch_size=1000, num_threads=10):
     """
     Main function to calculate all required cash flow fields with multithreading and bulk update.
     """

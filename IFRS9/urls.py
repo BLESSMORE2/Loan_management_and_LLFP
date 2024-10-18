@@ -107,9 +107,6 @@ urlpatterns = [
     path('ecl-methodology/choose/', views.choose_ecl_methodology, name='choose_ecl_methodology'),
     path('column_mapping/', column_mapping_view, name='column_mapping'),
 
-    path('reports-home/', views.reporting_home, name='reporting_home'),
-    path('report/', view_results_and_extract, name='view_results_and_extract'),
-    path('download_report/', views.download_report, name='download_report'),
 
     path('operations/', views.operations_view, name='operations'),
     path('processes/', views.process_list, name='process_list'),
@@ -123,6 +120,15 @@ urlpatterns = [
     path('ajax/get_process_function_status/<str:process_run_id>/', views.get_process_function_status, name='get_process_function_status'),
     path('process/monitor/<str:process_run_id>/', views.monitor_specific_process, name='monitor_specific_process'),
     path('get-updated-status-table/', views.get_updated_status_table, name='get_updated_status_table'),
+    path('running-processes/', running_processes_view, name='running_processes'),
+    path('cancel-process/<str:process_run_id>/', cancel_running_process, name='cancel_running_process'),
+
+
+    path('reports-home/', views.reporting_home, name='reporting_home'),
+    path('report/', view_results_and_extract, name='view_results_and_extract'),
+    path('reports/', views.list_reports, name='list_reports'),
+    path('download_report/', views.download_report, name='download_report'),
+    path('ecl-summary-report/', views.ecl_summary_report, name='ecl_summary_report'),
 
     
 
