@@ -3,7 +3,12 @@
 {% block content %}
 <div class="container mx-auto mt-10">
     <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">ECL Summary Report</h1>
-
+    <!-- Back Button -->
+    <div class="row mb-1">
+        <div class="col-12">
+            <a href="{% url 'list_reports' %}" class="btn btn-secondary mt-3">Back </a>
+        </div>
+    </div>
     <!-- Main Filter Section -->
     <form method="POST" action="">
         {% csrf_token %}

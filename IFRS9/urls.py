@@ -131,10 +131,9 @@ urlpatterns = [
     path('ecl-summary-report/', views.ecl_main_filter_view, name='ecl_summary_report'),
     path('ecl-sub-filter/', ecl_sub_filter_view, name='ecl_sub_filter_view'),
     path('export-ecl-report/', views.export_ecl_report_to_excel, name='export_ecl_report_to_excel'),
-
-    
-
-
+    path('ecl-reconciliation-main-filter/', ecl_reconciliation_main_filter_view, name='ecl_reconciliation_main_filter'),
+    path('ecl-reconciliation-sub-filter/', views.ecl_reconciliation_sub_filter_view, name='ecl_reconciliation_sub_filter_view'),
+    path('export-ecl-reconciliation-to-excel/', export_ecl_reconciliation_to_excel, name='export_ecl_reconciliation_to_excel'),
  
 
 

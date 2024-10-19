@@ -4,7 +4,12 @@
 {% block content %}
 <div class="container mx-auto mt-10">
     <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">ECL Summary Report - Grouped by {{ group_by_field }}</h1>
-    
+    <!-- Back Button -->
+    <div class="row mb-1">
+        <div class="col-12">
+            <a href="{% url 'ecl_summary_report' %}" class="btn btn-secondary mt-3">Back </a>
+        </div>
+    </div>
     <!-- Filter Section -->
     <form method="GET" action="">
         <div class="row mb-4" style="background-color: #b4d5f6; padding: 10px; border: 1px solid #ccc;">
@@ -84,6 +89,7 @@
                 <th colspan="1"></th> 
                 <th colspan="2">EXPOSURE AT DEFAULT</th>
                 <th colspan="2">EXPECTED CREDIT LOSS</th>
+                <th colspan="1">Account Count</th>  <!-- Added Account Count Column -->
             </tr>
             <tr style="background-color: #2d5c8e; color: white; text-align: center;">
                 <th>{{ group_by_field }}</th>
@@ -91,6 +97,7 @@
                 <th>EAD Reporting Currency</th>
                 <th>12 Month Reporting ECL </th>
                 <th>Lifetime Reporting ECL </th>
+                <th>Number of Accounts</th> <!-- Added Account Count Column -->
             </tr>
         </thead>
         <tbody>
@@ -101,6 +108,7 @@
                 <td style="text-align: right;">{{ row.n_exposure_at_default_rcy|floatformat:2 }}</td>
                 <td style="text-align: right;">{{ row.n_12m_ecl_rcy|floatformat:2 }}</td>
                 <td style="text-align: right;">{{ row.n_lifetime_ecl_rcy|floatformat:2 }}</td>
+                <td style="text-align: right;">{{ row.n_account_number }}</td> <!-- Account Count -->
             </tr>
             {% endfor %}
         </tbody>
@@ -111,6 +119,7 @@
                 <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_rcy|floatformat:2 }}</td>
                 <td style="text-align: right;">{{ grand_totals.n_12m_ecl_rcy|floatformat:2 }}</td>
                 <td style="text-align: right;">{{ grand_totals.n_lifetime_ecl_rcy|floatformat:2 }}</td>
+                <td style="text-align: right;">{{ grand_totals.n_account_number }}</td> <!-- Grand Total Account Count -->
             </tr>
         </tfoot>
     </table>
