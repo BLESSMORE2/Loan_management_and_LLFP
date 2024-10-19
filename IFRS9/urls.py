@@ -128,7 +128,9 @@ urlpatterns = [
     path('report/', view_results_and_extract, name='view_results_and_extract'),
     path('reports/', views.list_reports, name='list_reports'),
     path('download_report/', views.download_report, name='download_report'),
-    path('ecl-summary-report/', views.ecl_summary_report, name='ecl_summary_report'),
+    path('ecl-summary-report/', views.ecl_main_filter_view, name='ecl_summary_report'),
+    path('ecl-sub-filter/', ecl_sub_filter_view, name='ecl_sub_filter_view'),
+    path('export-ecl-report/', views.export_ecl_report_to_excel, name='export_ecl_report_to_excel'),
 
     
 
