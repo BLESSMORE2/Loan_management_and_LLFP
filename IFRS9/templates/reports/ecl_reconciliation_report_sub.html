@@ -204,6 +204,7 @@
             
         </table>
     </div>
+    <br>
     <form method="POST" action="{% url 'export_ecl_reconciliation_to_excel' %}">
         {% csrf_token %}
         <button class="btn btn-secondary">Download Report as Excel</button>

@@ -607,25 +607,49 @@ def export_ecl_reconciliation_to_excel(request):
     ws = wb.active
     ws.title = "ECL Reconciliation Report"
 
-    # Add the column headers dynamically based on the DataFrame columns
+    # Merge cells for the header to replicate the multi-level column headers
+    ws.merge_cells('B1:E1')
+    ws.merge_cells('F1:I1')
+    ws.merge_cells('J1:L1')
+    ws.merge_cells('M1:N1')
+
+    # Add the main headers
     headers = [
         group_by_field,
-        f"EAD Orig Currency ({fic_mis_date1} - {run_key1})",
-        f"EAD Reporting Currency ({fic_mis_date1} - {run_key1})",
-        f"12 Month ECL ({fic_mis_date1} - {run_key1})",
-        f"Lifetime ECL ({fic_mis_date1} - {run_key1})",
-        f"EAD Orig Currency ({fic_mis_date2} - {run_key2})",
-        f"EAD Reporting Currency ({fic_mis_date2} - {run_key2})",
-        f"12 Month ECL ({fic_mis_date2} - {run_key2})",
-        f"Lifetime ECL ({fic_mis_date2} - {run_key2})",
+        f"FIC MIS Date 1 ({fic_mis_date1}) - Run Key 1 ({run_key1})",
+        "",
+        "",
+        "",
+        f"FIC MIS Date 2 ({fic_mis_date2}) - Run Key 2 ({run_key2})",
+        "",
+        "",
+        "",
+        "Differences",
+        "",
+        "",
+        "Total Accounts",
+        ""
+    ]
+    ws.append(headers)
+
+    # Add sub-headers for the columns under the merged headers
+    sub_headers = [
+        "",
+        "EAD Orig Currency",
+        "EAD Reporting Currency",
+        "12 Month ECL",
+        "Lifetime ECL",
+        "EAD Orig Currency",
+        "EAD Reporting Currency",
+        "12 Month ECL",
+        "Lifetime ECL",
         "EAD Reporting Currency Difference",
         "12 Month ECL Difference",
         "Lifetime ECL Difference",
         f"Total Accounts ({fic_mis_date1})",
-        f"Total Accounts ({fic_mis_date2})",
-        "Status"
+        f"Total Accounts ({fic_mis_date2})"
     ]
-    ws.append(headers)
+    ws.append(sub_headers)
 
     # Add the grouped data to the sheet
     for row in grouped_data:
@@ -644,7 +668,6 @@ def export_ecl_reconciliation_to_excel(request):
             row.get('difference_lifetime_ecl', 0),
             row.get('n_accounts_in_higher', 0),
             row.get('n_accounts_in_lower', 0),
-            row.get('status_ead_ncy', 'No Change'),
         ])
 
     # Add the grand totals at the bottom
@@ -662,8 +685,7 @@ def export_ecl_reconciliation_to_excel(request):
         grand_totals.get('difference_12m_ecl', 0),
         grand_totals.get('difference_lifetime_ecl', 0),
         grand_totals.get('n_accounts_in_higher', 0),
-        grand_totals.get('n_accounts_in_lower', 0),
-        'No Change'
+        grand_totals.get('n_accounts_in_lower', 0)
     ])
 
     # Apply styling to the header row (first row)
@@ -676,24 +698,41 @@ def export_ecl_reconciliation_to_excel(request):
         cell.font = header_font
         cell.alignment = alignment
 
-    # Apply styling to the data rows (zebra striping)
+    # Apply styling to the sub-headers
+    for cell in ws[2]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = alignment
+
+    # Apply zebra striping and numeric alignment for data rows
     light_fill = PatternFill(start_color="d1e7dd", end_color="d1e7dd", fill_type="solid")
-    for row in ws.iter_rows(min_row=2, max_row=len(grouped_data) + 2, min_col=1, max_col=len(headers)):
+    for row in ws.iter_rows(min_row=3, max_row=len(grouped_data) + 3, min_col=1, max_col=len(sub_headers)):
         for cell in row:
+            if isinstance(cell.value, (int, float)):
+                cell.number_format = '#,##0.00'  # Apply number format
+                cell.alignment = Alignment(horizontal="right")
+            else:
+                cell.alignment = Alignment(horizontal="left")
             cell.fill = light_fill
 
     # Apply bold font for the grand total row
-    for cell in ws[len(grouped_data) + 2]:
+    for cell in ws[len(grouped_data) + 3]:
         cell.font = Font(bold=True)
 
-    # Adjust the column widths
-    for column_cells in ws.columns:
-        length = max(len(str(cell.value)) for cell in column_cells if not isinstance(cell, openpyxl.cell.MergedCell))
-        ws.column_dimensions[column_cells[0].column_letter].width = length + 2
+    # Adjust the column widths for better appearance
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter if hasattr(col[0], 'column_letter') else None  # Ensure the first cell has column_letter
+        if column:  # Only adjust if column is valid (not merged cell)
+            for cell in col:
+                if cell.value and not isinstance(cell, openpyxl.cell.cell.MergedCell):  # Skip merged cells
+                    max_length = max(max_length, len(str(cell.value)))
+            adjusted_width = (max_length + 2)
+            ws.column_dimensions[column].width = adjusted_width
 
     # Create an HTTP response with an Excel attachment
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="ecl_reconciliation_report.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="ecl_reconciliation_report_{fic_mis_date1}_{fic_mis_date2}.xlsx"'
 
     # Save the workbook to the response
     wb.save(response)
