@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block content %}
+<div class="container mx-auto mt-10">
+    <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">PD Analysis Report - Grouped by {{ group_by_field }}</h1>
+
+    {% if error_message %}
+        <div class="alert alert-danger text-center">{{ error_message }}</div>
+    {% endif %}
+    <!-- Back Button -->
+    <div class="row mb-1">
+        <div class="col-12">
+            <a href="{% url 'pd_analysis_main_filter' %}" class="btn btn-secondary mt-3">Back</a>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <form method="GET" action="">
+        <div class="row mb-4" style="background-color: #b4d5f6; padding: 10px; border: 1px solid #ccc;">
+            <!-- Product Segment -->
+            <div class="col-md-2" style="width: 15%; min-width: 150px;">
+                <label for="n_prod_segment">Product Segment</label>
+                <select id="n_prod_segment" name="n_prod_segment" class="form-control">
+                    <option value="">-- Select --</option>
+                    {% for segment in distinct_prod_segments %}
+                        <option value="{{ segment }}" {% if selected_prod_segment == segment %}selected{% endif %}>{{ segment }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Product Type -->
+            <div class="col-md-2" style="width: 15%; min-width: 150px;">
+                <label for="n_prod_type">Product Type</label>
+                <select id="n_prod_type" name="n_prod_type" class="form-control">
+                    <option value="">-- Select --</option>
+                    {% for prod_type in distinct_prod_types %}
+                        <option value="{{ prod_type }}" {% if selected_prod_type == prod_type %}selected{% endif %}>{{ prod_type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Stage Description -->
+            <div class="col-md-2" style="width: 15%; min-width: 150px;">
+                <label for="n_stage_descr">Stage Description</label>
+                <select id="n_stage_descr" name="n_stage_descr" class="form-control">
+                    <option value="">-- Select --</option>
+                    {% for stage_descr in distinct_stage_descrs %}
+                        <option value="{{ stage_descr }}" {% if selected_stage_descr == stage_descr %}selected{% endif %}>{{ stage_descr }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Loan Type -->
+            <div class="col-md-2" style="width: 15%; min-width: 150px;">
+                <label for="n_loan_type">Loan Type</label>
+                <select id="n_loan_type" name="n_loan_type" class="form-control">
+                    <option value="">-- Select --</option>
+                    {% for loan_type in distinct_loan_types %}
+                        <option value="{{ loan_type }}" {% if selected_loan_type == loan_type %}selected{% endif %}>{{ loan_type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Apply Button -->
+            <div class="col-md-2" style="width: 10%; display: flex; align-items: flex-end; min-width: 120px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Apply Filter</button>
+            </div>
+        </div>
+
+        <!-- Group By Section -->
+        <div class="row mb-4" style="background-color: #e7f5f0; padding: 10px; border: 1px solid #ccc;">
+            <!-- Group By -->
+            <div class="col-md-6">
+                <label for="group_by_field">Group By</label>
+                <select id="group_by_field" name="group_by_field" class="form-control">
+                    <option value="n_prod_segment" {% if group_by_field == 'n_prod_segment' %}selected{% endif %}>Product Segment</option>
+                    <option value="n_prod_type" {% if group_by_field == 'n_prod_type' %}selected{% endif %}>Product Type</option>
+                    <option value="n_stage_descr" {% if group_by_field == 'n_stage_descr' %}selected{% endif %}>Stage Description</option>
+                    <option value="n_delq_band_code" {% if group_by_field == 'n_delq_band_code' %}selected{% endif %}>Delq Band Code</option>
+                    <option value="n_credit_rating_code" {% if group_by_field == 'n_credit_rating_code' %}selected{% endif %}>Credit Rating Code</option>
+          
+                </select>
+            </div>
+            <div class="col-md-2" style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn btn-success" style="width: 100%;">Apply Group By</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Data Table -->
+    <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+        <thead>
+            <tr style="background-color: #71aeee; color: black; text-align: center;">
+                <th>{{ group_by_field }}</th>
+                <th>12 Month PD Min</th>
+                <th>12 Month PD Max</th>
+                <th>Lifetime PD Min</th>
+                <th>Lifetime PD Max</th>
+                <th>LGD Min</th>
+                <th>LGD Max</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in grouped_data %}
+            <tr>
+                <td>{{ row|get_item:group_by_field }}</td>
+                <td style="text-align: right;">{{ row|get_item:"12 Month PD Min"|floatformat:4 }}</td>
+                <td style="text-align: right;">{{ row|get_item:"12 Month PD Max"|floatformat:4 }}</td>
+                <td style="text-align: right;">{{ row|get_item:"Lifetime PD Min"|floatformat:4 }}</td>
+                <td style="text-align: right;">{{ row|get_item:"Lifetime PD Max"|floatformat:4 }}</td>
+                <td style="text-align: right;">{{ row|get_item:"LGD Min"|floatformat:2 }}</td>
+                <td style="text-align: right;">{{ row|get_item:"LGD Max"|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <form method="POST" action="{% url 'export_pd_report_to_excel' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary" style="background-color: #3a253f; font-weight: bold;">Download Report as Excel</button>
+    </form>
+</div>
+{% endblock %}
