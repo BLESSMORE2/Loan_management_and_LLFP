@@ -737,3 +737,251 @@ def export_ecl_reconciliation_to_excel(request):
     # Save the workbook to the response
     wb.save(response)
     return response
+
+
+CSV_DIR = os.path.join(os.getcwd(), 'csv_files')
+
+@require_http_methods(["GET", "POST"])
+def ecl_account_reconciliation_main_filter_view(request):
+    errors = {}
+
+    # Handle POST request (applying the filter)
+    if request.method == 'POST':
+        # Retrieve selected FIC MIS Dates and Run Keys from the form
+        fic_mis_date1 = request.POST.get('fic_mis_date1')
+        run_key1 = request.POST.get('run_key1')
+        fic_mis_date2 = request.POST.get('fic_mis_date2')
+        run_key2 = request.POST.get('run_key2')
+
+        # Validate that both dates and run keys are provided
+        if not fic_mis_date1:
+            errors['fic_mis_date1'] = 'Please select FIC MIS Date 1.'
+        if not run_key1:
+            errors['run_key1'] = 'Please select Run Key 1.'
+        if not fic_mis_date2:
+            errors['fic_mis_date2'] = 'Please select FIC MIS Date 2.'
+        if not run_key2:
+            errors['run_key2'] = 'Please select Run Key 2.'
+
+        # If no errors, proceed with filter
+        if not errors:
+            request.session['fic_mis_date1'] = fic_mis_date1
+            request.session['run_key1'] = run_key1
+            request.session['fic_mis_date2'] = fic_mis_date2
+            request.session['run_key2'] = run_key2
+
+            # Retrieve filtered data based on the selected main filter values
+            ecl_data1 = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date1, n_run_key=run_key1)
+            ecl_data2 = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date2, n_run_key=run_key2)
+
+            # Convert the filtered data into a DataFrame
+            ecl_data1_df = pd.DataFrame(list(ecl_data1.values()))
+            ecl_data2_df = pd.DataFrame(list(ecl_data2.values()))
+
+            # Ensure both DataFrames use the same set of account numbers
+            common_account_numbers = set(ecl_data1_df['n_account_number']).intersection(ecl_data2_df['n_account_number'])
+            ecl_data1_df = ecl_data1_df[ecl_data1_df['n_account_number'].isin(common_account_numbers)]
+            ecl_data2_df = ecl_data2_df[ecl_data2_df['n_account_number'].isin(common_account_numbers)]
+
+            # Convert date fields to strings for both DataFrames
+            for df in [ecl_data1_df, ecl_data2_df]:
+                if 'fic_mis_date' in df.columns:
+                    df['fic_mis_date'] = df['fic_mis_date'].astype(str)
+                if 'd_maturity_date' in df.columns:
+                    df['d_maturity_date'] = df['d_maturity_date'].astype(str)
+
+            # Create the directory if it doesn't exist
+            if not os.path.exists(CSV_DIR):
+                os.makedirs(CSV_DIR)
+
+            # Save the data as CSV files in the session
+            csv_filename1 = os.path.join(CSV_DIR, f"ecl_data_{fic_mis_date1}_{run_key1}.csv")
+            csv_filename2 = os.path.join(CSV_DIR, f"ecl_data_{fic_mis_date2}_{run_key2}.csv")
+            ecl_data1_df.to_csv(csv_filename1, index=False)
+            ecl_data2_df.to_csv(csv_filename2, index=False)
+            request.session['csv_filename1'] = csv_filename1
+            request.session['csv_filename2'] = csv_filename2
+            request.session.modified = True
+
+            # Redirect to the sub-filter view
+            return redirect('ecl_account_reconciliation_sub_filter')
+
+    # Handle GET request to load FIC MIS Dates
+    fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
+
+    # AJAX request for dynamically updating the Run Key dropdowns
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        field_name = request.GET.get('field')
+        field_value = request.GET.get('value')
+
+        if field_name == 'fic_mis_date':
+            # Fetch run keys corresponding to the selected FIC MIS date
+            n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=field_value).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
+            return JsonResponse({'n_run_keys': list(n_run_keys)})
+
+    # If there are errors or it's a GET request, render the form with any errors
+    return render(request, 'reports/ecl_account_reconciliation_main_filter.html', {
+        'fic_mis_dates': fic_mis_dates,
+        'errors': errors  # Pass the errors to the template
+    })
+
+
+@require_http_methods(["GET", "POST"])
+def ecl_account_reconciliation_sub_filter_view(request):
+    # Retrieve CSV filenames from the session
+    csv_filename_1 = request.session.get('csv_filename1')
+    csv_filename_2 = request.session.get('csv_filename2')
+
+    # Load CSV files into DataFrames
+    ecl_data_df_1 = pd.read_csv(csv_filename_1)
+    ecl_data_df_2 = pd.read_csv(csv_filename_2)
+
+    # Merge data based on account number using an inner join
+    merged_data = pd.merge(
+        ecl_data_df_1,
+        ecl_data_df_2,
+        on=['n_account_number'],
+        how='inner',
+        suffixes=('_prev', '_curr')
+    )
+
+    # Filter based on account number from the request
+    account_number = request.GET.get('n_account_number')
+    if account_number:
+        merged_data = merged_data[merged_data['n_account_number'] == account_number]
+
+    # Pass the merged data to the template (handle single account selection)
+    account_details = {}
+    if not merged_data.empty:
+        account_details = {
+            'date_prev': merged_data['fic_mis_date_prev'].iloc[0],
+            'date_curr': merged_data['fic_mis_date_curr'].iloc[0],
+            'n_account_number': merged_data['n_account_number'].iloc[0],
+            'n_run_key_prev': merged_data['n_run_key_prev'].iloc[0],
+            'n_run_key_curr': merged_data['n_run_key_curr'].iloc[0],
+            'v_ccy_code_prev': merged_data['v_ccy_code_prev'].iloc[0],
+            'v_ccy_code_curr': merged_data['v_ccy_code_curr'].iloc[0],
+            'balance_outstanding_prev': merged_data['n_carrying_amount_rcy_prev'].iloc[0],
+            'balance_outstanding_curr': merged_data['n_carrying_amount_rcy_curr'].iloc[0],
+            'exposure_at_default_prev': merged_data['n_exposure_at_default_rcy_prev'].iloc[0],
+            'exposure_at_default_curr': merged_data['n_exposure_at_default_rcy_curr'].iloc[0],
+            'ifrs_stage_prev': merged_data['n_stage_descr_prev'].iloc[0],
+            'ifrs_stage_curr': merged_data['n_stage_descr_curr'].iloc[0],
+            'twelve_month_pd_prev': merged_data['n_twelve_months_pd_prev'].iloc[0],
+            'twelve_month_pd_curr': merged_data['n_twelve_months_pd_curr'].iloc[0],
+            'lifetime_pd_prev': merged_data['n_lifetime_pd_prev'].iloc[0],
+            'lifetime_pd_curr': merged_data['n_lifetime_pd_curr'].iloc[0],
+            'lgd_prev': merged_data['n_lgd_percent_prev'].iloc[0],
+            'lgd_curr': merged_data['n_lgd_percent_curr'].iloc[0],
+            'twelve_month_ecl_prev': merged_data['n_12m_ecl_rcy_prev'].iloc[0],  # Correct column
+            'twelve_month_ecl_curr': merged_data['n_12m_ecl_rcy_curr'].iloc[0],  # Correct column
+            'lifetime_ecl_prev': merged_data['n_lifetime_ecl_rcy_prev'].iloc[0],  # Correct column
+            'lifetime_ecl_curr': merged_data['n_lifetime_ecl_rcy_curr'].iloc[0],  # Correct column
+            'prod_segment_prev': merged_data['n_prod_segment_prev'].iloc[0],
+            'prod_segment_curr': merged_data['n_prod_segment_curr'].iloc[0],
+        }
+
+    # Get account options for the dropdown
+    account_options = merged_data['n_account_number'].unique().tolist()
+
+    return render(request, 'reports/ecl_account_reconciliation_report.html', {
+        'account_details': account_details,
+        'account_options': account_options,
+        'selected_account': account_number
+    })
+
+
+from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl import Workbook
+from django.http import HttpResponse
+
+@require_http_methods(["GET"])
+def export_full_ecl_report_to_excel(request):
+    # Retrieve CSV filenames from the session
+    csv_filename_1 = request.session.get('csv_filename1')
+    csv_filename_2 = request.session.get('csv_filename2')
+
+    # Load CSV files into DataFrames
+    ecl_data_df_1 = pd.read_csv(csv_filename_1)
+    ecl_data_df_2 = pd.read_csv(csv_filename_2)
+
+    # Merge data based on account number using an inner join
+    merged_data = pd.merge(
+        ecl_data_df_1,
+        ecl_data_df_2,
+        on=['n_account_number'],
+        how='inner',
+        suffixes=('_prev', '_curr')
+    )
+
+    # Get the `fic_mis_date` and `n_run_key` for the two periods
+    fic_mis_date_1 = merged_data['fic_mis_date_prev'].iloc[0]
+    fic_mis_date_2 = merged_data['fic_mis_date_curr'].iloc[0]
+    run_key_1 = merged_data['n_run_key_prev'].iloc[0]
+    run_key_2 = merged_data['n_run_key_curr'].iloc[0]
+
+    # Create a new Excel workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Full ECL Reconciliation Report"
+
+    # Colors for different headers
+    header_color_1 = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")  # Yellow
+    header_color_2 = PatternFill(start_color="A9D08E", end_color="A9D08E", fill_type="solid")  # Green
+
+    # Add column headers for the Excel sheet using fic_mis_date and n_run_key
+    headers = [
+        'Account ID',
+        'Product Segment',
+        'Currency Code',
+        f'Balance Outstanding ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'Balance Outstanding ({fic_mis_date_2} - Run Key {run_key_2})',
+        f'Exposure at Default ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'Exposure at Default ({fic_mis_date_2} - Run Key {run_key_2})',
+        f'IFRS Stage ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'IFRS Stage ({fic_mis_date_2} - Run Key {run_key_2})',
+        f'12 Month PD ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'12 Month PD ({fic_mis_date_2} - Run Key {run_key_2})',
+        f'Lifetime PD ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'Lifetime PD ({fic_mis_date_2} - Run Key {run_key_2})',
+        f'LGD ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'LGD ({fic_mis_date_2} - Run Key {run_key_2})',
+        f'12 Month Reporting ECL ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'12 Month Reporting ECL ({fic_mis_date_2} - Run Key {run_key_2})',
+        f'Lifetime Reporting ECL ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'Lifetime Reporting ECL ({fic_mis_date_2} - Run Key {run_key_2})'
+    ]
+    
+    ws.append(headers)
+
+    # Apply color formatting for the headers
+    for col_num, cell in enumerate(ws[1], start=1):
+        if col_num >= 4 and col_num % 2 == 0:  # Columns related to fic_mis_date_2
+            cell.fill = header_color_2
+        elif col_num >= 4:  # Columns related to fic_mis_date_1
+            cell.fill = header_color_1
+
+    # Add the rows of data to the Excel sheet
+    for index, row in merged_data.iterrows():
+        ws.append([
+            row['n_account_number'],
+            row.get('n_prod_segment_prev', ''),
+            row.get('v_ccy_code_prev', ''),
+            row.get('n_carrying_amount_rcy_prev', ''), row.get('n_carrying_amount_rcy_curr', ''),
+            row.get('n_exposure_at_default_rcy_prev', ''), row.get('n_exposure_at_default_rcy_curr', ''),
+            row.get('n_stage_descr_prev', ''), row.get('n_stage_descr_curr', ''),
+            row.get('n_twelve_months_pd_prev', ''), row.get('n_twelve_months_pd_curr', ''),
+            row.get('n_lifetime_pd_prev', ''), row.get('n_lifetime_pd_curr', ''),
+            row.get('n_lgd_percent_prev', ''), row.get('n_lgd_percent_curr', ''),
+            row.get('n_12m_ecl_rcy_prev', ''), row.get('n_12m_ecl_rcy_curr', ''),
+            row.get('n_lifetime_ecl_rcy_prev', ''), row.get('n_lifetime_ecl_rcy_curr', ''),
+        ])
+
+    # Set up the response as an Excel file download
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="ecl_full_report.xlsx"'
+
+    # Save the workbook to the response
+    wb.save(response)
+
+    return response
