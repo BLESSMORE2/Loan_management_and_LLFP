@@ -177,14 +177,12 @@ STAGE_CHOICES = [
 ]
 
 class StageReassignmentFilterForm(forms.Form):
-    fic_mis_date = forms.DateField(widget=forms.DateInput(attrs={'class': 'form-control', 'placeholder': 'dd/mm/yyyy'}), required=True)
-    n_cust_ref_code = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
-    n_party_type = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
-    n_account_number = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
-    n_partner_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
+    fic_mis_date = forms.DateField(widget=forms.DateInput(attrs={'class': 'form-control'}), required=True)
+    n_cust_ref_code = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Customer ID'}), required=False)
+    n_account_number = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Account Number'}), required=True)
 class StageReassignmentForm(forms.ModelForm):
     class Meta:
-        model = FCT_Stage_Determination
+        model = FCT_Reporting_Lines
         fields = ['n_curr_ifrs_stage_skey']
 
     def save(self, *args, **kwargs):

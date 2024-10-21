@@ -11,6 +11,8 @@ from django.urls import reverse_lazy
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db import transaction
+from django.views.decorators.http import require_http_methods
+
 
 
 
@@ -239,28 +241,30 @@ STAGE_DESCRIPTION_MAP = {
     3: 'Stage 3',
 }
 
-def stage_reassignment(request):
+
+
+
+def stage_reassignment(request): 
     filter_form = StageReassignmentFilterForm(request.GET or None)
     records = None
+
+    # Fetch available FIC MIS Dates in descending order
+    fic_mis_dates = FCT_Reporting_Lines.objects.values_list('fic_mis_date', flat=True).distinct().order_by('-fic_mis_date')
 
     try:
         if filter_form.is_valid():
             fic_mis_date = filter_form.cleaned_data.get('fic_mis_date')
-            n_cust_ref_code = filter_form.cleaned_data.get('n_cust_ref_code')
-            n_party_type = filter_form.cleaned_data.get('n_party_type')
             n_account_number = filter_form.cleaned_data.get('n_account_number')
-            n_partner_name = filter_form.cleaned_data.get('n_partner_name')
+            n_cust_ref_code = filter_form.cleaned_data.get('n_cust_ref_code')
 
             # Filter logic
-            records = FCT_Stage_Determination.objects.filter(fic_mis_date=fic_mis_date)
+            records = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date, n_account_number=n_account_number)
             if n_cust_ref_code:
                 records = records.filter(n_cust_ref_code=n_cust_ref_code)
-            if n_party_type:
-                records = records.filter(n_party_type=n_party_type)
-            if n_account_number:
-                records = records.filter(n_account_number=n_account_number)
-            if n_partner_name:
-                records = records.filter(n_partner_name=n_partner_name)
+
+            # Check if records are empty and set an appropriate message
+            if not records.exists():
+                messages.warning(request, "No data records were retrieved. The query condition returned zero records.")
 
         if request.method == "POST":
             stage_form = StageReassignmentForm(request.POST)
@@ -294,5 +298,6 @@ def stage_reassignment(request):
     return render(request, 'staging/stage_reassignment.html', {
         'records': records,
         'filter_form': filter_form,
-        'stage_form': StageReassignmentForm()
+        'stage_form': StageReassignmentForm(),
+        'fic_mis_dates': fic_mis_dates
     })

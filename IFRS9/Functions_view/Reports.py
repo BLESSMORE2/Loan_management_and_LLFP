@@ -273,7 +273,7 @@ def ecl_sub_filter_view(request):
 def export_ecl_report_to_excel(request):
     # Retrieve the filtered data and grand totals from session
     grouped_data = request.session.get('grouped_data', [])
-    group_by_field = request.session.get('group_by_field', 'v_ccy_code')
+    group_by_field = request.session.get('group_by_field', 'n_stage_descr')
     grand_totals = request.session.get('grand_totals', {})
 
     # Convert the grouped data into a pandas DataFrame
