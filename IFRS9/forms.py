@@ -1,167 +1,453 @@
-import requests
-from concurrent.futures import ThreadPoolExecutor
-from django.db import transaction
-from django.db.models import Sum
-from ..models import DimExchangeRateConf, Ldn_Exchange_Rate, FCT_Reporting_Lines, ReportingCurrency, Dim_Run
-from django.utils import timezone
-from .save_log import save_log
-from decimal import Decimal
+from django import forms
+from .models import *
+from django.forms import inlineformset_factory
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Submit
 
-EXCHANGE_RATE_API_URL = 'https://v6.exchangerate-api.com/v6/'
+class UploadFileForm(forms.Form):
+    file = forms.FileField(label='Select a file', widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
 
-def get_latest_run_skey():
-    """Retrieve the latest_run_skey from Dim_Run table."""
-    try:
-        run_record = Dim_Run.objects.first()
-        if not run_record:
-            save_log('get_latest_run_skey', 'ERROR', "No run key available in Dim_Run table.")
-            return None
-        return run_record.latest_run_skey
-    except Dim_Run.DoesNotExist:
-        save_log('get_latest_run_skey', 'ERROR', "Dim_Run table is missing.")
-        return None
-
-def get_exchange_rates_from_api(base_currency, date=None, use_latest=False):
-    """Fetch exchange rates for a base currency either for the latest or for a specific date (historical)."""
-    try:
-        # Fetch the API key from the config table where use_on_exchange_rates is True
-        exchange_rate_conf = DimExchangeRateConf.objects.filter(use_on_exchange_rates=True).first()
-
-        if not exchange_rate_conf:
-            save_log('get_exchange_rates_from_api', 'ERROR', "API usage is disabled.")
-            return None  # Stop execution if the API usage is disabled
-
-        EXCHANGE_RATE_API_KEY = exchange_rate_conf.EXCHANGE_RATE_API_KEY
-
-        # Determine if we are using latest or historical rates
-        if use_latest:
-            # Use the latest exchange rate
-            url = f"{EXCHANGE_RATE_API_URL}{EXCHANGE_RATE_API_KEY}/latest/{base_currency}"
-        else:
-            # Use historical exchange rate based on the date provided
-            if not date:
-                save_log('get_exchange_rates_from_api', 'ERROR', "Historical rates require a date to be supplied.")
-                return None
-            # Split the date string 'YYYY-MM-DD' to extract year, month, and day
-            year, month, day = date.split('-')
-
-            # Construct the historical API URL (no leading zeros for month and day)
-            url = f"{EXCHANGE_RATE_API_URL}{EXCHANGE_RATE_API_KEY}/history/{base_currency}/{int(year)}/{int(month)}/{int(day)}"
-
-        response = requests.get(url)
-        data = response.json()
-
-        # Log response details for debugging
-        save_log('get_exchange_rates_from_api', 'INFO', f"Response Status: {response.status_code}, Text: {response.text}")
-
-        # Check if the response is valid
-        if response.status_code == 200:
-            if data.get('result') == "success":
-                save_log('get_exchange_rates_from_api', 'INFO', f"Successfully fetched exchange rates for {base_currency} on {date if not use_latest else 'latest'}")
-                return data['conversion_rates']  # Return the full dictionary of rates
-            else:
-                # Handle specific error types from the API
-                error_type = data.get('error-type', 'Unknown error')
-                save_log('get_exchange_rates_from_api', 'ERROR', f"Exchange rate API error: {error_type}")
-                return None
-        else:
-            save_log('get_exchange_rates_from_api', 'ERROR', f"API request failed with status {response.status_code}: {response.text}")
-            return None
-    except Exception as e:
-        save_log('get_exchange_rates_from_api', 'ERROR', f"Error fetching exchange rates from API: {e}")
-        return None
-
-def update_reporting_lines_with_exchange_rate(fic_mis_date):
-    try:
-        # Step 1: Determine if we should use the latest exchange rates or historical
-        exchange_rate_conf = DimExchangeRateConf.objects.filter(use_on_exchange_rates=True).first()
-        if not exchange_rate_conf:
-            save_log('update_reporting_lines_with_exchange_rate', 'ERROR', "No valid exchange rate configuration found.")
-            return "No valid exchange rate configuration found."
-
-        use_latest = exchange_rate_conf.use_latest_exchange_rates
-        use_online = exchange_rate_conf.use_on_exchange_rates
-
-        # Step 2: Get the reporting currency code (target currency for all conversions)
-        reporting_currency = ReportingCurrency.objects.first()  # Assuming there's only one reporting currency
-        if not reporting_currency:
-            save_log('update_reporting_lines_with_exchange_rate', 'ERROR', "No reporting currency defined.")
-            return "Error: No reporting currency defined."
+class ColumnSelectionForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        columns = kwargs.pop('columns', [])
+        super(ColumnSelectionForm, self).__init__(*args, **kwargs)
         
-        target_currency_code = reporting_currency.currency_code.code  # This is the base currency
+        # Dynamically generate a MultipleChoiceField for selecting columns
+        self.fields['selected_columns'] = forms.MultipleChoiceField(
+            choices=[(col, col) for col in columns],
+            widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+            label='Select Columns to Include',
+            initial=columns  # By default, select all columns
+        )
 
-        # Step 3: Fetch exchange rates (latest or historical based on the config)
-        exchange_rates = get_exchange_rates_from_api(target_currency_code, fic_mis_date, use_latest)
+class ColumnMappingForm(forms.Form):
+    def __init__(self, *args, selected_columns=None, model_fields=None, **kwargs):
+        super(ColumnMappingForm, self).__init__(*args, **kwargs)
 
-        if not exchange_rates:
-            save_log('update_reporting_lines_with_exchange_rate', 'ERROR', "Unable to fetch exchange rates.")
-            return "Error: Unable to fetch exchange rates."
-        
-        # Step 4: Delete existing exchange rates for the provided fic_mis_date ONLY IF use_online is True
-        if use_online:
-            Ldn_Exchange_Rate.objects.filter(fic_mis_date=fic_mis_date).delete()
-            save_log('update_reporting_lines_with_exchange_rate', 'INFO', f"Deleted old exchange rates for date {fic_mis_date} due to online data fetch.")
+        if selected_columns and model_fields:
+            for column in selected_columns:
+                self.fields[column] = forms.ChoiceField(
+                    choices=[(field, field) for field in model_fields] + [('unmapped', 'Unmapped')],
+                    required=False
+                )
+                # Set the initial value for each field if provided in kwargs['initial']
+                if 'initial' in kwargs and 'column_mappings' in kwargs['initial']:
+                    if column in kwargs['initial']['column_mappings']:
+                        self.fields[column].initial = kwargs['initial']['column_mappings'][column]
 
-        # Step 5: Save the fetched exchange rates to the database for future use (if historical, use fic_mis_date)
-        exchange_rate_dict = {}
-        for from_currency, exchange_rate in exchange_rates.items():
-            if from_currency != target_currency_code:  # Ensure we are not inverting the base currency
-                inverted_exchange_rate = 1 / Decimal(str(exchange_rate))
-            else:
-                inverted_exchange_rate = Decimal(str(exchange_rate))  # For the base currency itself, keep it as is
+                        
+    def clean(self):
+        cleaned_data = super().clean()
+        column_mappings = {key.replace('column_mapping_', ''): value for key, value in cleaned_data.items()}
+        return {'column_mappings': column_mappings}
 
-            # Insert new exchange rate records after deletion if online fetch
-            Ldn_Exchange_Rate.objects.create(
-                fic_mis_date=fic_mis_date,
-                v_from_ccy_code=from_currency,   # The foreign currency
-                v_to_ccy_code=target_currency_code,  # Always report to the reporting currency
-                n_exchange_rate=inverted_exchange_rate,  # Store the inverted exchange rate
-                d_last_updated=timezone.now()
+class ReportingCurrencyForm(forms.ModelForm):
+    class Meta:
+        model = ReportingCurrency
+        fields = ['currency_code']
+
+
+class CurrencyCodeForm(forms.ModelForm):
+    class Meta:
+        model = CurrencyCode
+        fields = ['code', 'description']  # Fields for Currency Code and Description
+
+    def __init__(self, *args, **kwargs):
+        super(CurrencyCodeForm, self).__init__(*args, **kwargs)
+        # Customizing the widgets for better display
+        self.fields['code'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Enter Currency Code (e.g., USD)',
+        })
+        self.fields['description'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Enter Currency Description (e.g., United States Dollar)',
+        })
+        # Optional: Adding labels for user-friendly display
+        self.fields['code'].label = "Currency Code"
+        self.fields['description'].label = "Currency Description"
+
+class ExchangeRateConfForm(forms.ModelForm):
+    class Meta:
+        model = DimExchangeRateConf
+        fields = ['EXCHANGE_RATE_API_KEY', 'use_on_exchange_rates','use_latest_exchange_rates']
+        labels = {
+            'EXCHANGE_RATE_API_KEY': 'Exchange Rate API Key',
+            'use_on_exchange_rates': 'Use on exchange rates',
+            'use_latest_exchange_rates':'Use Latest Exchange Rates'
+        }
+        widgets = {
+            'EXCHANGE_RATE_API_KEY': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter your Exchange Rate API Key',
+                'required': True  # Making the API key field required
+            }),
+            'use_on_exchange_rates': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'use_latest_exchange_rates': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['EXCHANGE_RATE_API_KEY'].required = True
+
+##########################################################
+class TableSelectForm(forms.Form):
+    table_name = forms.ModelChoiceField(queryset=TableMetadata.objects.filter(table_type='STG'), label="Select Table")
+
+
+def generate_filter_form(model_class):
+    """
+    Dynamically generate a filter form based on the model's fields.
+    """
+    class FilterForm(forms.Form):
+        pass
+
+    for field in model_class._meta.fields:
+        if isinstance(field, forms.CharField):
+            FilterForm.base_fields[field.name] = forms.CharField(
+                required=False,
+                label=field.verbose_name,
+                widget=forms.TextInput(attrs={'class': 'form-control'})
             )
-            exchange_rate_dict[(from_currency, target_currency_code)] = inverted_exchange_rate
+        elif isinstance(field, forms.DateField):
+            FilterForm.base_fields[field.name] = forms.DateField(
+                required=False,
+                label=field.verbose_name,
+                widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+            )
+        elif isinstance(field, forms.IntegerField):
+            FilterForm.base_fields[field.name] = forms.IntegerField(
+                required=False,
+                label=field.verbose_name,
+                widget=forms.NumberInput(attrs={'class': 'form-control'})
+            )
+        elif isinstance(field, forms.FloatField):
+            FilterForm.base_fields[field.name] = forms.FloatField(
+                required=False,
+                label=field.verbose_name,
+                widget=forms.NumberInput(attrs={'class': 'form-control'})
+            )
+        # Add other field types as needed
+
+    return FilterForm
+
+class FilterForm(forms.Form):
+    filter_column = forms.CharField(widget=forms.HiddenInput())
+    filter_value = forms.CharField(widget=forms.HiddenInput())
+
+    ######################
+
+class FSIProductSegmentForm(forms.ModelForm):
+    class Meta:
+        model = FSI_Product_Segment
+        fields = ['v_prod_segment', 'v_prod_type', 'v_prod_desc']
+
+    def __init__(self, *args, **kwargs):
+        super(FSIProductSegmentForm, self).__init__(*args, **kwargs)
+
+        # Fetch distinct values from Ldn_Bank_Product_Info and set choices for the form fields
+        segment_choices = [('', '---')] + [
+            (seg, seg) for seg in Ldn_Bank_Product_Info.objects.values_list('v_prod_segment', flat=True).distinct()
+        ]
+        self.fields['v_prod_segment'] = forms.ChoiceField(choices=segment_choices)
+
+        type_choices = [('', '---')] + [
+            (ptype, ptype) for ptype in Ldn_Bank_Product_Info.objects.values_list('v_prod_type', flat=True).distinct()
+        ]
+        self.fields['v_prod_type'] = forms.ChoiceField(choices=type_choices)
+
+        desc_choices = [('', '---')] + [
+            (pdesc, pdesc) for pdesc in Ldn_Bank_Product_Info.objects.values_list('v_prod_desc', flat=True).distinct()
+        ]
+        self.fields['v_prod_desc'] = forms.ChoiceField(choices=desc_choices)
+
+
+
+
+#staging forms
+class CreditRatingStageForm(forms.ModelForm):
+    class Meta:
+        model = FSI_CreditRating_Stage
+        fields = ['credit_rating', 'stage']
+        widgets = {
+            'credit_rating': forms.TextInput(attrs={'class': 'form-control'}),
+            'stage': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class DPDStageMappingForm(forms.ModelForm):
+    class Meta:
+        model = FSI_DPD_Stage_Mapping
+        fields = ['payment_frequency', 'stage_1_threshold', 'stage_2_threshold', 'stage_3_threshold']
+        widgets = {
+            'payment_frequency': forms.Select(attrs={'class': 'form-control'}),
+            'stage_1_threshold': forms.NumberInput(attrs={'class': 'form-control'}),
+            'stage_2_threshold': forms.NumberInput(attrs={'class': 'form-control'}),
+            'stage_3_threshold': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+class CoolingPeriodDefinitionForm(forms.ModelForm):
+    class Meta:
+        model = CoolingPeriodDefinition
+        fields = ['v_amrt_term_unit', 'n_cooling_period_days']
+        widgets = {
+            'v_amrt_term_unit': forms.Select(attrs={'class': 'form-control'}),
+            'n_cooling_period_days': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+class DimDelinquencyBandForm(forms.ModelForm):
+    class Meta:
+        model = Dim_Delinquency_Band
+        fields = ['n_delq_band_code', 'v_delq_band_desc', 'n_delq_lower_value', 'n_delq_upper_value', 'v_amrt_term_unit']
+        widgets = {
+            'n_delq_band_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'v_delq_band_desc': forms.TextInput(attrs={'class': 'form-control'}),
+            'n_delq_lower_value': forms.NumberInput(attrs={'class': 'form-control'}),
+            'n_delq_upper_value': forms.NumberInput(attrs={'class': 'form-control'}),
+            'v_amrt_term_unit': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+class CreditRatingCodeBandForm(forms.ModelForm):
+    class Meta:
+        model = Credit_Rating_Code_Band
+        fields = ['v_rating_code', 'v_rating_desc']
+        widgets = {
+            'v_rating_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'v_rating_desc': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+STAGE_CHOICES = [
+    (1, 'Stage 1'),
+    (2, 'Stage 2'),
+    (3, 'Stage 3'),
+]
+
+class StageReassignmentFilterForm(forms.Form):
+    fic_mis_date = forms.DateField(widget=forms.DateInput(attrs={'class': 'form-control'}), required=True)
+    n_cust_ref_code = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Customer ID'}), required=False)
+    n_account_number = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Account Number'}), required=True)
+class StageReassignmentForm(forms.ModelForm):
+    class Meta:
+        model = FCT_Reporting_Lines
+        fields = ['n_curr_ifrs_stage_skey']
+
+    def save(self, *args, **kwargs):
+        instance = super().save(commit=False)
+        # Set the stage description based on the current IFRS stage key
+        stage_mapping = {
+            1: 'Stage 1',
+            2: 'Stage 2',
+            3: 'Stage 3'
+        }
+        instance.n_stage_descr = stage_mapping.get(instance.n_curr_ifrs_stage_skey, 'Unknown Stage')
+        instance.save()
+        return instance
+    
+#cashflow interest method
+class InterestMethodForm(forms.ModelForm):
+    class Meta:
+        model = Fsi_Interest_Method
+        fields = ['v_interest_method', 'description']
+        widgets = {
+            'v_interest_method': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control'}),
+        }
+
+
+#probability
+#term structure
+
+class PDTermStructureForm(forms.ModelForm):
+    class Meta:
+        model = Ldn_PD_Term_Structure
+        fields = [
+            'v_pd_term_structure_name', 'v_pd_term_frequency_unit', 
+            'v_pd_term_structure_type', 'v_default_probability_type',
+            'fic_mis_date'
+        ]
+
+        # Define widgets for fields
+        widgets = {
+            'fic_mis_date': forms.DateInput(attrs={'type': 'date'}),  # Using DateInput with 'date' type
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(PDTermStructureForm, self).__init__(*args, **kwargs)
+
+        # Customizing the display of the ForeignKey field 'v_pd_term_structure_name'
+        self.fields['v_pd_term_structure_name'].queryset = FSI_Product_Segment.objects.all()
+        self.fields['v_pd_term_structure_name'].label = "Term Structure Name"
         
-        # Step 6: Update the reporting lines with the fetched exchange rates
-        def process_entry(line):
-            if line.v_ccy_code == target_currency_code:
-                # No conversion is needed, so use NCY value as the RCY value (multiply by 1)
-                line.n_exposure_at_default_rcy = line.n_exposure_at_default_ncy
-                line.n_carrying_amount_rcy = line.n_carrying_amount_ncy
-                line.n_lifetime_ecl_rcy = line.n_lifetime_ecl_ncy
-                line.n_12m_ecl_rcy = line.n_12m_ecl_ncy
-            else:
-                # Fetch the exchange rate for the line's currency
-                exchange_rate_key = (line.v_ccy_code, target_currency_code)
+        # Custom label for the fields
+        self.fields['v_pd_term_frequency_unit'].label = "Term Frequency Unit"
+        self.fields['v_pd_term_frequency_unit'].widget = forms.Select(choices=[
+            ('M', 'Monthly'), ('Q', 'Quarterly'), ('H', 'Half Yearly'), ('Y', 'Yearly'), ('D', 'Daily')
+        ])
 
-                if exchange_rate_key not in exchange_rate_dict:
-                    save_log('update_reporting_lines_with_exchange_rate', 'ERROR', f"Exchange rate not found for {line.v_ccy_code} to {target_currency_code}")
-                    return line
+        self.fields['v_pd_term_structure_type'].label = "Term Structure Type"
+        self.fields['v_pd_term_structure_type'].widget = forms.Select(choices=[
+            ('R', 'Rating'), ('D', 'DPD')
+        ])
 
-                # Apply the exchange rate, converting it to Decimal before multiplication
-                exchange_rate = exchange_rate_dict[exchange_rate_key]
-                line.n_exposure_at_default_rcy = exchange_rate * Decimal(line.n_exposure_at_default_ncy) if line.n_exposure_at_default_ncy else None
-                line.n_carrying_amount_rcy = exchange_rate * Decimal(line.n_carrying_amount_ncy) if line.n_carrying_amount_ncy else None
-                line.n_lifetime_ecl_rcy = exchange_rate * Decimal(line.n_lifetime_ecl_ncy) if line.n_lifetime_ecl_ncy else None
-                line.n_12m_ecl_rcy = exchange_rate * Decimal(line.n_12m_ecl_ncy) if line.n_12m_ecl_ncy else None
+        self.fields['v_default_probability_type'].label = "Default Probability Type"
+        self.fields['v_default_probability_type'].widget = forms.Select(choices=[
+            ('M', 'Marginal'), ('C', 'Cumulative')
+        ])
 
-            return line
+        # Ensure 'fic_mis_date' displays as a date picker
+        self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
+        self.fields['fic_mis_date'].label = "Fic Mis Date"
 
-        # Step 7: Fetch the reporting lines and process them with multi-threading
-        reporting_lines = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date)
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            updated_entries = list(executor.map(process_entry, reporting_lines))
+class PDTermStructureDtlForm(forms.ModelForm):
+    class Meta:
+        model = Ldn_PD_Term_Structure_Dtl
+        fields = ['v_pd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd', 'n_pd_percent']
 
-        # Step 8: Bulk update the reporting lines and log the number of rows updated
-        with transaction.atomic():
-            updated_count = FCT_Reporting_Lines.objects.bulk_update(updated_entries, [
-                'n_exposure_at_default_rcy', 'n_carrying_amount_rcy', 'n_lifetime_ecl_rcy', 'n_12m_ecl_rcy'
-            ])
+    def __init__(self, *args, **kwargs):
+        super(PDTermStructureDtlForm, self).__init__(*args, **kwargs)
 
-        save_log('update_reporting_lines_with_exchange_rate', 'INFO', f"Successfully updated {len(updated_entries)} reporting lines for MIS date {fic_mis_date}.")
-        return f"Update successful. {len(updated_entries)} rows updated."
+        # Populate v_credit_risk_basis_cd choices from Dim_Delinquency_Band
+        delinquency_bands = Dim_Delinquency_Band.objects.values_list('n_delq_band_code', 'v_delq_band_desc')
+        self.fields['v_credit_risk_basis_cd'] = forms.ChoiceField(choices=[(code, f"{desc}") for code, desc in delinquency_bands])
 
-    except ValueError as ve:
-        save_log('update_reporting_lines_with_exchange_rate', 'ERROR', f"Value Error: {str(ve)}")
-        return f"Value Error: {str(ve)}"
-    except Exception as e:
-        save_log('update_reporting_lines_with_exchange_rate', 'ERROR', f"Error during update: {str(e)}")
-        return f"Error during update: {str(e)}"
+        self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
+
+class PDTermStructureDtlRatingForm(forms.ModelForm):
+    class Meta:
+        model = Ldn_PD_Term_Structure_Dtl
+        fields = ['v_pd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd', 'n_pd_percent']
+
+    def __init__(self, *args, **kwargs):
+        super(PDTermStructureDtlRatingForm, self).__init__(*args, **kwargs)
+        self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
+        # Populate v_credit_risk_basis_cd from Credit_Rating_Code_Band
+        self.fields['v_credit_risk_basis_cd'].queryset = Credit_Rating_Code_Band.objects.all()
+        self.fields['v_credit_risk_basis_cd'].label = "Rating Code"
+        self.fields['v_credit_risk_basis_cd'].widget = forms.Select(choices=[
+            (rating.v_rating_code, f"{rating.v_rating_code} - {rating.v_rating_desc}") 
+            for rating in Credit_Rating_Code_Band.objects.all()
+        ])
+
+class LGDTermStructureForm(forms.ModelForm):
+    class Meta:
+        model = Ldn_LGD_Term_Structure
+        fields = ['v_lgd_term_structure_name', 'n_lgd_percent', 'fic_mis_date']
+
+        widgets = {
+            'fic_mis_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(LGDTermStructureForm, self).__init__(*args, **kwargs)
+        # Customize form labels if necessary
+        self.fields['v_lgd_term_structure_name'].label = "LGD Term Structure Name"
+        self.fields['n_lgd_percent'].label = "LGD Percent"
+        self.fields['fic_mis_date'].label = "FIC MIS Date"
+
+class CollateralLGDForm(forms.ModelForm):
+    class Meta:
+        model = CollateralLGD
+        fields = ['can_calculate_lgd']
+        labels = {
+            'can_calculate_lgd': 'Can we calculate LGD using Collateral?',
+        }
+        widgets = {
+            'can_calculate_lgd': forms.CheckboxInput(),
+        }
+
+class InterpolationMethodForm(forms.ModelForm):
+    class Meta:
+        model = FSI_LLFP_APP_PREFERENCES
+        fields = [
+            'pd_interpolation_method', 
+            'n_pd_model_proj_cap', 
+            'interpolation_level'
+        ]
+    
+    def __init__(self, *args, **kwargs):
+        super(InterpolationMethodForm, self).__init__(*args, **kwargs)
+        self.fields['pd_interpolation_method'].label = "PD Interpolation Method"
+        self.fields['n_pd_model_proj_cap'].label = "PD Model Projection Cap"
+        self.fields['interpolation_level'].label = "Interpolation Level"
+
+
+from .models import ECLMethod
+
+class ECLMethodForm(forms.ModelForm):
+    class Meta:
+        model = ECLMethod
+        fields = ['method_name', 'uses_discounting']
+
+class ColumnMappingForm(forms.Form):
+    def __init__(self, *args, selected_columns=None, model_fields=None, **kwargs):
+        super(ColumnMappingForm, self).__init__(*args, **kwargs)
+
+        # Create a field for each selected column, with options to map it to a model field or mark it as 'unmapped'
+        if selected_columns and model_fields:
+            for column in selected_columns:
+                self.fields[column] = forms.ChoiceField(
+                    choices=[(field, field) for field in model_fields] + [('unmapped', 'Unmapped')],
+                    required=False
+                )
+                # Set the initial value for each field if provided in kwargs['initial']
+                if 'initial' in kwargs and 'column_mappings' in kwargs['initial']:
+                    if column in kwargs['initial']['column_mappings']:
+                        self.fields[column].initial = kwargs['initial']['column_mappings'][column]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Construct a dictionary to map selected columns to their chosen model fields
+        column_mappings = {key: value for key, value in cleaned_data.items() if value != 'unmapped'}
+        return {'column_mappings': column_mappings}
+    
+
+# Form for Process
+# Process Form
+class ProcessForm(forms.ModelForm):
+    class Meta:
+        model = Process
+        fields = ['process_name']
+        widgets = {
+            'process_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Process Name'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(ProcessForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Save Process'))
+
+# RunProcess Form
+class RunProcessForm(forms.ModelForm):
+    class Meta:
+        model = RunProcess
+        fields = ['function', 'order']
+        widgets = {
+            'function': forms.Select(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Execution Order'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(RunProcessForm, self).__init__(*args, **kwargs)
+        self.fields['function'].empty_label = "Select Function"
+        self.helper = FormHelper(self)
+        self.helper.form_method = 'post'
+
+    # Custom validation (example)
+    def clean(self):
+        cleaned_data = super().clean()
+        order = cleaned_data.get('order')
+
+        # Validation: Order should be a positive number
+        if order <= 0:
+            raise forms.ValidationError("Order must be a positive number.")
+        if order <= 0:
+            raise forms.ValidationError("Order must be a positive number.")
+
+        return cleaned_data
