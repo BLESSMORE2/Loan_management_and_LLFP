@@ -2,65 +2,60 @@
 
 {% block content %}
 <div class="container py-4">
-    <h1 class="h3 text-primary text-center mb-4">Check Exchange Rate (Base: USD)</h1>
-
+    <h1 class="h3 text-primary text-center mb-4">View Exchange Rate</h1>
     <!-- Back Button -->
     <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-outline-secondary mb-3">
-        <i class="fas fa-arrow-left"></i> Back
+        <i class="fas fa-arrow-left"></i> Back 
     </a>
 
-    <!-- Form to Enter Currency Code -->
-    <div class="card shadow-sm">
+    <!-- Card for entering currency codes and base currency -->
+    <div class="card shadow-lg mt-4">
         <div class="card-body">
-            <form method="POST" class="d-flex justify-content-center">
+            <form method="POST">
                 {% csrf_token %}
-                <div class="input-group mb-3">
-                    <input type="text" name="currency_code" class="form-control" placeholder="Enter Currency Code (e.g. EUR, GBP)" required>
-                    <button type="submit" class="btn btn-primary">Check Rate</button>
+                <div class="form-group">
+                    <label for="baseCurrency" class="form-label">Base Currency</label>
+                    <select name="base_currency" id="baseCurrency" class="form-control">
+                        {% for currency in currencies %}
+                        <option value="{{ currency.code }}" {% if currency.code == base_currency %}selected{% endif %}>
+                            {{ currency.code }} - {{ currency.description }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <small class="form-text text-muted text-center">
-                    The rate will be shown against USD as the base currency.
-                </small>
+
+                <div class="form-group mt-3">
+                    <label for="targetCurrency" class="form-label">Target Currency Code</label>
+                    <input type="text" name="currency_code" id="targetCurrency" class="form-control" placeholder="Enter currency code (e.g.,ZWL, EUR, JPY)" required>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary me-3">Check Exchange Rate</button>
+                    <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
             </form>
+
+            <!-- Display the exchange rate result if available -->
+            {% if exchange_rate %}
+            <div class="mt-4">
+                <h5>Exchange Rate Result</h5>
+                <p><strong>{{ exchange_rate.base_currency }}</strong> to <strong>{{ exchange_rate.currency_code }}</strong> is: <strong>{{ exchange_rate.rate }}</strong></p>
+            </div>
+            {% endif %}
+
+            <!-- Display error message if any -->
+            {% if error %}
+            <div class="alert alert-danger mt-4">{{ error }}</div>
+            {% endif %}
         </div>
     </div>
-
-    <!-- Display Results -->
-    {% if exchange_rate %}
-    <div class="alert alert-success mt-4 text-center">
-        <h5>Exchange Rate for {{ exchange_rate.currency_code }}:</h5>
-        <p><strong>1 {{ exchange_rate.currency_code }} = {{ exchange_rate.rate }} USD</strong></p>
-    </div>
-    {% elif error %}
-    <div class="alert alert-danger mt-4 text-center">
-        <h5>Error:</h5>
-        <p>{{ error }}</p>
-    </div>
-    {% endif %}
 </div>
 
-<!-- Custom Styling -->
+<!-- Custom Styles -->
 <style>
-    .card {
-        padding: 1.5rem;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        border: none;
-    }
-
-    .input-group input {
-        border-radius: 0.375rem 0 0 0.375rem;
-    }
-
-    .input-group button {
-        border-radius: 0 0.375rem 0.375rem 0;
-    }
-
-    .alert {
-        font-size: 1.125rem;
-    }
-
-    small.form-text {
-        margin-top: 0.5rem;
+    .form-group label {
+        font-weight: bold;
     }
 </style>
+
 {% endblock %}

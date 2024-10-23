@@ -30,6 +30,7 @@ from .Functions.cal_forward_exposure4 import *
 from .Functions.calculate_marginal_pd import *
 from .Functions.populate_reporting_table import *
 from .Functions.calculate_ecl import *
+from .Functions.cal_reporting_currency import *
 from .Functions_view.Staging import *
 from .Functions_view.Cashflow_projections import *
 from .Functions_view.Probability_conf import *
@@ -46,8 +47,8 @@ from datetime import datetime
 def dashboard_view(request):
     # Example data for financial graphs
     mis_date = '2024-06-30'  # Input date in 'YYYY-MM-DD' format
-    status = perform_interpolation(mis_date)
-    print(status) 
+    #status = perform_interpolation(mis_date)
+    #print(status) 
     #project_cash_flows(mis_date)
     #update_cash_flows_with_ead(mis_date)
     # # #Insert records into FCT_Stage_Determination with the numeric date
@@ -70,6 +71,7 @@ def dashboard_view(request):
     #calculate_forward_loss_fields(mis_date)
     #populate_fct_reporting_lines(mis_date)
     #calculate_ecl_based_on_method(mis_date)
+    update_reporting_lines_with_exchange_rate(mis_date)
 
     return render(request, 'dashboard.html')
 

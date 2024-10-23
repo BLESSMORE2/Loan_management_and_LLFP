@@ -29,6 +29,7 @@
                 <tr>
                     <th>API Key</th>
                     <th>Use on Exchange Rates</th>
+                    <th>Use Latest Exchange Rates</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -37,6 +38,7 @@
                 <tr>
                     <td>{{ conf.EXCHANGE_RATE_API_KEY }}</td>
                     <td>{{ conf.use_on_exchange_rates|yesno:"Yes,No" }}</td>
+                    <td>{{ conf.use_latest_exchange_rates|yesno:"Yes,No" }}</td>
                     <td>
                         <a href="{% url 'edit_exchange_rate_conf' conf.id %}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-edit"></i> Edit

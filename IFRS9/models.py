@@ -265,6 +265,7 @@ class Ldn_Exchange_Rate(models.Model):
 class DimExchangeRateConf(models.Model):
     EXCHANGE_RATE_API_KEY = models.CharField(max_length=255)
     use_on_exchange_rates = models.BooleanField(default=False)
+    use_latest_exchange_rates = models.BooleanField(default=False)
     class Meta:
         db_table = 'dim_exchange_rate_conf'
 

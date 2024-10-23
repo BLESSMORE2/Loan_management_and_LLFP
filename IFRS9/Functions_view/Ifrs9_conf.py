@@ -271,19 +271,23 @@ def delete_exchange_rate_conf(request, id):
 def view_exchange_rate(request):
     exchange_rate = None
     error = None
+    base_currency = None
+    currencies = CurrencyCode.objects.all()  # Fetch all available base currencies from the CurrencyCode table
 
     if request.method == 'POST':
         currency_code = request.POST.get('currency_code').upper()
+        base_currency = request.POST.get('base_currency')
 
         # Example API call for exchange rate (replace with actual API and key)
-        api_url = f"https://api.exchangerate-api.com/v4/latest/{currency_code}"
+        api_url = f"https://api.exchangerate-api.com/v4/latest/{base_currency}"
         response = requests.get(api_url)
 
         if response.status_code == 200:
             data = response.json()
             exchange_rate = {
+                'base_currency': base_currency,
                 'currency_code': currency_code,
-                'rate': data['rates'].get('USD', 'Rate not found')  # Assuming you want to get the USD exchange rate
+                'rate': data['rates'].get(currency_code, 'Rate not found')  # Use dynamic base currency
             }
         else:
             error = "Invalid currency code or API error."
@@ -291,4 +295,6 @@ def view_exchange_rate(request):
     return render(request, 'ifrs9_conf/exchange_rate.html', {
         'exchange_rate': exchange_rate,
         'error': error,
+        'currencies': currencies,  # Pass the currencies to the template for the dropdown
+        'base_currency': base_currency
     })
