@@ -121,6 +121,7 @@ urlpatterns = [
     path('configure-exchange-rate-process/', configure_exchange_rate_process, name='configure_exchange_rate_process'),
     path('configure-exchange-rate-process/edit/<int:id>/', edit_exchange_rate_conf, name='edit_exchange_rate_conf'),
     path('configure-exchange-rate-process/delete/<int:id>/', delete_exchange_rate_conf, name='delete_exchange_rate_conf'),
+    path('view-exchange-rate/', views.view_exchange_rate, name='view_exchange_rate'),
 
 
 

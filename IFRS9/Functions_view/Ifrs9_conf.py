@@ -4,6 +4,8 @@ from ..forms import ECLMethodForm, ColumnMappingForm,ReportingCurrencyForm,Curre
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
+from django.http import JsonResponse
+import requests
 
 
 
@@ -265,3 +267,28 @@ def delete_exchange_rate_conf(request, id):
         messages.success(request, 'Configuration deleted successfully!')
         return redirect('configure_exchange_rate_process')
     return render(request, 'ifrs9_conf/delete_exchange_rate_conf.html', {'exchange_conf': exchange_conf})
+
+def view_exchange_rate(request):
+    exchange_rate = None
+    error = None
+
+    if request.method == 'POST':
+        currency_code = request.POST.get('currency_code').upper()
+
+        # Example API call for exchange rate (replace with actual API and key)
+        api_url = f"https://api.exchangerate-api.com/v4/latest/{currency_code}"
+        response = requests.get(api_url)
+
+        if response.status_code == 200:
+            data = response.json()
+            exchange_rate = {
+                'currency_code': currency_code,
+                'rate': data['rates'].get('USD', 'Rate not found')  # Assuming you want to get the USD exchange rate
+            }
+        else:
+            error = "Invalid currency code or API error."
+
+    return render(request, 'ifrs9_conf/exchange_rate.html', {
+        'exchange_rate': exchange_rate,
+        'error': error,
+    })

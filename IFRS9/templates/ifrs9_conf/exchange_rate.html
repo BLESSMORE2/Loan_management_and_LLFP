@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center mb-4">Check Exchange Rate (Base: USD)</h1>
+
+    <!-- Back Button -->
+    <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+
+    <!-- Form to Enter Currency Code -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="POST" class="d-flex justify-content-center">
+                {% csrf_token %}
+                <div class="input-group mb-3">
+                    <input type="text" name="currency_code" class="form-control" placeholder="Enter Currency Code (e.g. EUR, GBP)" required>
+                    <button type="submit" class="btn btn-primary">Check Rate</button>
+                </div>
+                <small class="form-text text-muted text-center">
+                    The rate will be shown against USD as the base currency.
+                </small>
+            </form>
+        </div>
+    </div>
+
+    <!-- Display Results -->
+    {% if exchange_rate %}
+    <div class="alert alert-success mt-4 text-center">
+        <h5>Exchange Rate for {{ exchange_rate.currency_code }}:</h5>
+        <p><strong>1 {{ exchange_rate.currency_code }} = {{ exchange_rate.rate }} USD</strong></p>
+    </div>
+    {% elif error %}
+    <div class="alert alert-danger mt-4 text-center">
+        <h5>Error:</h5>
+        <p>{{ error }}</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Custom Styling -->
+<style>
+    .card {
+        padding: 1.5rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        border: none;
+    }
+
+    .input-group input {
+        border-radius: 0.375rem 0 0 0.375rem;
+    }
+
+    .input-group button {
+        border-radius: 0 0.375rem 0.375rem 0;
+    }
+
+    .alert {
+        font-size: 1.125rem;
+    }
+
+    small.form-text {
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
