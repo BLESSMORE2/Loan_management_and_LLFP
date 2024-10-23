@@ -106,6 +106,23 @@ urlpatterns = [
 
     path('ecl-methodology/choose/', views.choose_ecl_methodology, name='choose_ecl_methodology'),
     path('column_mapping/', column_mapping_view, name='column_mapping'),
+    path('configure-reporting-currency/', configure_reporting_currency, name='configure_reporting_currency'),
+    #path('define-currency-codes/', define_currency_codes_view, name='define_currency_codes'),
+    path('reporting-currencies/', reporting_currency_list, name='reporting_currency_list'),
+    path('reporting-currencies/create/', reporting_currency_create, name='reporting_currency_create'),
+    path('reporting-currencies/edit/<int:currency_id>/', reporting_currency_edit, name='reporting_currency_edit'),
+    path('reporting-currencies/delete/<int:currency_id>/', reporting_currency_delete, name='reporting_currency_delete'),
+    path('define-reporting-currency/', define_currency_view, name='define_reporting_currency_view'),
+    path('define-reporting-currency/create/', define_currency_create, name='define_reporting_currency_create'),
+    path('define-reporting-currency/edit/<int:currency_id>/', define_currency_edit, name='define_reporting_currency_edit'),
+    path('define-reporting-currency/delete/<int:currency_id>/', define_currency_delete, name='define_reporting_currency_delete'),
+    path('configure-exchange-rates-options/', configure_exchange_rates_options, name='configure_exchange_rates_options'),
+    path('supported-currencies/', supported_currencies, name='supported_currencies'),
+    path('configure-exchange-rate-process/', configure_exchange_rate_process, name='configure_exchange_rate_process'),
+    path('configure-exchange-rate-process/edit/<int:id>/', edit_exchange_rate_conf, name='edit_exchange_rate_conf'),
+    path('configure-exchange-rate-process/delete/<int:id>/', delete_exchange_rate_conf, name='delete_exchange_rate_conf'),
+
+
 
 
     path('operations/', views.operations_view, name='operations'),

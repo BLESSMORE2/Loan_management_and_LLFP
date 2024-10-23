@@ -257,9 +257,16 @@ class Ldn_Exchange_Rate(models.Model):
     v_from_ccy_code = models.CharField(max_length=3)
     v_to_ccy_code = models.CharField(max_length=3)
     n_exchange_rate = models.DecimalField(max_digits=15, decimal_places=6)
+    d_last_updated= models.DateField(default=timezone.now)
     class Meta:
         db_table = 'Ldn_exchange_rate'
         unique_together = ('fic_mis_date', 'v_from_ccy_code', 'v_to_ccy_code')
+
+class DimExchangeRateConf(models.Model):
+    EXCHANGE_RATE_API_KEY = models.CharField(max_length=255)
+    use_on_exchange_rates = models.BooleanField(default=False)
+    class Meta:
+        db_table = 'dim_exchange_rate_conf'
 
 class Ldn_Expected_Cashflow(models.Model):
     fic_mis_date = models.DateField()
@@ -580,6 +587,7 @@ class FCT_Reporting_Lines(models.Model):
     n_rate_chg_min = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
     
     # Grouped exposure and balance fields
+    v_ccy_code = models.CharField(max_length=3, null=True, blank=True)
     n_carrying_amount_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
     n_carrying_amount_rcy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
     n_exposure_at_default_ncy = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
@@ -608,7 +616,7 @@ class FCT_Reporting_Lines(models.Model):
     n_remain_no_of_pmts = models.BigIntegerField(null=True, blank=True)
     n_amrt_term = models.IntegerField(null=True, blank=True)
     v_amrt_term_unit = models.CharField(max_length=1, null=True, blank=True)
-    v_ccy_code = models.CharField(max_length=3, null=True, blank=True)
+    
     
     # Stage-related fields
     n_delinquent_days = models.IntegerField(null=True, blank=True)
@@ -753,5 +761,36 @@ class Log(models.Model):
         verbose_name_plural = 'Logs'
         ordering = ['-timestamp']
         db_table = 'dim_massage_logs'
+
+class CurrencyCode(models.Model):
+
+    code = models.CharField(max_length=3, unique=True)  # Currency code, e.g., USD, EUR
+    description = models.CharField(max_length=100)  # Description of the currency, e.g., United States Dollar
+
+    class Meta:
+        db_table = 'dim_currency_code'
+
+    def __str__(self):
+        return f"{self.code} - {self.description}"
+    
+
+class ReportingCurrency(models.Model):
+ 
+    currency_code = models.ForeignKey(CurrencyCode, on_delete=models.CASCADE)
+
+    def clean(self):
+        if ReportingCurrency.objects.exists() and not self.pk:
+            raise ValidationError("You can only have one reporting currency.")
+
+    def save(self, *args, **kwargs):
+        self.clean()  # Validate the rule before saving
+        super(ReportingCurrency, self).save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'dim_reporting_currency_code'
+
+    def __str__(self):
+        return self.currency_code.code
+
 
  

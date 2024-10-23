@@ -41,7 +41,54 @@ class ColumnMappingForm(forms.Form):
         column_mappings = {key.replace('column_mapping_', ''): value for key, value in cleaned_data.items()}
         return {'column_mappings': column_mappings}
 
+class ReportingCurrencyForm(forms.ModelForm):
+    class Meta:
+        model = ReportingCurrency
+        fields = ['currency_code']
 
+
+class CurrencyCodeForm(forms.ModelForm):
+    class Meta:
+        model = CurrencyCode
+        fields = ['code', 'description']  # Fields for Currency Code and Description
+
+    def __init__(self, *args, **kwargs):
+        super(CurrencyCodeForm, self).__init__(*args, **kwargs)
+        # Customizing the widgets for better display
+        self.fields['code'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Enter Currency Code (e.g., USD)',
+        })
+        self.fields['description'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Enter Currency Description (e.g., United States Dollar)',
+        })
+        # Optional: Adding labels for user-friendly display
+        self.fields['code'].label = "Currency Code"
+        self.fields['description'].label = "Currency Description"
+
+class ExchangeRateConfForm(forms.ModelForm):
+    class Meta:
+        model = DimExchangeRateConf
+        fields = ['EXCHANGE_RATE_API_KEY', 'use_on_exchange_rates']
+        labels = {
+            'EXCHANGE_RATE_API_KEY': 'Exchange Rate API Key',
+            'use_on_exchange_rates': 'Use on exchange rates',
+        }
+        widgets = {
+            'EXCHANGE_RATE_API_KEY': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter your Exchange Rate API Key',
+                'required': True  # Making the API key field required
+            }),
+            'use_on_exchange_rates': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['EXCHANGE_RATE_API_KEY'].required = True
 
 ##########################################################
 class TableSelectForm(forms.Form):
