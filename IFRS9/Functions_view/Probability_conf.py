@@ -2,22 +2,27 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from ..models import *
 from ..forms import *
+from django.contrib.auth.decorators import login_required
 
 
+@login_required
 def probability_configuration(request):
     return render(request, 'probability_conf/probability_configuration.html')
 
+@login_required
 def pd_modelling(request):
     # Logic for PD Modelling
     return render(request, 'probability_conf/pd_modelling.html')
 
 
 # List all segments
+@login_required
 def segment_list(request):
     segments = FSI_Product_Segment.objects.all()
     return render(request, 'probability_conf/segment_list.html', {'segments': segments})
 
 # Create new segment
+@login_required
 def segment_create(request):
     if request.method == "POST":
         form = FSIProductSegmentForm(request.POST)
@@ -34,6 +39,7 @@ def segment_create(request):
     return render(request, 'probability_conf/segment_form.html', {'form': form})
 
 # Update existing segment
+@login_required
 def segment_edit(request, segment_id):
     segment = get_object_or_404(FSI_Product_Segment, pk=segment_id)
     if request.method == "POST":
@@ -51,6 +57,7 @@ def segment_edit(request, segment_id):
     return render(request, 'probability_conf/segment_form.html', {'form': form})
 
 # Delete segment
+@login_required
 def segment_delete(request, segment_id):
     segment = get_object_or_404(FSI_Product_Segment, pk=segment_id)
     if request.method == "POST":
@@ -60,11 +67,13 @@ def segment_delete(request, segment_id):
     return render(request, 'probability_conf/segment_confirm_delete.html', {'segment': segment})
 
 # List all PD Term Structures
+@login_required
 def pd_term_structure_list(request):
     term_structures = Ldn_PD_Term_Structure.objects.all()
     return render(request, 'probability_conf/pd_term_structure_list.html', {'term_structures': term_structures})
 
 # Create new PD Term Structure
+@login_required
 def pd_term_structure_create(request):
     if request.method == "POST":
         form = PDTermStructureForm(request.POST)
@@ -82,6 +91,7 @@ def pd_term_structure_create(request):
     return render(request, 'probability_conf/pd_term_structure_form.html', {'form': form})
 
 # Edit PD Term Structure
+@login_required
 def pd_term_structure_edit(request, term_id):
     term_structure = get_object_or_404(Ldn_PD_Term_Structure, pk=term_id)
     if request.method == "POST":
@@ -100,6 +110,7 @@ def pd_term_structure_edit(request, term_id):
     return render(request, 'probability_conf/pd_term_structure_form.html', {'form': form})
 
 # Delete PD Term Structure
+@login_required
 def pd_term_structure_delete(request, term_id):
     term_structure = get_object_or_404(Ldn_PD_Term_Structure, pk=term_id)
     if request.method == "POST":
@@ -111,6 +122,7 @@ def pd_term_structure_delete(request, term_id):
 
 ####################################33
 # List all Delinquent Based PD Terms
+@login_required
 def delinquent_pd_list(request):
     pd_term_details = Ldn_PD_Term_Structure_Dtl.objects.filter(
         v_pd_term_structure_id__v_pd_term_structure_type='D'  # Filter for 'Rating' type PD Term Structures
@@ -118,6 +130,7 @@ def delinquent_pd_list(request):
     return render(request, 'probability_conf/delinquent_pd_list.html', {'pd_term_details': pd_term_details})
 
 # Create a new PD Term Detail
+@login_required
 def delinquent_pd_create(request):
     if request.method == 'POST':
         form = PDTermStructureDtlForm(request.POST)
@@ -133,6 +146,7 @@ def delinquent_pd_create(request):
     return render(request, 'probability_conf/delinquent_pd_form.html', {'form': form})
 
 # Edit PD Term Detail
+@login_required
 def delinquent_pd_edit(request, term_id):
     pd_term_detail = get_object_or_404(Ldn_PD_Term_Structure_Dtl, pk=term_id)
     if request.method == 'POST':
@@ -149,6 +163,7 @@ def delinquent_pd_edit(request, term_id):
     return render(request, 'probability_conf/delinquent_pd_form.html', {'form': form})
 
 # Delete PD Term Detail
+@login_required
 def delinquent_pd_delete(request, term_id):
     pd_term_detail = get_object_or_404(Ldn_PD_Term_Structure_Dtl, pk=term_id)
     if request.method == 'POST':
@@ -159,6 +174,7 @@ def delinquent_pd_delete(request, term_id):
 
 # List View
 # List all Rating Based PD Terms
+@login_required
 def rating_pd_list(request):
     pd_term_details = Ldn_PD_Term_Structure_Dtl.objects.filter(
         v_pd_term_structure_id__v_pd_term_structure_type='R'  # Filter for 'Rating' type PD Term Structures
@@ -167,6 +183,7 @@ def rating_pd_list(request):
     return render(request, 'probability_conf/rating_pd_list.html', {'pd_term_details': pd_term_details})
 
 # Create a new Rating Based PD Term Detail
+@login_required
 def rating_pd_create(request):
     if request.method == 'POST':
         form = PDTermStructureDtlRatingForm(request.POST)
@@ -182,6 +199,7 @@ def rating_pd_create(request):
     return render(request, 'probability_conf/rating_pd_form.html', {'form': form})
 
 # Edit Rating Based PD Term Detail
+@login_required
 def rating_pd_edit(request, term_id):
     pd_term_detail = get_object_or_404(Ldn_PD_Term_Structure_Dtl, pk=term_id)
     if request.method == 'POST':
@@ -198,6 +216,7 @@ def rating_pd_edit(request, term_id):
     return render(request, 'probability_conf/rating_pd_form.html', {'form': form})
 
 # Delete Rating Based PD Term Detail
+@login_required
 def rating_pd_delete(request, term_id):
     pd_term_detail = get_object_or_404(Ldn_PD_Term_Structure_Dtl, pk=term_id)
     if request.method == 'POST':
@@ -209,11 +228,13 @@ def rating_pd_delete(request, term_id):
 
 
 # List all Interpolation Methods
+@login_required
 def interpolation_method_list(request):
     preferences = FSI_LLFP_APP_PREFERENCES.objects.all()
     return render(request, 'probability_conf/interpolation_method_list.html', {'preferences': preferences})
 
 # Create a new Interpolation Method
+@login_required
 def interpolation_method_create(request):
     if request.method == 'POST':
         form = InterpolationMethodForm(request.POST)
@@ -229,6 +250,7 @@ def interpolation_method_create(request):
     return render(request, 'probability_conf/interpolation_method_form.html', {'form': form})
 
 # Edit Interpolation Method
+@login_required
 def interpolation_method_edit(request, method_id):
     interpolation_method = get_object_or_404(FSI_LLFP_APP_PREFERENCES, pk=method_id)
     if request.method == 'POST':
@@ -245,6 +267,7 @@ def interpolation_method_edit(request, method_id):
     return render(request, 'probability_conf/interpolation_method_form.html', {'form': form})
 
 # Delete Interpolation Method
+@login_required
 def interpolation_method_delete(request, method_id):
     interpolation_method = get_object_or_404(FSI_LLFP_APP_PREFERENCES, pk=method_id)
     if request.method == 'POST':

@@ -1,7 +1,4 @@
 from django.shortcuts import render,redirect, get_object_or_404
-import matplotlib.pyplot as plt
-import io
-import urllib, base64
 from ..models import *
 from ..forms import *
 import pandas as pd
@@ -14,20 +11,21 @@ from django.core.exceptions import ValidationError
 from django.db import connection
 from django.apps import apps
 from django.forms import modelform_factory
-from django.forms import modelformset_factory
-from django.db.models import Value
-from django.db.models.functions import Coalesce
 from django.db.models import Q
 import csv
-from django.http import HttpResponse
-from django.http import JsonResponse
+from django.http import HttpResponse,JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 
 
+
+@login_required
 def data_management(request):
     return render(request, 'load_data/data_management.html')
-class FileUploadView(View):
+
+class FileUploadView(LoginRequiredMixin,View):
     template_name = 'load_data/file_upload_step1.html'
 
     def get(self, request):
@@ -84,7 +82,7 @@ class FileUploadView(View):
             'stg_tables': TableMetadata.objects.filter(table_type='STG')
         })
     
-class ColumnSelectionView(View):
+class ColumnSelectionView(LoginRequiredMixin,View):
     template_name = 'load_data/file_upload_step2.html'
 
     def get(self, request):
@@ -105,7 +103,7 @@ class ColumnSelectionView(View):
         return render(request, self.template_name, {'form': form})
 
 ########################
-class ColumnMappingView(View):
+class ColumnMappingView(LoginRequiredMixin,View):
     template_name = 'load_data/file_upload_step3.html'
 
     def get(self, request):
@@ -197,9 +195,9 @@ class ColumnMappingView(View):
 #####################
 
 
-from datetime import datetime
 
-class SubmitToDatabaseView(View):
+
+class SubmitToDatabaseView(LoginRequiredMixin,View):
     template_name = 'load_data/file_upload_step4.html'
 
     def get(self, request):
@@ -314,6 +312,7 @@ class SubmitToDatabaseView(View):
 
     
     ####################################################################
+@login_required
 def data_entry_view(request):
     table_form = TableSelectForm(request.POST or None)
     data_form = None
@@ -352,7 +351,7 @@ def data_entry_view(request):
 
 
 ########################################################
-class TableSelectForm(forms.Form):
+class TableSelectForm(LoginRequiredMixin,forms.Form):
     table_name = forms.ChoiceField(choices=[], label="Select Table")
 
     def __init__(self, *args, **kwargs):
@@ -361,6 +360,7 @@ class TableSelectForm(forms.Form):
         app_models = apps.get_app_config('IFRS9').get_models()
         self.fields['table_name'].choices = [(model._meta.model_name, model._meta.verbose_name) for model in app_models]
 
+@login_required
 def view_data(request):
     table_form = TableSelectForm(request.GET or None)
     data = None
@@ -389,6 +389,7 @@ def view_data(request):
     })
 
 
+@login_required
 def filter_table(request, table_name):
     table_form = TableSelectForm(initial={'table_name': table_name})
     data = None
@@ -460,6 +461,7 @@ def filter_table(request, table_name):
         'table_name': table_name,
     })
 
+@login_required
 def download_data(request, table_name):
     try:
         # Get the model class dynamically using the table name
@@ -518,7 +520,7 @@ def download_data(request, table_name):
         return redirect('view_data')
 
 
-
+@login_required
 def edit_row(request, table_name, row_id):
     try:
         # Get the model class dynamically
@@ -542,6 +544,7 @@ def edit_row(request, table_name, row_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
+@login_required
 def delete_row(request, table_name, row_id):
     try:
         # Get the model class dynamically
@@ -559,3 +562,18 @@ def delete_row(request, table_name, row_id):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
+
+# INSERT INTO `tablemetadata` (`table_name`, `description`, `table_type`) VALUES 
+# ('Ldn_Bank_Product_Info', 'Information about bank products offered.', 'STG'),
+# ('Ldn_Customer_Info', 'Details about customers including personal and contact information.', 'STG'),
+# ('Ldn_Customer_Rating_Detail', 'Customer credit ratings and assessment details.', 'STG'),
+# ('Ldn_Exchange_Rate', 'Exchange rates for various currencies.', 'STG'),
+# ('Ldn_Expected_Cashflow', 'Expected cash flows based on financial models.', 'STG'),
+# ('Ldn_Financial_Instrument', 'Details of financial instruments used in transactions.', 'STG'),
+# ('Ldn_LGD_Term_Structure', 'Loss Given Default (LGD) term structure details.', 'STG'),
+# ('Ldn_PD_Term_Structure', 'Probability of Default (PD) term structure details.', 'STG'),
+# ('Ldn_PD_Term_Structure_Dtl', 'Detailed probability of default term structures.', 'STG'),
+# ('Ldn_Payment_Schedule', 'Schedule of payments related to financial products.', 'STG');

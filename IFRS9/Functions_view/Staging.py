@@ -7,30 +7,36 @@ import  base64
 from ..models import *
 from ..forms import *
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db import transaction
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 
 
 
 
+@login_required
 def configure_stages(request):
     title = "Stage Determination and Classification Configurations"
     return render(request, 'staging/staging_options.html', {'title': title})
 
+@login_required
 def staging_using_ratings(request):
     title = "Staging Using Ratings"
     # Additional logic for staging using ratings
     return render(request, 'staging/staging_using_ratings.html', {'title': title})
 
+@login_required
 def staging_using_delinquent_days(request):
     title = "Staging Using Delinquent Days"
     # Additional logic for staging using delinquent days
     return render(request, 'staging/staging_using_delinquent_days.html', {'title': title})
+
 
 def stage_reassignment(request):
     title = "Stage Reassignment"
@@ -39,7 +45,7 @@ def stage_reassignment(request):
 
 
 # List View for all credit ratings
-class CreditRatingStageListView(ListView):
+class CreditRatingStageListView(LoginRequiredMixin,ListView):
     model = FSI_CreditRating_Stage
     template_name = 'staging/staging_using_ratings.html'  # Points to your template
     context_object_name = 'ratings'  # This will be used in the template
@@ -51,7 +57,7 @@ class CreditRatingStageListView(ListView):
 
 
 # Create View for adding a new credit rating
-class CreditRatingStageCreateView(CreateView):
+class CreditRatingStageCreateView(LoginRequiredMixin,CreateView):
     model = FSI_CreditRating_Stage
     form_class = CreditRatingStageForm
     template_name = 'staging/creditrating_stage_form.html'
@@ -63,7 +69,7 @@ class CreditRatingStageCreateView(CreateView):
         return super().form_valid(form)
 
 # Update View for editing a credit rating
-class CreditRatingStageUpdateView(UpdateView):
+class CreditRatingStageUpdateView(LoginRequiredMixin,UpdateView):
     model = FSI_CreditRating_Stage
     form_class = CreditRatingStageForm
     template_name = 'staging/creditrating_stage_form.html'
@@ -74,7 +80,7 @@ class CreditRatingStageUpdateView(UpdateView):
         return super().form_valid(form)
 
 # Delete View for deleting a credit rating
-class CreditRatingStageDeleteView(DeleteView):
+class CreditRatingStageDeleteView(LoginRequiredMixin,DeleteView):
     model = FSI_CreditRating_Stage
     template_name = 'staging/creditrating_stage_confirm_delete.html'
     success_url = reverse_lazy('creditrating_stage_list')
@@ -87,13 +93,13 @@ class CreditRatingStageDeleteView(DeleteView):
 
 ##DPD staging
 
-class DPDStageMappingListView(ListView):
+class DPDStageMappingListView(LoginRequiredMixin,ListView):
     model = FSI_DPD_Stage_Mapping
     template_name = 'staging/dpd_stage_mapping_list.html'
     context_object_name = 'dpd_mappings'
     paginate_by = 10
 
-class DPDStageMappingCreateView(CreateView):
+class DPDStageMappingCreateView(LoginRequiredMixin,CreateView):
     model = FSI_DPD_Stage_Mapping
     fields = ['payment_frequency', 'stage_1_threshold', 'stage_2_threshold', 'stage_3_threshold']
     template_name = 'staging/dpd_stage_mapping_form.html'
@@ -103,7 +109,7 @@ class DPDStageMappingCreateView(CreateView):
         messages.success(self.request, "DPD Stage Mapping successfully added!")
         return super().form_valid(form)
 
-class DPDStageMappingUpdateView(UpdateView):
+class DPDStageMappingUpdateView(LoginRequiredMixin,UpdateView):
     model = FSI_DPD_Stage_Mapping
     fields = ['payment_frequency', 'stage_1_threshold', 'stage_2_threshold', 'stage_3_threshold']
     template_name = 'staging/dpd_stage_mapping_form.html'
@@ -113,7 +119,7 @@ class DPDStageMappingUpdateView(UpdateView):
         messages.success(self.request, "DPD Stage Mapping successfully updated!")
         return super().form_valid(form)
 
-class DPDStageMappingDeleteView(DeleteView):
+class DPDStageMappingDeleteView(LoginRequiredMixin,DeleteView):
     model = FSI_DPD_Stage_Mapping
     template_name = 'staging/dpd_stage_mapping_confirm_delete.html'
     success_url = reverse_lazy('dpd_stage_mapping_list')
@@ -125,13 +131,13 @@ class DPDStageMappingDeleteView(DeleteView):
 
 #CoolingPeriodDefinition
 
-class CoolingPeriodDefinitionListView(ListView):
+class CoolingPeriodDefinitionListView(LoginRequiredMixin,ListView):
     model = CoolingPeriodDefinition
     template_name = 'staging/cooling_period_definition_list.html'
     context_object_name = 'cooling_periods'
     paginate_by = 10
 
-class CoolingPeriodDefinitionCreateView(CreateView):
+class CoolingPeriodDefinitionCreateView(LoginRequiredMixin,CreateView):
     model = CoolingPeriodDefinition
     form_class = CoolingPeriodDefinitionForm
     template_name = 'staging/cooling_period_definition_form.html'
@@ -141,7 +147,7 @@ class CoolingPeriodDefinitionCreateView(CreateView):
         messages.success(self.request, "Cooling period definition successfully added!")
         return super().form_valid(form)
 
-class CoolingPeriodDefinitionUpdateView(UpdateView):
+class CoolingPeriodDefinitionUpdateView(LoginRequiredMixin,UpdateView):
     model = CoolingPeriodDefinition
     form_class = CoolingPeriodDefinitionForm
     template_name = 'staging/cooling_period_definition_form.html'
@@ -151,7 +157,7 @@ class CoolingPeriodDefinitionUpdateView(UpdateView):
         messages.success(self.request, "Cooling period definition successfully updated!")
         return super().form_valid(form)
 
-class CoolingPeriodDefinitionDeleteView(DeleteView):
+class CoolingPeriodDefinitionDeleteView(LoginRequiredMixin,DeleteView):
     model = CoolingPeriodDefinition
     template_name = 'staging/cooling_period_definition_confirm_delete.html'
     success_url = reverse_lazy('cooling_period_definitions')
@@ -160,13 +166,13 @@ class CoolingPeriodDefinitionDeleteView(DeleteView):
         messages.success(self.request, "Cooling period definition successfully deleted!")
         return super().delete(request, *args, **kwargs)
     
-class DimDelinquencyBandListView(ListView):
+class DimDelinquencyBandListView(LoginRequiredMixin,ListView):
     model = Dim_Delinquency_Band
     template_name = 'staging/dim_delinquency_band_list.html'
     context_object_name = 'delinquency_bands'
     paginate_by = 10
 
-class DimDelinquencyBandCreateView(CreateView):
+class DimDelinquencyBandCreateView(LoginRequiredMixin,CreateView):
     model = Dim_Delinquency_Band
     form_class = DimDelinquencyBandForm
     template_name = 'staging/dim_delinquency_band_form.html'
@@ -176,7 +182,7 @@ class DimDelinquencyBandCreateView(CreateView):
         messages.success(self.request, "Delinquency band successfully added!")
         return super().form_valid(form)
 
-class DimDelinquencyBandUpdateView(UpdateView):
+class DimDelinquencyBandUpdateView(LoginRequiredMixin,UpdateView):
     model = Dim_Delinquency_Band
     form_class = DimDelinquencyBandForm
     template_name = 'staging/dim_delinquency_band_form.html'
@@ -186,7 +192,7 @@ class DimDelinquencyBandUpdateView(UpdateView):
         messages.success(self.request, "Delinquency band successfully updated!")
         return super().form_valid(form)
 
-class DimDelinquencyBandDeleteView(DeleteView):
+class DimDelinquencyBandDeleteView(LoginRequiredMixin,DeleteView):
     model = Dim_Delinquency_Band
     template_name = 'staging/dim_delinquency_band_confirm_delete.html'
     success_url = reverse_lazy('dim_delinquency_band_list')
@@ -195,13 +201,13 @@ class DimDelinquencyBandDeleteView(DeleteView):
         messages.success(self.request, "Delinquency band successfully deleted!")
         return super().delete(request, *args, **kwargs)
     
-class CreditRatingCodeBandListView(ListView):
+class CreditRatingCodeBandListView(LoginRequiredMixin,ListView):
     model = Credit_Rating_Code_Band
     template_name = 'staging/credit_rating_code_band_list.html'
     context_object_name = 'rating_codes'
     paginate_by = 10
 
-class CreditRatingCodeBandCreateView(CreateView):
+class CreditRatingCodeBandCreateView(LoginRequiredMixin,CreateView):
     model = Credit_Rating_Code_Band
     form_class = CreditRatingCodeBandForm
     template_name = 'staging/credit_rating_code_band_form.html'
@@ -211,7 +217,7 @@ class CreditRatingCodeBandCreateView(CreateView):
         messages.success(self.request, "Credit rating code successfully added!")
         return super().form_valid(form)
 
-class CreditRatingCodeBandUpdateView(UpdateView):
+class CreditRatingCodeBandUpdateView(LoginRequiredMixin,UpdateView):
     model = Credit_Rating_Code_Band
     form_class = CreditRatingCodeBandForm
     template_name = 'staging/credit_rating_code_band_form.html'
@@ -221,7 +227,7 @@ class CreditRatingCodeBandUpdateView(UpdateView):
         messages.success(self.request, "Credit rating code successfully updated!")
         return super().form_valid(form)
 
-class CreditRatingCodeBandDeleteView(DeleteView):
+class CreditRatingCodeBandDeleteView(LoginRequiredMixin,DeleteView):
     model = Credit_Rating_Code_Band
     template_name = 'staging/credit_rating_code_band_confirm_delete.html'
     success_url = reverse_lazy('credit_rating_code_band_list')
@@ -243,7 +249,7 @@ STAGE_DESCRIPTION_MAP = {
 
 
 
-
+@login_required
 def stage_reassignment(request): 
     filter_form = StageReassignmentFilterForm(request.GET or None)
     records = None

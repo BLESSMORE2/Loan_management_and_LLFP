@@ -24,4 +24,5 @@ urlpatterns = [
    
     path('admin/', admin.site.urls),
     path('', include('IFRS9.urls')),  # Include URLs from the IFRS9 app
+    path('', include('Users.urls')),
 ]

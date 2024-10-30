@@ -6,27 +6,33 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.http import JsonResponse
 import requests
+from django.contrib.auth.decorators import login_required
 
 
 
 
+@login_required
 def ifrs9_configuration(request):
     # Render the IFRS9 Configuration template
     return render(request, 'ifrs9_conf/ifrs9_configuration.html')
 
+@login_required
 def ecl_methodology_options(request):
     # This view shows the two options: Documentation and Choose Methodology
     return render(request, 'ifrs9_conf/ecl_methodology_options.html')
 
+@login_required
 def ecl_methodology_documentation(request):
     # View to show the ECL methodology documentation
     return render(request, 'ifrs9_conf/ecl_methodology_documentation.html') 
+
  # You would create a separate documentation page
+@login_required
 def ecl_methodology_list(request):
     methods = ECLMethod.objects.all()
     return render(request, 'ifrs9_conf/ecl_methodology_list.html', {'methods': methods})
 
-
+@login_required
 def add_ecl_method(request):
     if request.method == 'POST':
         form = ECLMethodForm(request.POST)
@@ -45,6 +51,7 @@ def add_ecl_method(request):
     return render(request, 'ifrs9_conf/add_ecl_method.html', {'form': form})
 
 
+@login_required
 def edit_ecl_method(request, method_id):
     method = get_object_or_404(ECLMethod, pk=method_id)
     if request.method == 'POST':
@@ -60,6 +67,7 @@ def edit_ecl_method(request, method_id):
     
     return render(request, 'ifrs9_conf/edit_ecl_method.html', {'form': form})
 
+@login_required
 def delete_ecl_method(request, method_id):
     method = get_object_or_404(ECLMethod, pk=method_id)
     
@@ -70,13 +78,13 @@ def delete_ecl_method(request, method_id):
 
     return render(request, 'ifrs9_conf/delete_ecl_method.html', {'method': method})
 
-
+@login_required
 def choose_ecl_methodology(request):
     # View to configure the ECL methodology
     return render(request, 'ifrs9_conf/choose_ecl_methodology.html')  
 
 
-
+@login_required
 def column_mapping_view(request):
     # Dynamically retrieve all field names from the model
     model_fields = [field.name for field in FCT_Reporting_Lines._meta.get_fields()]
@@ -111,6 +119,7 @@ def column_mapping_view(request):
         'selected_columns': selected_columns
     })
 
+@login_required
 def configure_reporting_currency(request):
     """
     View for configuring the reporting currency.
@@ -119,12 +128,14 @@ def configure_reporting_currency(request):
     return render(request, 'ifrs9_conf/configure_reporting_currency.html')
 
 # List all Reporting Currencies
+@login_required
 def reporting_currency_list(request):
     reporting_currencies = ReportingCurrency.objects.select_related('currency_code').all()
     return render(request, 'ifrs9_conf/reporting_currency_list.html', {'reporting_currencies': reporting_currencies})
 
 # Create a new Reporting Currency
 # Create a new Reporting Currency (only if there isn't one already)
+@login_required
 def reporting_currency_create(request):
     # Check if a reporting currency already exists
     if ReportingCurrency.objects.exists():
@@ -145,6 +156,7 @@ def reporting_currency_create(request):
     return render(request, 'ifrs9_conf/reporting_currency_form.html', {'form': form})
 
 # Edit an existing Reporting Currency
+@login_required
 def reporting_currency_edit(request, currency_id):
     reporting_currency = get_object_or_404(ReportingCurrency, pk=currency_id)
     if request.method == 'POST':
@@ -161,6 +173,7 @@ def reporting_currency_edit(request, currency_id):
     return render(request, 'ifrs9_conf/reporting_currency_form.html', {'form': form})
 
 # Delete an existing Reporting Currency
+@login_required
 def reporting_currency_delete(request, currency_id):
     reporting_currency = get_object_or_404(ReportingCurrency, pk=currency_id)
     if request.method == 'POST':
@@ -170,7 +183,9 @@ def reporting_currency_delete(request, currency_id):
     return render(request, 'ifrs9_conf/reporting_currency_confirm_delete.html', {'reporting_currency': reporting_currency})
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 # List Reporting Currency (since there should only be one)
+@login_required
 def define_currency_view(request):
     currencies_list = CurrencyCode.objects.all()  # Fetch all defined currencies
 
@@ -191,6 +206,7 @@ def define_currency_view(request):
     })
 
 # Create Reporting Currency (only if there isn't one already)
+@login_required
 def define_currency_create(request):
     
     
@@ -208,6 +224,7 @@ def define_currency_create(request):
     return render(request, 'ifrs9_conf/reporting_currency_form.html', {'form': form})
 
 # Edit the existing Reporting Currency
+@login_required
 def define_currency_edit(request, currency_id):
     reporting_currency = get_object_or_404(CurrencyCode, pk=currency_id)  # Fetch from CurrencyCode table
     if request.method == 'POST':
@@ -224,6 +241,7 @@ def define_currency_edit(request, currency_id):
     return render(request, 'ifrs9_conf/reporting_currency_form.html', {'form': form})
 
 # Delete the existing Reporting Currency
+@login_required
 def define_currency_delete(request, currency_id):
     reporting_currency = get_object_or_404(CurrencyCode, pk=currency_id)  # Fetch from CurrencyCode table
     if request.method == 'POST':
@@ -233,20 +251,24 @@ def define_currency_delete(request, currency_id):
     return render(request, 'ifrs9_conf/define_reporting_currency_confirm_delete.html', {'reporting_currency': reporting_currency})
 
 
+@login_required
 def configure_exchange_rates_options(request):
     return render(request, 'ifrs9_conf/configure_exchange_rates_options.html')
 
+@login_required
 def supported_currencies(request):
     # This is a static view, so no need to fetch anything from the database
     return render(request, 'ifrs9_conf/supported_currencies.html')
 
 
 # List and Display view
+@login_required
 def configure_exchange_rate_process(request):
     exchange_conf_list = DimExchangeRateConf.objects.all()
     return render(request, 'ifrs9_conf/configure_exchange_rate_process.html', {'exchange_conf_list': exchange_conf_list})
 
 # Edit view
+@login_required
 def edit_exchange_rate_conf(request, id):
     exchange_conf = get_object_or_404(DimExchangeRateConf, id=id)
     if request.method == 'POST':
@@ -260,6 +282,7 @@ def edit_exchange_rate_conf(request, id):
     return render(request, 'ifrs9_conf/edit_exchange_rate_conf.html', {'form': form})
 
 # Delete view
+@login_required
 def delete_exchange_rate_conf(request, id):
     exchange_conf = get_object_or_404(DimExchangeRateConf, id=id)
     if request.method == 'POST':
@@ -268,6 +291,7 @@ def delete_exchange_rate_conf(request, id):
         return redirect('configure_exchange_rate_process')
     return render(request, 'ifrs9_conf/delete_exchange_rate_conf.html', {'exchange_conf': exchange_conf})
 
+@login_required
 def view_exchange_rate(request):
     exchange_rate = None
     error = None

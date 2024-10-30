@@ -119,6 +119,8 @@ $(document).ready(function(){
                 lastSelectedProcess = null;
             } else {
                 lastSelectedProcess = processId;
+                
+                console.log('Calling URL:', '/ajax/get_process_functions/' + processId);
 
                 // Make an AJAX call to get the functions of the selected process
                 $.ajax({

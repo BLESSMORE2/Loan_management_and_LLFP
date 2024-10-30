@@ -3,90 +3,107 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 text-primary">{{ title }}</h1>
-        <a href="" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
+        <h1 class="h3 text-primary"><i class="fas fa-home mr-2"></i> Home</h1>
     </div>
 
     <div class="row">
+        <!-- Data Management Card -->
         <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body text-center">
                     <i class="fas fa-database fa-3x text-primary mb-3"></i>
                     <h5 class="card-title">Data Management</h5>
                     <p class="card-text">Manage your data efficiently and securely.</p>
-                    <a href="{% url 'data_management' %}" class="btn btn-light custom-link">Go to Data Management</a>
+                    <a href="{% url 'data_management' %}" class="btn btn-outline-primary custom-link">Go to Data Management</a>
                 </div>
             </div>
         </div>
 
+        <!-- Operations Card -->
         <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body text-center">
                     <i class="fas fa-shield-alt fa-3x text-dark mb-3"></i>
                     <h5 class="card-title">Operations</h5>
                     <p class="card-text">Manage application operations.</p>
-                    <a href="{% url 'operations' %}" class="btn btn-light custom-link">Operations</a>
+                    <a href="{% url 'operations' %}" class="btn btn-outline-dark custom-link">Operations</a>
                 </div>
             </div>
         </div>
 
+        <!-- Credit Risk Models Card -->
         <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body text-center">
                     <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
                     <h5 class="card-title">Credit Risk Models</h5>
                     <p class="card-text">Analyze and manage credit risk models.</p>
-                    <a href="{% url 'credit_risk_models' %}" class="btn btn-light custom-link">Explore Models</a>
+                    <a href="{% url 'credit_risk_models' %}" class="btn btn-outline-success custom-link">Explore Models</a>
                 </div>
             </div>
         </div>
 
+        <!-- Reporting & Analytics Card -->
         <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body text-center">
                     <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
                     <h5 class="card-title">Reporting & Analytics</h5>
                     <p class="card-text">Generate and view detailed reports and analytics.</p>
-                    <a href="{% url 'reporting_home' %}" class="btn btn-light custom-link">View Reports</a>
+                    <a href="{% url 'reporting_home' %}" class="btn btn-outline-info custom-link">View Reports</a>
                 </div>
             </div>
         </div>
 
+        <!-- IFRS9 Configuration Card -->
         <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body text-center">
                     <i class="fas fa-cogs fa-3x text-warning mb-3"></i>
                     <h5 class="card-title">IFRS9 Configuration</h5>
-                    <p class="card-text">Configure system settings and ifrs9 preferences.</p>
-                    <a href="{% url 'ifrs9_configuration' %}" class="btn btn-danger custom-link">Configure System</a>
+                    <p class="card-text">Configure system settings and IFRS9 preferences.</p>
+                    <a href="{% url 'ifrs9_configuration' %}" class="btn btn-outline-warning custom-link">Configure System</a>
                 </div>
             </div>
         </div>
 
+        <!-- Help & Support Card -->
         <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body text-center">
                     <i class="fas fa-life-ring fa-3x text-danger mb-3"></i>
                     <h5 class="card-title">Help & Support</h5>
                     <p class="card-text">Access help and support resources.</p>
-                    <a href="" class="btn btn-light custom-link">Get Support</a>
+                    <a href="#" class="btn btn-outline-danger custom-link">Get Support</a>
                 </div>
             </div>
         </div>
-
-        
     </div>
 </div>
 
 <style>
     .custom-link {
         font-weight: bold;
-        color: darkblue;
+        transition: all 0.3s ease;
     }
     .custom-link:hover {
-        color: darkblue;
+        text-decoration: none;
+    }
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    .card-text {
+        font-size: 0.95rem;
+        color: #555;
+    }
+    .card {
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
     }
 </style>
 {% endblock %}

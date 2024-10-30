@@ -1,9 +1,7 @@
 from django.shortcuts import render,redirect
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-import matplotlib.pyplot as plt
-import io
-import  base64
+from django.contrib.auth.decorators import login_required
 from .models import *
 from .forms import *
 
@@ -39,7 +37,6 @@ from .Functions_view.Ifrs9_conf import *
 from .Functions_view.Reports import *
 from .Functions_view.Operations import *
 
-from datetime import datetime
 
 
 
@@ -47,8 +44,7 @@ from datetime import datetime
 def dashboard_view(request):
     # Example data for financial graphs
     mis_date = '2024-06-30'  # Input date in 'YYYY-MM-DD' format
-    #status = perform_interpolation(mis_date)
-    #print(status) 
+    #perform_interpolation(mis_date) 
     #project_cash_flows(mis_date)
     #update_cash_flows_with_ead(mis_date)
     # # #Insert records into FCT_Stage_Determination with the numeric date
@@ -71,7 +67,7 @@ def dashboard_view(request):
     #calculate_forward_loss_fields(mis_date)
     #populate_fct_reporting_lines(mis_date)
     #calculate_ecl_based_on_method(mis_date)
-    update_reporting_lines_with_exchange_rate(mis_date)
+    #update_reporting_lines_with_exchange_rate(mis_date)
 
     return render(request, 'dashboard.html')
 
@@ -84,6 +80,7 @@ def app_list_view(request):
     }
     return render(request, 'app_list.html', context)
 
+@login_required
 def ifrs9_home_view(request):
     context = {
         'title': ' Home',
@@ -91,7 +88,7 @@ def ifrs9_home_view(request):
     }
     return render(request, 'ifrs9_home.html', context)
 
-
+@login_required
 def credit_risk_models_view(request):
     context = {
         'title': 'Credit Risk Models',

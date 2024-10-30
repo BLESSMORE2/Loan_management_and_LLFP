@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q
+from django.contrib.auth.decorators import login_required
 import pandas as pd
 import numpy as np
 import os
@@ -17,14 +18,18 @@ from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+
+@login_required
 def reporting_home(request):
     return render(request, 'reports/reporting.html')
+
+@login_required
 def list_reports(request):
     # This view will render the list of available reports
     return render(request, 'reports/list_reports.html')
 
 
-
+@login_required
 @require_http_methods(["GET", "POST"])
 def view_results_and_extract(request):
     # Handle AJAX request for dynamic Run Key loading based on selected FIC MIS Date
@@ -93,6 +98,7 @@ def view_results_and_extract(request):
 
 
 
+@login_required
 def download_report(request):
     # Fetch the same filters as used in the view_results_and_extract
     filters = {
@@ -134,6 +140,7 @@ def download_report(request):
 # Directory to save the CSV files
 CSV_DIR = os.path.join(os.getcwd(), 'csv_files')
 
+@login_required
 @require_http_methods(["GET", "POST"])
 def ecl_main_filter_view(request):
     # Handle POST request (applying the filter)
@@ -190,7 +197,7 @@ def ecl_main_filter_view(request):
 
 
 
-
+@login_required
 @require_http_methods(["GET", "POST"])
 def ecl_sub_filter_view(request):
     # Retrieve the CSV filename from the session
@@ -270,6 +277,7 @@ def ecl_sub_filter_view(request):
 
 
 # Export to Excel dynamically based on the current filtered and grouped data
+@login_required
 def export_ecl_report_to_excel(request):
     # Retrieve the filtered data and grand totals from session
     grouped_data = request.session.get('grouped_data', [])
@@ -337,7 +345,7 @@ def export_ecl_report_to_excel(request):
 
 
 CSV_DIR = os.path.join(os.getcwd(), 'csv_files')
-
+@login_required
 @require_http_methods(["GET", "POST"])
 def ecl_reconciliation_main_filter_view(request):
     # Initialize an empty errors dictionary
@@ -422,7 +430,7 @@ def ecl_reconciliation_main_filter_view(request):
 
 
 
-
+@login_required
 @require_http_methods(["GET", "POST"])
 def ecl_reconciliation_sub_filter_view(request):
     # Retrieve the CSV filenames from the session
@@ -576,6 +584,7 @@ def ecl_reconciliation_sub_filter_view(request):
     })
 
 
+@login_required
 @require_http_methods(["POST"])
 def export_ecl_reconciliation_to_excel(request):
     # Retrieve the filtered data and grand totals from session
@@ -726,6 +735,7 @@ def export_ecl_reconciliation_to_excel(request):
 
 CSV_DIR = os.path.join(os.getcwd(), 'csv_files')
 
+@login_required
 @require_http_methods(["GET", "POST"])
 def ecl_account_reconciliation_main_filter_view(request):
     errors = {}
@@ -811,6 +821,7 @@ def ecl_account_reconciliation_main_filter_view(request):
     })
 
 
+@login_required
 @require_http_methods(["GET", "POST"])
 def ecl_account_reconciliation_sub_filter_view(request):
     # Retrieve CSV filenames from the session
@@ -877,7 +888,7 @@ def ecl_account_reconciliation_sub_filter_view(request):
 
 
 
-
+@login_required
 @require_http_methods(["GET"])
 def export_full_ecl_report_to_excel(request):
     # Retrieve CSV filenames from the session
@@ -970,6 +981,7 @@ def export_full_ecl_report_to_excel(request):
     return response
 
 
+@login_required
 @require_http_methods(["GET", "POST"])
 def pd_analysis_main_filter_view(request):
     # Handle POST request (applying the filter)
@@ -1021,6 +1033,7 @@ def pd_analysis_main_filter_view(request):
     return render(request, 'reports/pd_analysis_main_filter.html', {'fic_mis_dates': fic_mis_dates})
 
 
+@login_required
 @require_http_methods(["GET", "POST"])
 def pd_analysis_sub_filter_view(request):
     # Retrieve the CSV file from the session
@@ -1094,6 +1107,7 @@ def pd_analysis_sub_filter_view(request):
     })
 
 
+@login_required
 @require_http_methods(["POST"])
 def export_pd_report_to_excel(request):
     # Retrieve the grouped data and group by field from the session

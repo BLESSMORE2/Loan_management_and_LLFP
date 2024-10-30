@@ -4,8 +4,11 @@ from django.contrib import messages
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from ..models import Fsi_Interest_Method
 from ..forms import InterestMethodForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
+@login_required
 def cashflow_projections(request):
     # This view will render the page that shows two options: Documentation and Interest Method
     context = {
@@ -14,7 +17,7 @@ def cashflow_projections(request):
     }
     return render(request, 'cashflow_projections/index.html', context)
 
-
+@login_required
 def cashflow_projections_documentation(request):
     # You can pass any context data if needed
     context = {
@@ -25,13 +28,14 @@ def cashflow_projections_documentation(request):
 
 
 # List View
-class InterestMethodListView(ListView):
+
+class InterestMethodListView(LoginRequiredMixin,ListView):
     model = Fsi_Interest_Method
     template_name = 'cashflow_projections/interest_method_list.html'
     context_object_name = 'methods'
 
 # Create View
-class InterestMethodCreateView(CreateView):
+class InterestMethodCreateView(LoginRequiredMixin,CreateView):
     model = Fsi_Interest_Method
     form_class = InterestMethodForm
     template_name = 'cashflow_projections/interest_method_form.html'
@@ -46,7 +50,7 @@ class InterestMethodCreateView(CreateView):
         return super().form_invalid(form)
 
 # Update View
-class InterestMethodUpdateView(UpdateView):
+class InterestMethodUpdateView(LoginRequiredMixin,UpdateView):
     model = Fsi_Interest_Method
     form_class = InterestMethodForm
     template_name = 'cashflow_projections/interest_method_form.html'
@@ -61,7 +65,7 @@ class InterestMethodUpdateView(UpdateView):
         return super().form_invalid(form)
 
 # Delete View
-class InterestMethodDeleteView(DeleteView):
+class InterestMethodDeleteView(LoginRequiredMixin,DeleteView):
     model = Fsi_Interest_Method
     template_name = 'cashflow_projections/interest_method_confirm_delete.html'
     success_url = reverse_lazy('interest_method_list')

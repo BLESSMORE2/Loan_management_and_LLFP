@@ -38,11 +38,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'IFRS9',
+    'Users',
     'crispy_forms',
     'crispy_bootstrap4',
   
 ]
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+AUTH_USER_MODEL = 'Users.CustomUser'
+LOGIN_URL = '/login/'  # Or use the named URL like 'login' if you have defined it in your URL patterns
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -87,7 +91,7 @@ WSGI_APPLICATION = 'Loan_management_and_LLFP.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'more',  # Name of your MySQL database
+        'NAME': 'ifrs9',  # Name of your MySQL database
         'USER': 'root',  # Default user in XAMPP
         'PASSWORD': '',  # Empty password by default in XAMPP
         'HOST': 'localhost',

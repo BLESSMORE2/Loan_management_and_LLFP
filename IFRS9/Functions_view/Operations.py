@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.forms import inlineformset_factory
 from django.db import transaction
 import threading
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from ..models import Process, RunProcess,Function,FunctionExecutionStatus
 from ..forms import ProcessForm, RunProcessForm
@@ -39,23 +40,28 @@ from ..Functions.calculate_marginal_pd import *
 from ..Functions.populate_reporting_table import *
 from ..Functions.calculate_ecl import *
 
+
+@login_required
 def operations_view(request):
     return render(request, 'operations/operations.html')
 
 
 
 # List all processes
+@login_required
 def process_list(request):
     processes = Process.objects.all()
     return render(request, 'operations/process_list.html', {'processes': processes})
 
 # View the details of a specific process, including its associated functions and execution order
+@login_required
 def process_detail(request, process_id):
     process = get_object_or_404(Process, id=process_id)
     run_processes = RunProcess.objects.filter(process=process).order_by('order')  # Fetch functions in order
     return render(request, 'operations/process_detail.html', {'process': process, 'run_processes': run_processes})
 
 # Create or edit a process
+@login_required
 def create_process(request, process_id=None):
     """
     View to add or edit a process and its corresponding run processes.
@@ -132,7 +138,7 @@ def create_process(request, process_id=None):
     })
 
 
-
+@login_required
 def delete_process(request, process_id):
     process = get_object_or_404(Process, id=process_id)
     if request.method == 'POST':
@@ -145,6 +151,7 @@ def delete_process(request, process_id):
     return render(request, 'operations/delete_process.html', {'process': process})
 ##############################################################################################3
 # Display and search for processes
+@login_required
 def execute_process_view(request):
     query = request.GET.get('search', '')
     processes = Process.objects.filter(Q(process_name__icontains=query))
@@ -159,6 +166,7 @@ def execute_process_view(request):
 
 running_threads = {}
 cancel_flags = {}
+
 
 def generate_process_run_id(process, execution_date):
     """
@@ -187,6 +195,7 @@ def generate_process_run_id(process, execution_date):
 
 
 # Background function for running the process
+
 def execute_functions_in_background(function_status_entries, process_run_id, mis_date):
     for status_entry in function_status_entries:
 
@@ -241,6 +250,7 @@ def execute_functions_in_background(function_status_entries, process_run_id, mis
         print(f"Updated FunctionExecutionStatus for {function_name} to {status_entry.status}")
 
 
+@login_required
 def run_process_execution(request):
     if request.method == 'POST':
         process_id = request.POST.get('process_id')
@@ -288,6 +298,7 @@ def run_process_execution(request):
         return response  # Redirects immediately while the background task executes
         
 
+@login_required
 def get_process_functions(request, process_id):
     process = get_object_or_404(Process, id=process_id)
     functions_html = render_to_string('operations/_functions_list.html', {'run_processes': process.run_processes.all()})
@@ -296,6 +307,7 @@ def get_process_functions(request, process_id):
 
 
 # Monitor running process page
+@login_required
 def monitor_running_process_view(request):
     # Fetch distinct reporting dates and order by date descending
     available_dates = FunctionExecutionStatus.objects.order_by('-reporting_date').values_list('reporting_date', flat=True).distinct()
@@ -335,7 +347,7 @@ def monitor_running_process_view(request):
     return render(request, 'operations/monitor_running_process.html', context)
 
 
-
+@login_required
 def monitor_specific_process(request, process_run_id):
     # Fetch the specific process run by its ID
     process_statuses = FunctionExecutionStatus.objects.filter(process_run_id=process_run_id)
@@ -346,6 +358,7 @@ def monitor_specific_process(request, process_run_id):
     }
     return render(request, 'operations/monitor_specific_process.html', context)
 
+@login_required
 def get_updated_status_table(request):
     process_run_id = request.GET.get('process_run_id')
     
@@ -358,13 +371,14 @@ def get_updated_status_table(request):
     # Return the partial template with the updated table
     return render(request, 'operations/status_table.html', {'function_statuses': function_statuses})
 
-
+@login_required
 def get_process_function_status(request, process_run_id):
     run_processes = FunctionExecutionStatus.objects.filter(process_run_id=process_run_id).order_by('execution_order')  # ordering by execution order
     functions_html = render_to_string('operations/_function_status_list.html', {'run_processes': run_processes})
     return JsonResponse({'html': functions_html})
 
 
+@login_required
 def running_processes_view(request):
     # Fetch all ongoing (running) processes from the FunctionExecutionStatus model
     running_processes = FunctionExecutionStatus.objects.filter(status='Ongoing')
@@ -376,6 +390,7 @@ def running_processes_view(request):
     return render(request, 'operations/running_processes.html', context)
 
 # Updated function to handle cancellation request
+@login_required
 def cancel_running_process(request, process_run_id):
     # Check if the process is running
     try:
@@ -396,3 +411,28 @@ def cancel_running_process(request, process_run_id):
         messages.error(request, f"An error occurred while cancelling the process '{process_run_id}'.")
 
     return redirect('running_processes')  # Redirect to the running processes list
+
+
+# INSERT INTO `dim_function` (`function_name`, `description`) VALUES 
+# ('perform_interpolation', 'Performs interpolation on the given data.'),
+# ('project_cash_flows', 'Projects future cash flows based on data.'),
+# ('update_cash_flows_with_ead', 'Updates cash flows using the exposure at default.'),
+# ('insert_fct_stage', 'Inserts records into the FCT Stage Determination.'),
+# ('update_stage', 'Determines and updates the current stage of accounts.'),
+# ('process_cooling_period_for_accounts', 'Processes the cooling period for accounts.'),
+# ('update_stage_determination', 'Updates the stage determination logic.'),
+# ('update_stage_determination_accrued_interest_and_ead', 'Updates stage determination with accrued interest and EAD.'),
+# ('update_stage_determination_eir', 'Updates stage determination based on the effective interest rate.'),
+# ('update_lgd_for_stage_determination', 'Updates loss given default for stage determination.'),
+# ('calculate_pd_for_accounts', 'Calculates probability of default for accounts.'),
+# ('insert_cash_flow_data', 'Inserts cash flow data into the system.'),
+# ('update_financial_cash_flow', 'Updates financial cash flow records.'),
+# ('update_cash_flow_with_pd_buckets', 'Updates cash flows with probability of default buckets.'),
+# ('update_marginal_pd', 'Updates marginal probability of default calculations.'),
+# ('calculate_expected_cash_flow', 'Calculates expected cash flow projections.'),
+# ('calculate_discount_factors', 'Calculates discount factors for cash flows.'),
+# ('calculate_cashflow_fields', 'Calculates various cash flow fields.'),
+# ('calculate_forward_loss_fields', 'Calculates forward-looking loss fields.'),
+# ('populate_fct_reporting_lines', 'Populates reporting lines for FCT.'),
+# ('calculate_ecl_based_on_method', 'Calculates expected credit loss based on selected method.'),
+# ('update_reporting_lines_with_exchange_rate', 'Updates reporting lines with the  exchange rates.');

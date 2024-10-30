@@ -3,7 +3,12 @@
 {% block content %}
 <div class="container mt-5">
     <h2 class="mb-4 text-center">View Data</h2>
-
+    <!-- Back Button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'data_management' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back 
+        </a>
+    </div>
     {% if messages %}
         <div class="mb-4">
             {% for message in messages %}
