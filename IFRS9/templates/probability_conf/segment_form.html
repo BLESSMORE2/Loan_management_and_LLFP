@@ -3,7 +3,6 @@
 <div class="container py-4">
     <h1 class="h3 text-primary">{{ form.instance.pk|yesno:"Edit Segment,Add Segment" }}</h1>
 
-    <!-- Success and Error Messages -->
     {% if messages %}
         <div class="container mt-4">
             {% for message in messages %}
@@ -45,7 +44,54 @@
     </form>
 </div>
 
-<!-- Optional CSS to improve design -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Fetch Product Types based on selected Product Segment
+        $('#id_v_prod_segment').change(function() {
+            var segment = $(this).val();
+            $.ajax({
+                url: "{% url 'get_product_types' %}",
+                data: {
+                    'segment': segment
+                },
+                success: function(data) {
+                    var typeSelect = $('#id_v_prod_type');
+                    typeSelect.empty();
+                    typeSelect.append('<option value="">---</option>');
+                    $.each(data, function(index, item) {
+                        typeSelect.append('<option value="' + item.value + '">' + item.display + '</option>');
+                    });
+                    $('#id_v_prod_desc').val(''); // Clear Product Description when segment changes
+                }
+            });
+        });
+
+        // Fetch Product Description based on selected Product Type
+        $('#id_v_prod_type').change(function() {
+         var productType = $(this).val();
+         if (productType) {
+             $.ajax({
+                 url: "{% url 'get_product_description' %}",
+                 data: {
+                     'product_type': productType
+                 },
+                 success: function(data) {
+                     console.log("Description:", data.description); // Log the description
+                     $('#id_v_prod_desc').val(data.description);
+                 },
+                 error: function() {
+                     $('#id_v_prod_desc').val('');  // Clear on error
+                 }
+             });
+         } else {
+             $('#id_v_prod_desc').val('');  // Clear if no product type is selected
+         }
+        });
+        
+    });
+</script>
+
 <style>
     .form-label {
         font-weight: bold;

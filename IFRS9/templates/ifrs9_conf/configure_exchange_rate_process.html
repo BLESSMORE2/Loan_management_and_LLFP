@@ -58,10 +58,9 @@
     </div>
 
     <!-- Add New Configuration Button -->
-    <div class="d-flex justify-content-end mt-4">
-        <a href="{% url 'edit_exchange_rate_conf' 0 %}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Add New Configuration
-        </a>
-    </div>
+    <a href="{% url 'add_exchange_rate_conf' %}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Add New Configuration
+    </a>
+    
 </div>
 {% endblock %}

@@ -16,8 +16,13 @@
         <div class="form-group">
             <label for="table_name">Select Table:</label>
             <select name="table_name" id="table_name" class="form-control" required>
+                <!-- Placeholder option to ensure no table is selected by default -->
+                <option value="" disabled {% if not table_name %}selected{% endif %}>-- Please select a table --</option>
                 {% for table in stg_tables %}
-                    <option value="{{ table }}">{{ table }}</option>
+                    <option value="{{ table }}" 
+                        {% if table == table_name %}selected{% endif %}>
+                        {{ table }}
+                    </option>
                 {% endfor %}
             </select>
         </div>

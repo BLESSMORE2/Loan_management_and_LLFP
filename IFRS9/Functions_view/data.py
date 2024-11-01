@@ -16,6 +16,9 @@ import csv
 from django.http import HttpResponse,JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError, DatabaseError as DBError
+from django.views import View
+import pandas as pd
 
 
 
@@ -55,6 +58,10 @@ class FileUploadView(LoginRequiredMixin,View):
                 else:
                     messages.error(request, "Unsupported file format. Please upload a CSV or Excel file.")
                     return render(request, self.template_name, {'form': form, 'stg_tables': TableMetadata.objects.filter(table_type='STG')})
+
+                # Convert Timestamps to strings for JSON serialization
+                df = df.applymap(lambda x: x.isoformat() if isinstance(x, pd.Timestamp) else x)
+
 
                 # Store the data, column names, and selected table in session for later steps
                 request.session['file_data'] = df.to_dict()  # Save the full data in session
@@ -138,9 +145,7 @@ class ColumnMappingView(LoginRequiredMixin,View):
             model_fields=model_fields
         )
 
-        # Debug output
-        print('Initial mappings:', initial_mappings)
-        print('Unmapped columns:', unmapped_columns)
+  
 
         # Check if there are unmapped columns
         if unmapped_columns:
@@ -168,8 +173,7 @@ class ColumnMappingView(LoginRequiredMixin,View):
             # Safely get the 'column_mappings' from cleaned_data
             mappings = form.cleaned_data.get('column_mappings', {})
 
-            # Debug output to check the mappings
-            print("Column Mappings:", mappings)
+           
 
             # Validate that all columns have been mapped (i.e., not mapped to 'unmapped')
             unmapped_columns = [col for col, mapped_to in mappings.items() if mapped_to == 'unmapped']
@@ -197,120 +201,77 @@ class ColumnMappingView(LoginRequiredMixin,View):
 
 
 
-class SubmitToDatabaseView(LoginRequiredMixin,View):
+class SubmitToDatabaseView(LoginRequiredMixin, View):
     template_name = 'load_data/file_upload_step4.html'
 
     def get(self, request):
+        return render(request, self.template_name)
+
+    def post(self, request):
         try:
             # Retrieve data from the session
             df_data = request.session.get('file_data')
             selected_columns = request.session.get('selected_columns')
             mappings = request.session.get('column_mappings')
-            selected_table = request.session.get('selected_table')  # Get the selected table from the session
+            selected_table = request.session.get('selected_table')
 
-            # Check for missing data
-            if not df_data:
-                messages.error(request, "Error: No data found in the uploaded file.")
-                return render(request, self.template_name)
+            if not df_data or not selected_columns or not mappings:
+                return JsonResponse({'status': 'error', 'message': 'Missing data in the session.'}, status=400)
 
-            # Convert the session data back into a DataFrame
+            # Convert session data to DataFrame and apply mappings
             df = pd.DataFrame(df_data)
-
-            # Check if the DataFrame is empty
-            if df.empty:
-                messages.error(request, "Error: The uploaded file contains no data.")
-                return render(request, self.template_name)
-
-            # Check for missing columns
-            if not selected_columns:
-                messages.error(request, "Error: No columns selected for upload.")
-                return render(request, self.template_name)
-
-            # Check for missing mappings
-            if not mappings:
-                messages.error(request, "Error: No column mappings provided.")
-                return render(request, self.template_name)
-
-            # Filter the DataFrame to include only selected columns
-            df = df[selected_columns]
-
-            # Rename the DataFrame columns based on the mappings
-            df.rename(columns=mappings, inplace=True)
+            df = df[selected_columns].rename(columns=mappings)
 
             # Convert date columns to YYYY-MM-DD format
             for column in df.columns:
-                if 'date' in column.lower():  # Check if the column name suggests it contains dates
-                    try:
-                        df[column] = pd.to_datetime(df[column], errors='coerce').dt.strftime('%Y-%m-%d')
-                    except Exception as e:
-                        messages.error(request, f"Error converting date format for column '{column}': {str(e)}")
-                        return render(request, self.template_name)
+                if 'date' in column.lower():
+                    df[column] = pd.to_datetime(df[column], errors='coerce').dt.strftime('%Y-%m-%d').astype(str)
+            
+            # Retrieve the model class dynamically
+            model_class = apps.get_model('IFRS9', selected_table)
 
-            # Get the model class dynamically based on the selected table
-            try:
-                model_class = apps.get_model('IFRS9', selected_table)
-            except LookupError:
-                messages.error(request, "Error: The selected table does not exist.")
-                return render(request, self.template_name)
+            # Define chunk size for bulk insert
+            chunk_size = 5000
+            total_chunks = len(df) // chunk_size + (1 if len(df) % chunk_size > 0 else 0)
+            request.session['progress'] = 0
 
-            # Split the DataFrame into chunks
-            chunk_size = 100  # Customize chunk size as needed
-            df_chunks = [df[i:i + chunk_size] for i in range(0, len(df), chunk_size)]
+            # Counter to track the total number of records successfully inserted
+            success_count = 0
 
-            # Create a queue to handle results
-            result_queue = Queue()
+            for i, chunk_start in enumerate(range(0, len(df), chunk_size), start=1):
+                # Prepare the chunk for insertion
+                chunk_df = df.iloc[chunk_start:chunk_start + chunk_size]
+                records_to_insert = [model_class(**row.to_dict()) for _, row in chunk_df.iterrows()]
 
-            # Function to insert data into the database (to be run in threads)
-            def insert_data_chunk(data_chunk, result_queue):
-                for _, row in data_chunk.iterrows():
-                    try:
-                        model_class.objects.create(**row.to_dict())
-                    except IntegrityError as e:
-                        result_queue.put(f"Integrity Error: {e}")
-                        return
-                    except ValidationError as e:
-                        if hasattr(e, 'error_dict'):
-                            error_messages = "; ".join(f"{field}: {', '.join(errors)}" for field, errors in e.error_dict.items())
-                        else:
-                            error_messages = ", ".join(e.messages)
-                        result_queue.put(f"Validation Error: {error_messages}")
-                        return
-                    except Exception as e:
-                        result_queue.put(f"Error: {str(e)}")
-                        return
-                result_queue.put("Success")
+                try:
+                    # Bulk create the records with conflict handling
+                    model_class.objects.bulk_create(records_to_insert)
+                    success_count += len(records_to_insert)  # Increment success count by inserted records
+                except IntegrityError as e:
+                    return JsonResponse({'status': 'error', 'message': f'Integrity error: {str(e)}'}, status=400)
+                except ValidationError as e:
+                    error_messages = "; ".join(f"{field}: {', '.join(errors)}" for field, errors in e.message_dict.items())
+                    return JsonResponse({'status': 'error', 'message': f'Validation error: {error_messages}'}, status=400)
+                except DBError as e:
+                    return JsonResponse({'status': 'error', 'message': f'Database error: {str(e)}'}, status=400)
 
-            # Create and start threads for each chunk
-            threads = []
-            for chunk in df_chunks:
-                thread = Thread(target=insert_data_chunk, args=(chunk, result_queue))
-                thread.start()
-                threads.append(thread)
+                # Update progress in session after each chunk
+                request.session['progress'] = int((i / total_chunks) * 100)
+                request.session.modified = True
 
-            # Wait for all threads to complete
-            for thread in threads:
-                thread.join()
-
-            # Collect results
-            errors = []
-            while not result_queue.empty():
-                result = result_queue.get()
-                if result != "Success":
-                    errors.append(result)
-
-            # Handle results
-            if errors:
-                messages.error(request, " ".join(errors))
-            else:
-                messages.success(request, "Data successfully uploaded to the database!")
+            # Mark completion and return success message with count of records uploaded
+            request.session['progress'] = 100
+            return JsonResponse({'status': 'success', 'message': f'{success_count} records successfully uploaded.'})
 
         except Exception as e:
-            # Catch any unexpected exceptions
-            messages.error(request, f"Unexpected Error: {str(e)}")
-
-        return render(request, self.template_name)
-
+            return JsonResponse({'status': 'error', 'message': f"Unexpected error: {str(e)}"}, status=500)
+class CheckProgressView(LoginRequiredMixin, View):
+    def get(self, request):
+        progress = request.session.get('progress', 0)
+        return JsonResponse({'progress': progress})
     
+
+     
     ####################################################################
 @login_required
 def data_entry_view(request):

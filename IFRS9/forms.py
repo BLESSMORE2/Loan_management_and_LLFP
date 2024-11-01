@@ -150,7 +150,7 @@ class FSIProductSegmentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(FSIProductSegmentForm, self).__init__(*args, **kwargs)
 
-        # Fetch distinct values from Ldn_Bank_Product_Info and set choices for the form fields
+        # Fetch distinct values for Product Segment and Product Type
         segment_choices = [('', '---')] + [
             (seg, seg) for seg in Ldn_Bank_Product_Info.objects.values_list('v_prod_segment', flat=True).distinct()
         ]
@@ -161,11 +161,8 @@ class FSIProductSegmentForm(forms.ModelForm):
         ]
         self.fields['v_prod_type'] = forms.ChoiceField(choices=type_choices)
 
-        desc_choices = [('', '---')] + [
-            (pdesc, pdesc) for pdesc in Ldn_Bank_Product_Info.objects.values_list('v_prod_desc', flat=True).distinct()
-        ]
-        self.fields['v_prod_desc'] = forms.ChoiceField(choices=desc_choices)
-
+        # Make Product Description read-only
+        self.fields['v_prod_desc'].widget.attrs['disabled'] = True
 
 
 

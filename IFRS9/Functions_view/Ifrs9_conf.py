@@ -267,6 +267,18 @@ def configure_exchange_rate_process(request):
     exchange_conf_list = DimExchangeRateConf.objects.all()
     return render(request, 'ifrs9_conf/configure_exchange_rate_process.html', {'exchange_conf_list': exchange_conf_list})
 
+@login_required
+def add_exchange_rate_conf(request):
+    if request.method == 'POST':
+        form = ExchangeRateConfForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Configuration added successfully!')
+            return redirect('configure_exchange_rate_process')
+    else:
+        form = ExchangeRateConfForm()
+    return render(request, 'ifrs9_conf/configure_add_exchange_rate_conf.html', {'form': form})
+
 # Edit view
 @login_required
 def edit_exchange_rate_conf(request, id):

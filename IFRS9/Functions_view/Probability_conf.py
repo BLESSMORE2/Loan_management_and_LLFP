@@ -3,6 +3,7 @@ from django.contrib import messages
 from ..models import *
 from ..forms import *
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 
 @login_required
@@ -31,12 +32,30 @@ def segment_create(request):
             messages.success(request, "Segment added successfully!")
             return redirect('segment_list')
         else:
-            # Include actual error messages
             error_message = form.errors.as_json()
             messages.error(request, f"There was an error in adding the segment: {error_message}")
     else:
         form = FSIProductSegmentForm()
     return render(request, 'probability_conf/segment_form.html', {'form': form})
+
+@login_required
+def get_product_types(request):
+    segment = request.GET.get('segment')
+    if segment:
+        types = Ldn_Bank_Product_Info.objects.filter(v_prod_segment=segment).values_list('v_prod_type', flat=True).distinct()
+        type_choices = [{'value': t, 'display': t} for t in types]
+    else:
+        type_choices = []
+    return JsonResponse(type_choices, safe=False)
+
+@login_required
+def get_product_description(request):
+    product_type = request.GET.get('product_type')
+    if product_type:
+        description = Ldn_Bank_Product_Info.objects.filter(v_prod_type=product_type).values_list('v_prod_desc', flat=True).first()
+        return JsonResponse({'description': description})
+    return JsonResponse({'description': ''})
+
 
 # Update existing segment
 @login_required

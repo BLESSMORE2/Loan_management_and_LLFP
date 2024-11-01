@@ -51,12 +51,13 @@ class Ldn_Financial_Instrument(models.Model):
     v_branch_code = models.CharField(max_length=50, null=True)
     class Meta:
         db_table = 'Ldn_Financial_Instrument'
+        unique_together = ('fic_mis_date', 'v_account_number')
 
 
     
 class Ldn_Customer_Rating_Detail(models.Model):
     fic_mis_date = models.DateField(null=False)
-    v_party_cd = models.CharField(max_length=50, null=False)
+    v_party_cd = models.CharField(max_length=50,unique=True)
     v_rating_code = models.CharField(max_length=50)
     v_purpose = models.CharField(max_length=50)  # No choices, just a CharField
 
@@ -65,6 +66,7 @@ class Ldn_Customer_Rating_Detail(models.Model):
         unique_together = ('fic_mis_date', 'v_party_cd')
 
 class Ldn_Bank_Product_Info(models.Model):
+    fic_mis_date = models.DateField(null=False)
     v_prod_code = models.CharField(max_length=50, unique=True)
     v_prod_name = models.CharField(max_length=100)
     v_prod_type = models.CharField(max_length=50)
@@ -77,12 +79,13 @@ class Ldn_Bank_Product_Info(models.Model):
     v_prod_desc = models.CharField(max_length=50)
     class Meta:
         db_table = 'Ldn_Bank_Product_Info'
+        
 
 class FSI_Product_Segment(models.Model):
     segment_id = models.AutoField(primary_key=True)  # Auto-incrementing ID   
     v_prod_segment = models.CharField(max_length=255)
     v_prod_type = models.CharField(max_length=255)
-    v_prod_desc = models.CharField(max_length=255)
+    v_prod_desc = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.v_prod_segment} - {self.v_prod_type} - {self.v_prod_desc}"
@@ -90,7 +93,7 @@ class FSI_Product_Segment(models.Model):
     class Meta:
         db_table = 'fsi_product_segment'
         constraints = [
-            models.UniqueConstraint(fields=['v_prod_segment', 'v_prod_type', 'v_prod_desc'], name='unique_segment_type_desc')
+            models.UniqueConstraint(fields=['v_prod_segment', 'v_prod_type'], name='unique_segment_type_desc')
         ]
 
         
