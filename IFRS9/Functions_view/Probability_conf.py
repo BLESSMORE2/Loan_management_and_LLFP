@@ -4,6 +4,8 @@ from ..models import *
 from ..forms import *
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.core.paginator import Paginator
+
 
 
 @login_required
@@ -16,11 +18,25 @@ def pd_modelling(request):
     return render(request, 'probability_conf/pd_modelling.html')
 
 
-# List all segments
+# List all segments with pagination
 @login_required
 def segment_list(request):
     segments = FSI_Product_Segment.objects.all()
-    return render(request, 'probability_conf/segment_list.html', {'segments': segments})
+    rows_per_page = int(request.GET.get('rows', 5))  # Default to 8 rows per page
+    paginator = Paginator(segments, rows_per_page)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Calculate the number of empty rows to add if there are fewer than `rows_per_page` on the page
+    empty_rows = rows_per_page - len(page_obj)
+
+    return render(request, 'probability_conf/segment_list.html', {
+        'page_obj': page_obj,
+        'rows_per_page': rows_per_page,
+        'empty_rows': range(empty_rows)  # Pass a range object to loop through empty rows in the template
+    })
+
 
 # Create new segment
 @login_required

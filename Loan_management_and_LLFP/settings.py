@@ -47,6 +47,17 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 AUTH_USER_MODEL = 'Users.CustomUser'
 LOGIN_URL = '/login/'  # Or use the named URL like 'login' if you have defined it in your URL patterns
 
+# settings.py
+
+# Set session expiration age (in seconds)
+SESSION_COOKIE_AGE = 3600  # 1 hour (60 minutes * 60 seconds)
+
+# Enable session expiration on browser close
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Optionally enable sessions to expire based on user inactivity
+SESSION_SAVE_EVERY_REQUEST = True
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

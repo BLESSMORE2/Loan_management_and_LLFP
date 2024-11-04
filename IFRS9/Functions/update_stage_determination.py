@@ -60,8 +60,8 @@ def process_product_info_update(entry):
         # Update the segment key (n_segment_skey) using FSI_Product_Segment
         product_segment = FSI_Product_Segment.objects.get(
             v_prod_segment=entry.n_prod_segment,
-            v_prod_type=entry.n_prod_type,
-            v_prod_desc=entry.n_prod_desc
+            v_prod_type=entry.n_prod_type
+         
         )
         entry.n_segment_skey = product_segment.segment_id
 
@@ -76,8 +76,6 @@ def process_product_info_update(entry):
             collateral = LgdCollateral.objects.get(v_cust_ref_code=entry.n_cust_ref_code, fic_mis_date=entry.fic_mis_date)
             entry.n_collateral_amount = collateral.total
 
-        except LgdCollateral.DoesNotExist:
-            save_log('process_product_info_update', 'INFO', f"No collateral data found for customer {entry.n_cust_ref_code} and mis_date {entry.fic_mis_date}")
         except Exception as e:
             save_log('process_product_info_update', 'ERROR', f"Error updating collateral amount for entry {entry.n_account_number}: {e}")
 
@@ -101,8 +99,6 @@ def process_product_info_update(entry):
         entry.n_partner_name = customer_info.v_partner_name
         entry.n_party_type = customer_info.v_party_type
 
-    except Ldn_Customer_Info.DoesNotExist:
-        save_log('process_product_info_update', 'ERROR', f"Customer info not found for customer reference: {entry.n_cust_ref_code}")
     except Exception as e:
         save_log('process_product_info_update', 'ERROR', f"Error updating customer info for entry {entry.n_prod_code}: {e}")
 
@@ -115,8 +111,6 @@ def process_product_info_update(entry):
         entry.n_pd_term_structure_name = pd_term_structure.v_pd_term_structure_name
         entry.n_pd_term_structure_desc = pd_term_structure.v_pd_term_structure_desc
 
-    except Ldn_PD_Term_Structure.DoesNotExist:
-        save_log('process_product_info_update', 'ERROR', f"PD Term Structure not found for term structure key: {entry.n_pd_term_structure_skey}")
     except Exception as e:
         save_log('process_product_info_update', 'ERROR', f"Error updating PD term structure for entry {entry.n_prod_code}: {e}")
 
@@ -129,8 +123,6 @@ def process_product_info_update(entry):
         if entry.n_credit_rating_code is None:
             entry.n_credit_rating_code = rating_detail.v_rating_code
 
-    except Ldn_Customer_Rating_Detail.DoesNotExist:
-        save_log('process_product_info_update', 'INFO', f"Rating detail not found for customer {entry.n_cust_ref_code} and fic_mis_date {entry.fic_mis_date}")
     except Exception as e:
         save_log('process_product_info_update', 'ERROR', f"Error updating rating code for entry {entry.n_prod_code}: {e}")
 

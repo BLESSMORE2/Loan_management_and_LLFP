@@ -98,6 +98,7 @@ class ExchangeRateConfForm(forms.ModelForm):
 ##########################################################
 class TableSelectForm(forms.Form):
     table_name = forms.ModelChoiceField(queryset=TableMetadata.objects.filter(table_type='STG'), label="Select Table")
+    
 
 
 def generate_filter_form(model_class):

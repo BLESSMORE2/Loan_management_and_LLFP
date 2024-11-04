@@ -9,6 +9,7 @@
             <i class="fas fa-arrow-left"></i> Back 
         </a>
     </div>
+    
     {% if messages %}
         <div class="mb-4">
             {% for message in messages %}
@@ -21,12 +22,15 @@
 
     <div class="row justify-content-center">
         <div class="col-lg-12 col-md-12">
-            <form method="get" class="shadow p-4 rounded bg-light">
+            <form method="get" class="shadow p-4 rounded bg-light" action="{% url 'filter_table' %}" id="dataForm">
                 {% csrf_token %}
                 <div class="form-group mb-4">
-                    {{ table_form }}
+                    {{ table_form.table_name }}
                 </div>
-                <button type="submit" class="btn btn-primary">View Data</button>
+                <div class="form-group mb-4">
+                    {{ table_form.fic_mis_date }}
+                </div>
+                <button type="submit" class="btn btn-primary" id="viewDataButton" disabled>View Data</button>
             </form>
         </div>
     </div>
@@ -117,6 +121,49 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+
+    <script>
+        $(document).ready(function() {
+            const viewDataButton = $('#viewDataButton');
+            const tableField = $('select[name="table_name"]');
+            const dateField = $('select[name="fic_mis_date"]');
+    
+            function toggleButton() {
+                if (tableField.val() && dateField.val()) {
+                    viewDataButton.prop('disabled', false);
+                } else {
+                    viewDataButton.prop('disabled', true);
+                }
+            }
+    
+            toggleButton();
+            tableField.change(toggleButton);
+            dateField.change(toggleButton);
+    
+            tableField.change(function() {
+                const tableName = $(this).val();
+                dateField.empty();
+                dateField.append('<option value="">Select Date</option>');
+    
+                if (tableName) {
+                    $.ajax({
+                        url: "{% url 'get_fic_mis_dates' %}",
+                        data: { table_name: tableName },
+                        success: function(response) {
+                            response.dates.forEach(function(date) {
+                                dateField.append('<option value="' + date[0] + '">' + date[1] + '</option>');
+                            });
+                        },
+                        error: function() {
+                            alert("Error loading dates");
+                        }
+                    });
+                }
+                toggleButton();
+            });
+        });
+    </script>
 
     <script>
         console.log("Script loaded successfully");
@@ -314,52 +361,55 @@
 
         // Apply filters
         window.applyFilters = function(column) {
-            console.log(`applyFilters triggered for column: ${column}`);
-            
-            const selectedValues = [];
-            document.querySelectorAll(`#dropdownMenu${column} .form-check-input:checked`).forEach((checkbox) => {
-                if (checkbox.value !== "(Select All)") {
-                    selectedValues.push(checkbox.value);
-                }
-            });
-
-            console.log(`Selected values: ${selectedValues}`);
-
-            if (selectedValues.length > 0) {
-                const tableName = "{{ table_name }}";
-                if (tableName) {
-                    const url = "{% url 'filter_table' 'table_name_placeholder' %}".replace('table_name_placeholder', tableName);
-                    const urlParams = new URLSearchParams();
-                    urlParams.set('filter_column', column);
-                    urlParams.set('filter_values', selectedValues.join(','));
-
-                    console.log(`Redirecting to: ${url}?${urlParams.toString()}`);
-                    window.location.href = `${url}?${urlParams.toString()}`;
-                } else {
-                    alert('Error: Table name is not available.');
-                }
-            } else {
-                alert('Please select at least one value to filter.');
+        console.log(`applyFilters triggered for column: ${column}`);
+        
+        const selectedValues = [];
+        document.querySelectorAll(`#dropdownMenu${column} .form-check-input:checked`).forEach((checkbox) => {
+            if (checkbox.value !== "(Select All)") {
+                selectedValues.push(checkbox.value);
             }
-        }
+        });
 
-        // Sort table functionality
-        window.sortTable = function(column, order) {
-            console.log(`Sorting column: ${column}, order: ${order}`);
+        console.log(`Selected values: ${selectedValues}`);
 
+        if (selectedValues.length > 0) {
             const tableName = "{{ table_name }}";
             if (tableName) {
-                const url = "{% url 'filter_table' 'table_name_placeholder' %}".replace('table_name_placeholder', tableName);
+                // Build the URL with query parameters
+                const url = "{% url 'filter_table' %}";
                 const urlParams = new URLSearchParams();
+                urlParams.set('table_name', tableName);  // Pass table_name as a query parameter
                 urlParams.set('filter_column', column);
-                urlParams.set('sort_order', order);
+                urlParams.set('filter_values', selectedValues.join(','));
 
                 console.log(`Redirecting to: ${url}?${urlParams.toString()}`);
                 window.location.href = `${url}?${urlParams.toString()}`;
             } else {
                 alert('Error: Table name is not available.');
             }
+        } else {
+            alert('Please select at least one value to filter.');
         }
+    }
+       // Sort table functionality
+window.sortTable = function(column, order) {
+    console.log(`Sorting column: ${column}, order: ${order}`);
+
+    const tableName = "{{ table_name }}";
+    if (tableName) {
+        // Use the URL for 'filter_table' without table_name as an argument
+        const url = "{% url 'filter_table' %}";
+        const urlParams = new URLSearchParams();
+        urlParams.set('table_name', tableName);  // Pass table_name as a query parameter
+        urlParams.set('filter_column', column);
+        urlParams.set('sort_order', order);
+
+        console.log(`Redirecting to: ${url}?${urlParams.toString()}`);
+        window.location.href = `${url}?${urlParams.toString()}`;
+    } else {
+        alert('Error: Table name is not available.');
+    }
+}
 
         // Adjust dropdown based on available space
         $(document).on('shown.bs.dropdown', function (event) {
