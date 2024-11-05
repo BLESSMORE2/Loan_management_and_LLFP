@@ -112,7 +112,6 @@ class Ldn_PD_Term_Structure(models.Model):
     v_pd_term_structure_desc = models.CharField(max_length=50, editable=False)  # Auto-filled from v_prod_desc in FSI_Product_Segment
     v_pd_term_frequency_unit = models.CharField(max_length=1, choices=[('M', 'Monthly'), ('Q', 'Quarterly'), ('H', 'Half Yearly'), ('Y', 'Yearly'), ('D', 'Daily')])
     v_pd_term_structure_type = models.CharField(max_length=1, choices=[('R', 'Rating'), ('D', 'DPD')])
-    v_default_probability_type = models.CharField(max_length=1, choices=[('M', 'Marginal'), ('C', 'Cumulative')])
     fic_mis_date = models.DateField()
 
     def save(self, *args, **kwargs):

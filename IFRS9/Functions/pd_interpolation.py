@@ -1,63 +1,55 @@
 import math
-from concurrent.futures import ThreadPoolExecutor
-from django.db import transaction
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from ..models import *
 from .save_log import save_log
+from django.db import transaction
 
 
-def perform_interpolation(mis_date):
-    """
-    Perform PD interpolation based on the interpolation level set in preferences.
-    :param mis_date: Date in 'YYYY-MM-DD' format.
-    :return: String, status of the interpolation process ('1' for success, '0' for failure').
-    """
-    try:
-        preferences = FSI_LLFP_APP_PREFERENCES.objects.first()
-        if preferences is None:
-            save_log('perform_interpolation', 'ERROR', "No preferences found.")
-            return '0'
-
-        interpolation_level = preferences.interpolation_level
-
-        if interpolation_level == 'ACCOUNT':
-            save_log('perform_interpolation', 'INFO', "Performing account-level interpolation")
-            return pd_interpolation_account_level(mis_date)
-        elif interpolation_level == 'TERM_STRUCTURE':
-            save_log('perform_interpolation', 'INFO', "Performing term structure-level interpolation")
-            return pd_interpolation(mis_date)
-        else:
-            save_log('perform_interpolation', 'ERROR', f"Unknown interpolation level: {interpolation_level}")
-            return '0'
-    except Exception as e:
-        save_log('perform_interpolation', 'ERROR', f"Error during interpolation: {e}")
-        return '0'
 
 # Term structure interpolation functions
-def pd_interpolation(mis_date):
+def perform_interpolation(mis_date):
     """
-    Perform PD interpolation based on the term structure details and preferences.
+    Perform PD interpolation based on the term structure details and preferences,
+    processing items in batches of 5, with database consistency and thread safety.
     """
     try:
         preferences = FSI_LLFP_APP_PREFERENCES.objects.first()
         pd_interpolation_method = preferences.pd_interpolation_method or 'NL-POISSON'
         pd_model_proj_cap = preferences.n_pd_model_proj_cap
 
-        term_structure_details = Ldn_PD_Term_Structure_Dtl.objects.filter(fic_mis_date=mis_date)
+        # Clear previous interpolated results for the given date to ensure consistency
+        FSI_PD_Interpolated.objects.filter(fic_mis_date=mis_date).delete()
+
+        # Fetch term structure details and process in batches of 5
+        term_structure_details = list(Ldn_PD_Term_Structure_Dtl.objects.filter(fic_mis_date=mis_date))
+        batch_size = 5
         
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [
-                executor.submit(process_interpolation, detail, pd_model_proj_cap, pd_interpolation_method)
-                for detail in term_structure_details
-            ]
+        for i in range(0, len(term_structure_details), batch_size):
+            batch = term_structure_details[i:i + batch_size]
+            save_log('perform_interpolation', 'INFO', f"Processing batch {i // batch_size + 1} with {len(batch)} items")
 
-            for future in futures:
-                future.result()
+            # Atomic transaction to ensure batch consistency
+            with transaction.atomic():
+                with ThreadPoolExecutor(max_workers=batch_size) as executor:
+                    futures = {
+                        executor.submit(process_interpolation, detail, pd_model_proj_cap, pd_interpolation_method): detail.id
+                        for detail in batch
+                    }
+                    
+                    for future in as_completed(futures):
+                        detail_id = futures[future]
+                        try:
+                            future.result()  # Wait for the thread to complete
+                            save_log('perform_interpolation', 'INFO', f"Interpolation completed for detail ID {detail_id}")
+                        except Exception as e:
+                            save_log('perform_interpolation', 'ERROR', f"Interpolation failed for detail ID {detail_id} with error: {e}")
+                            raise  # Rollback if an error occurs in the batch
 
-        save_log('pd_interpolation', 'INFO', "Term structure interpolation completed successfully.")
+        save_log('perform_interpolation', 'INFO', "Term structure interpolation completed for all batches.")
         return '1'
 
     except Exception as e:
-        save_log('pd_interpolation', 'ERROR', f"Error during interpolation: {e}")
+        save_log('perform_interpolation', 'ERROR', f"Error during interpolation: {e}")
         return '0'
 
 def process_interpolation(detail, pd_model_proj_cap, pd_interpolation_method):
@@ -82,11 +74,7 @@ def process_interpolation(detail, pd_model_proj_cap, pd_interpolation_method):
         bucket_frequency = 1
         cash_flow_bucket_unit = 'Y'
 
-    FSI_PD_Interpolated.objects.filter(
-        fic_mis_date=detail.fic_mis_date,
-        v_pd_term_structure_id=detail.v_pd_term_structure_id.v_pd_term_structure_id
-    ).delete()
-
+   
     if pd_interpolation_method == 'NL-POISSON':
         interpolate_poisson(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit)
     elif pd_interpolation_method == 'NL-GEOMETRIC':
@@ -125,7 +113,11 @@ def interpolate_poisson(detail, bucket_frequency, pd_model_proj_cap, cash_flow_b
         v_cash_flow_bucket_id=bucket,
         v_cash_flow_bucket_unit=cash_flow_bucket_unit
     ))
-    FSI_PD_Interpolated.objects.bulk_create(records)
+    try:
+        FSI_PD_Interpolated.objects.bulk_create(records)
+        save_log('interpolation', 'INFO', f"Successfully saved records for credit risk band: {detail.v_credit_risk_basis_cd}")
+    except Exception as e:
+        save_log('interpolation', 'ERROR', f"Failed to save records for credit risk band {detail.v_credit_risk_basis_cd}: {e}")
 
 def interpolate_geometric(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit):
     """
@@ -151,7 +143,12 @@ def interpolate_geometric(detail, bucket_frequency, pd_model_proj_cap, cash_flow
         v_cash_flow_bucket_id=bucket,
         v_cash_flow_bucket_unit=cash_flow_bucket_unit
     ))
-    FSI_PD_Interpolated.objects.bulk_create(records)
+    try:
+        FSI_PD_Interpolated.objects.bulk_create(records)
+        save_log('interpolation', 'INFO', f"Successfully saved records for credit risk band: {detail.v_credit_risk_basis_cd}")
+    except Exception as e:
+        save_log('interpolation', 'ERROR', f"Failed to save records for credit risk band {detail.v_credit_risk_basis_cd}: {e}")
+
 
 def interpolate_arithmetic(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit):
     """
@@ -178,7 +175,12 @@ def interpolate_arithmetic(detail, bucket_frequency, pd_model_proj_cap, cash_flo
         v_cash_flow_bucket_id=bucket,
         v_cash_flow_bucket_unit=cash_flow_bucket_unit
     ))
-    FSI_PD_Interpolated.objects.bulk_create(records)
+    try:
+        FSI_PD_Interpolated.objects.bulk_create(records)
+        save_log('interpolation', 'INFO', f"Successfully saved records for credit risk band: {detail.v_credit_risk_basis_cd}")
+    except Exception as e:
+        save_log('interpolation', 'ERROR', f"Failed to save records for credit risk band {detail.v_credit_risk_basis_cd}: {e}")
+
 
 def interpolate_exponential_decay(detail, bucket_frequency, pd_model_proj_cap, cash_flow_bucket_unit):
     """
@@ -214,7 +216,12 @@ def interpolate_exponential_decay(detail, bucket_frequency, pd_model_proj_cap, c
         v_cash_flow_bucket_id=bucket,
         v_cash_flow_bucket_unit=cash_flow_bucket_unit
         ))
-        FSI_PD_Interpolated.objects.bulk_create(records)
+        try:
+            FSI_PD_Interpolated.objects.bulk_create(records)
+            save_log('interpolation', 'INFO', f"Successfully saved records for credit risk band: {detail.v_credit_risk_basis_cd}")
+        except Exception as e:
+            save_log('interpolation', 'ERROR', f"Failed to save records for credit risk band {detail.v_credit_risk_basis_cd}: {e}")
+      
 
         # Stop the loop if the population reaches 0
         if population_remaining <= 0:

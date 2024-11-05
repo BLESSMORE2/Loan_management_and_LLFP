@@ -5,6 +5,8 @@ from ..forms import *
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.core.paginator import Paginator
+from django.db import IntegrityError
+
 
 
 
@@ -77,18 +79,26 @@ def get_product_description(request):
 @login_required
 def segment_edit(request, segment_id):
     segment = get_object_or_404(FSI_Product_Segment, pk=segment_id)
+    
     if request.method == "POST":
         form = FSIProductSegmentForm(request.POST, instance=segment)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Segment updated successfully!")
-            return redirect('segment_list')
+            try:
+                form.save()
+                messages.success(request, "Segment updated successfully!")
+                return redirect('segment_list')
+            except IntegrityError as e:
+                # Handle duplicate entry or unique constraint errors
+                messages.error(request, f"Integrity error: {e}")
+            except Exception as e:
+                # Handle any other unexpected errors
+                messages.error(request, f"An unexpected error occurred: {e}")
         else:
-            # Include actual error messages
-            error_message = form.errors.as_json()
-            messages.error(request, f"There was an error in updating the segment: {error_message}")
+            # General message for validation errors; specific errors will show in the form
+            messages.error(request, "There were errors in the form. Please correct them below.")
     else:
         form = FSIProductSegmentForm(instance=segment)
+    
     return render(request, 'probability_conf/segment_form.html', {'form': form})
 
 # Delete segment
@@ -101,10 +111,15 @@ def segment_delete(request, segment_id):
         return redirect('segment_list')
     return render(request, 'probability_conf/segment_confirm_delete.html', {'segment': segment})
 
-# List all PD Term Structures
 @login_required
 def pd_term_structure_list(request):
-    term_structures = Ldn_PD_Term_Structure.objects.all()
+    term_structures_list = Ldn_PD_Term_Structure.objects.all()
+    
+    # Set up pagination
+    paginator = Paginator(term_structures_list, 5)  # Show 5 items per page
+    page_number = request.GET.get('page')
+    term_structures = paginator.get_page(page_number)  # Get the page of items
+
     return render(request, 'probability_conf/pd_term_structure_list.html', {'term_structures': term_structures})
 
 # Create new PD Term Structure
@@ -113,37 +128,47 @@ def pd_term_structure_create(request):
     if request.method == "POST":
         form = PDTermStructureForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "PD Term Structure added successfully!")
-            return redirect('pd_term_structure_list')
+            try:
+                form.save()
+                messages.success(request, "PD Term Structure added successfully!")
+                return redirect('pd_term_structure_list')
+            except IntegrityError as e:
+                # Handle duplicate entry error with the specific exception message
+                messages.error(request, f"Error adding PD Term Structure: {e}")
+            except Exception as e:
+                # Handle any other exceptions
+                messages.error(request, f"An unexpected error occurred: {e}")
         else:
-            # Display specific form errors
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"Error in {field}: {error}")
+            # Display form validation errors
+            messages.error(request, "There were errors in the form. Please correct them below.")
     else:
         form = PDTermStructureForm()
+
     return render(request, 'probability_conf/pd_term_structure_form.html', {'form': form})
 
-# Edit PD Term Structure
 @login_required
 def pd_term_structure_edit(request, term_id):
     term_structure = get_object_or_404(Ldn_PD_Term_Structure, pk=term_id)
+    
     if request.method == "POST":
         form = PDTermStructureForm(request.POST, instance=term_structure)
         if form.is_valid():
-            form.save()
-            messages.success(request, "PD Term Structure updated successfully!")
-            return redirect('pd_term_structure_list')
+            try:
+                form.save()
+                messages.success(request, "PD Term Structure updated successfully!")
+                return redirect('pd_term_structure_list')
+            except IntegrityError as e:
+                # Handle duplicate entry error with the specific exception message
+                messages.error(request, f"Error updating PD Term Structure: {e}")
+            except Exception as e:
+                # Catch any other exceptions and show the error message
+                messages.error(request, f"An unexpected error occurred: {e}")
         else:
-            # Display specific form errors
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"Error in {field}: {error}")
+            messages.error(request, "There were validation errors. Please correct them below.")
     else:
         form = PDTermStructureForm(instance=term_structure)
+    
     return render(request, 'probability_conf/pd_term_structure_form.html', {'form': form})
-
 # Delete PD Term Structure
 @login_required
 def pd_term_structure_delete(request, term_id):
@@ -159,9 +184,16 @@ def pd_term_structure_delete(request, term_id):
 # List all Delinquent Based PD Terms
 @login_required
 def delinquent_pd_list(request):
-    pd_term_details = Ldn_PD_Term_Structure_Dtl.objects.filter(
-        v_pd_term_structure_id__v_pd_term_structure_type='D'  # Filter for 'Rating' type PD Term Structures
+    # Filter for 'Delinquent' type PD Term Structures
+    pd_term_details_list = Ldn_PD_Term_Structure_Dtl.objects.filter(
+        v_pd_term_structure_id__v_pd_term_structure_type='D'
     ).select_related('v_pd_term_structure_id')
+    
+    # Set up pagination with 5 items per page
+    paginator = Paginator(pd_term_details_list, 5)
+    page_number = request.GET.get('page')
+    pd_term_details = paginator.get_page(page_number)
+
     return render(request, 'probability_conf/delinquent_pd_list.html', {'pd_term_details': pd_term_details})
 
 # Create a new PD Term Detail
@@ -170,11 +202,16 @@ def delinquent_pd_create(request):
     if request.method == 'POST':
         form = PDTermStructureDtlForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Delinquent PD Term added successfully!")
-            return redirect('delinquent_pd_list')
+            try:
+                form.save()
+                messages.success(request, "Delinquent PD Term added successfully!")
+                return redirect('delinquent_pd_list')
+            except Exception as e:
+                # Capture and display the specific exception message
+                messages.error(request, f"Error adding Delinquent PD Term: {e}")
         else:
-            messages.error(request, f"Error adding Delinquent PD Term: {form.errors}")
+            # Display form validation errors
+            messages.error(request, "There were validation errors. Please correct them below.")
     else:
         form = PDTermStructureDtlForm()
     
@@ -184,19 +221,24 @@ def delinquent_pd_create(request):
 @login_required
 def delinquent_pd_edit(request, term_id):
     pd_term_detail = get_object_or_404(Ldn_PD_Term_Structure_Dtl, pk=term_id)
+    
     if request.method == 'POST':
         form = PDTermStructureDtlForm(request.POST, instance=pd_term_detail)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Delinquent PD Term updated successfully!")
-            return redirect('delinquent_pd_list')
+            try:
+                form.save()
+                messages.success(request, "Delinquent PD Term updated successfully!")
+                return redirect('delinquent_pd_list')
+            except Exception as e:
+                # Capture and display the specific exception message
+                messages.error(request, f"Error updating Delinquent PD Term: {e}")
         else:
-            messages.error(request, f"Error updating Delinquent PD Term: {form.errors}")
+            # Display form validation errors
+            messages.error(request, "There were validation errors. Please correct them below.")
     else:
         form = PDTermStructureDtlForm(instance=pd_term_detail)
     
     return render(request, 'probability_conf/delinquent_pd_form.html', {'form': form})
-
 # Delete PD Term Detail
 @login_required
 def delinquent_pd_delete(request, term_id):
@@ -211,10 +253,16 @@ def delinquent_pd_delete(request, term_id):
 # List all Rating Based PD Terms
 @login_required
 def rating_pd_list(request):
-    pd_term_details = Ldn_PD_Term_Structure_Dtl.objects.filter(
-        v_pd_term_structure_id__v_pd_term_structure_type='R'  # Filter for 'Rating' type PD Term Structures
+    # Filter for 'Rating' type PD Term Structures
+    pd_term_details_list = Ldn_PD_Term_Structure_Dtl.objects.filter(
+        v_pd_term_structure_id__v_pd_term_structure_type='R'
     ).select_related('v_pd_term_structure_id')
     
+    # Set up pagination with 5 items per page
+    paginator = Paginator(pd_term_details_list, 5)
+    page_number = request.GET.get('page')
+    pd_term_details = paginator.get_page(page_number)
+
     return render(request, 'probability_conf/rating_pd_list.html', {'pd_term_details': pd_term_details})
 
 # Create a new Rating Based PD Term Detail
@@ -223,11 +271,13 @@ def rating_pd_create(request):
     if request.method == 'POST':
         form = PDTermStructureDtlRatingForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Rating Based PD Term added successfully!")
-            return redirect('rating_pd_list')
-        else:
-            messages.error(request, "Error adding Rating Based PD Term.")
+            try:
+                form.save()
+                messages.success(request, "Rating Based PD Term added successfully!")
+                return redirect('rating_pd_list')
+            except Exception as e:
+                # Capture and display the specific exception message
+                messages.error(request, f"Error adding Rating Based PD Term: {e}")
     else:
         form = PDTermStructureDtlRatingForm()
     
@@ -240,11 +290,14 @@ def rating_pd_edit(request, term_id):
     if request.method == 'POST':
         form = PDTermStructureDtlRatingForm(request.POST, instance=pd_term_detail)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Rating Based PD Term updated successfully!")
-            return redirect('rating_pd_list')
-        else:
-            messages.error(request, "Error updating Rating Based PD Term.")
+            try:
+                form.save()
+                messages.success(request, "Rating Based PD Term updated successfully!")
+                return redirect('rating_pd_list')
+            except Exception as e:
+                # Capture and display the specific exception message
+                messages.error(request, f"Error updating Rating Based PD Term: {e}")
+        
     else:
         form = PDTermStructureDtlRatingForm(instance=pd_term_detail)
     
@@ -274,28 +327,38 @@ def interpolation_method_create(request):
     if request.method == 'POST':
         form = InterpolationMethodForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Interpolation Method added successfully!")
-            return redirect('interpolation_method_list')
+            try:
+                form.save()
+                messages.success(request, "Interpolation Method added successfully!")
+                return redirect('interpolation_method_list')
+            except Exception as e:
+                # Capture and display the specific exception message
+                messages.error(request, f"Error adding Interpolation Method: {e}")
         else:
-            messages.error(request, "Error adding Interpolation Method.")
+            # Display form validation errors
+            messages.error(request, "There were validation errors. Please correct them below.")
     else:
         form = InterpolationMethodForm()
 
     return render(request, 'probability_conf/interpolation_method_form.html', {'form': form})
-
 # Edit Interpolation Method
 @login_required
 def interpolation_method_edit(request, method_id):
     interpolation_method = get_object_or_404(FSI_LLFP_APP_PREFERENCES, pk=method_id)
+    
     if request.method == 'POST':
         form = InterpolationMethodForm(request.POST, instance=interpolation_method)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Interpolation Method updated successfully!")
-            return redirect('interpolation_method_list')
+            try:
+                form.save()
+                messages.success(request, "Interpolation Method updated successfully!")
+                return redirect('interpolation_method_list')
+            except Exception as e:
+                # Capture and display the specific exception message
+                messages.error(request, f"Error updating Interpolation Method: {e}")
         else:
-            messages.error(request, "Error updating Interpolation Method.")
+            # Display form validation errors
+            messages.error(request, "There were validation errors. Please correct them below.")
     else:
         form = InterpolationMethodForm(instance=interpolation_method)
 

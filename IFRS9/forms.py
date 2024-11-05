@@ -266,7 +266,7 @@ class PDTermStructureForm(forms.ModelForm):
         model = Ldn_PD_Term_Structure
         fields = [
             'v_pd_term_structure_name', 'v_pd_term_frequency_unit', 
-            'v_pd_term_structure_type', 'v_default_probability_type',
+            'v_pd_term_structure_type',
             'fic_mis_date'
         ]
 
@@ -290,13 +290,10 @@ class PDTermStructureForm(forms.ModelForm):
 
         self.fields['v_pd_term_structure_type'].label = "Term Structure Type"
         self.fields['v_pd_term_structure_type'].widget = forms.Select(choices=[
-            ('R', 'Rating'), ('D', 'DPD')
+             ('D', 'DPD'),('R', 'Rating')
         ])
 
-        self.fields['v_default_probability_type'].label = "Default Probability Type"
-        self.fields['v_default_probability_type'].widget = forms.Select(choices=[
-            ('M', 'Marginal'), ('C', 'Cumulative')
-        ])
+        
 
         # Ensure 'fic_mis_date' displays as a date picker
         self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
@@ -309,12 +306,17 @@ class PDTermStructureDtlForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(PDTermStructureDtlForm, self).__init__(*args, **kwargs)
+        
+        # Filter Term Structure ID based on v_pd_term_structure_type
+        self.fields['v_pd_term_structure_id'].queryset = Ldn_PD_Term_Structure.objects.filter(
+            v_pd_term_structure_type='D'
+        )
 
         # Populate v_credit_risk_basis_cd choices from Dim_Delinquency_Band
         delinquency_bands = Dim_Delinquency_Band.objects.values_list('n_delq_band_code', 'v_delq_band_desc')
-        self.fields['v_credit_risk_basis_cd'] = forms.ChoiceField(choices=[(code, f"{desc}") for code, desc in delinquency_bands])
-
-        self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
+        self.fields['v_credit_risk_basis_cd'] = forms.ChoiceField(choices=[
+            (code, f"{desc}") for code, desc in delinquency_bands
+        ])
 
 class PDTermStructureDtlRatingForm(forms.ModelForm):
     class Meta:
@@ -323,12 +325,20 @@ class PDTermStructureDtlRatingForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(PDTermStructureDtlRatingForm, self).__init__(*args, **kwargs)
+        
+        # Filter Term Structure ID based on v_pd_term_structure_type
+        self.fields['v_pd_term_structure_id'].queryset = Ldn_PD_Term_Structure.objects.filter(
+            v_pd_term_structure_type='R'
+        )
+        
+        # Set up Date Input for fic_mis_date
         self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
-        # Populate v_credit_risk_basis_cd from Credit_Rating_Code_Band
+        
+        # Set up Rating Code dropdown from Credit_Rating_Code_Band
         self.fields['v_credit_risk_basis_cd'].queryset = Credit_Rating_Code_Band.objects.all()
         self.fields['v_credit_risk_basis_cd'].label = "Rating Code"
         self.fields['v_credit_risk_basis_cd'].widget = forms.Select(choices=[
-            (rating.v_rating_code, f"{rating.v_rating_code} - {rating.v_rating_desc}") 
+            (rating.v_rating_code, f"{rating.v_rating_code}") 
             for rating in Credit_Rating_Code_Band.objects.all()
         ])
 

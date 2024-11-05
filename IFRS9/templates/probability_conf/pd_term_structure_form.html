@@ -15,6 +15,17 @@
         </div>
     {% endif %}
 
+    <!-- General Form Errors -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
     <!-- Form Section in Table -->
     <form method="post">
         {% csrf_token %}
@@ -24,7 +35,7 @@
                 <td>
                     {{ form.v_pd_term_structure_name }}
                     {% if form.v_pd_term_structure_name.errors %}
-                        <div class="text-danger">Error: {{ form.v_pd_term_structure_name.errors }}</div>
+                        <div class="text-danger">{{ form.v_pd_term_structure_name.errors.as_text }}</div>
                     {% endif %}
                 </td>
             </tr>
@@ -33,7 +44,7 @@
                 <td>
                     {{ form.v_pd_term_frequency_unit }}
                     {% if form.v_pd_term_frequency_unit.errors %}
-                        <div class="text-danger">Error: {{ form.v_pd_term_frequency_unit.errors }}</div>
+                        <div class="text-danger">{{ form.v_pd_term_frequency_unit.errors.as_text }}</div>
                     {% endif %}
                 </td>
             </tr>
@@ -42,16 +53,7 @@
                 <td>
                     {{ form.v_pd_term_structure_type }}
                     {% if form.v_pd_term_structure_type.errors %}
-                        <div class="text-danger">Error: {{ form.v_pd_term_structure_type.errors }}</div>
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <td><label for="v_default_probability_type" class="form-label">Default Probability Type</label></td>
-                <td>
-                    {{ form.v_default_probability_type }}
-                    {% if form.v_default_probability_type.errors %}
-                        <div class="text-danger">Error: {{ form.v_default_probability_type.errors }}</div>
+                        <div class="text-danger">{{ form.v_pd_term_structure_type.errors.as_text }}</div>
                     {% endif %}
                 </td>
             </tr>
@@ -60,7 +62,7 @@
                 <td>
                     {{ form.fic_mis_date }}
                     {% if form.fic_mis_date.errors %}
-                        <div class="text-danger">Error: {{ form.fic_mis_date.errors }}</div>
+                        <div class="text-danger">{{ form.fic_mis_date.errors.as_text }}</div>
                     {% endif %}
                 </td>
             </tr>

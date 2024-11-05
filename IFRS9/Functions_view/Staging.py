@@ -14,7 +14,11 @@ from django.contrib import messages
 from django.db import transaction
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.contrib import messages
+from django.urls import reverse_lazy
+from django.db import IntegrityError
+from django.views.generic import UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 
@@ -57,27 +61,56 @@ class CreditRatingStageListView(LoginRequiredMixin,ListView):
 
 
 # Create View for adding a new credit rating
-class CreditRatingStageCreateView(LoginRequiredMixin,CreateView):
+class CreditRatingStageCreateView(LoginRequiredMixin, CreateView):
     model = FSI_CreditRating_Stage
     form_class = CreditRatingStageForm
     template_name = 'staging/creditrating_stage_form.html'
     success_url = reverse_lazy('creditrating_stage_list')
 
     def form_valid(self, form):
-        # Add success message
-        messages.success(self.request, "Credit rating successfully added!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Credit rating successfully added!")
+            return response
+        except IntegrityError as e:
+            # Handle unique constraint violations or other database integrity issues
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other unexpected errors
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        # Add a general error message for validation errors
+        messages.error(self.request, "There were errors in the form. Please correct them below.")
+        return super().form_invalid(form)
 
 # Update View for editing a credit rating
-class CreditRatingStageUpdateView(LoginRequiredMixin,UpdateView):
+class CreditRatingStageUpdateView(LoginRequiredMixin, UpdateView):
     model = FSI_CreditRating_Stage
     form_class = CreditRatingStageForm
     template_name = 'staging/creditrating_stage_form.html'
     success_url = reverse_lazy('creditrating_stage_list')
+
     def form_valid(self, form):
-        # Add success message
-        messages.success(self.request, "Credit rating successfully updated!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Credit rating successfully updated!")
+            return response
+        except IntegrityError as e:
+            # Handle unique constraint violations or other database integrity issues
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other unexpected errors
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        # Add a general error message for validation errors
+        messages.error(self.request, "There were errors in the form. Please correct them below.")
+        return super().form_invalid(form)
 
 # Delete View for deleting a credit rating
 class CreditRatingStageDeleteView(LoginRequiredMixin,DeleteView):
@@ -99,25 +132,55 @@ class DPDStageMappingListView(LoginRequiredMixin,ListView):
     context_object_name = 'dpd_mappings'
     paginate_by = 10
 
-class DPDStageMappingCreateView(LoginRequiredMixin,CreateView):
+class DPDStageMappingCreateView(LoginRequiredMixin, CreateView):
     model = FSI_DPD_Stage_Mapping
     fields = ['payment_frequency', 'stage_1_threshold', 'stage_2_threshold', 'stage_3_threshold']
     template_name = 'staging/dpd_stage_mapping_form.html'
     success_url = reverse_lazy('dpd_stage_mapping_list')
 
     def form_valid(self, form):
-        messages.success(self.request, "DPD Stage Mapping successfully added!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "DPD Stage Mapping successfully added!")
+            return response
+        except IntegrityError as e:
+            # Handle unique constraint violations or other database integrity issues
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other unexpected errors
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
 
-class DPDStageMappingUpdateView(LoginRequiredMixin,UpdateView):
+    def form_invalid(self, form):
+        # Add a general error message for validation errors
+        messages.error(self.request, "There were errors in the form. Please correct them below.")
+        return super().form_invalid(form)
+
+class DPDStageMappingUpdateView(LoginRequiredMixin, UpdateView):
     model = FSI_DPD_Stage_Mapping
     fields = ['payment_frequency', 'stage_1_threshold', 'stage_2_threshold', 'stage_3_threshold']
     template_name = 'staging/dpd_stage_mapping_form.html'
     success_url = reverse_lazy('dpd_stage_mapping_list')
 
     def form_valid(self, form):
-        messages.success(self.request, "DPD Stage Mapping successfully updated!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "DPD Stage Mapping successfully updated!")
+            return response
+        except IntegrityError as e:
+            # Handle unique constraint violations or other database integrity issues
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other unexpected errors
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        # Add a general error message for validation errors
+        messages.error(self.request, "There were errors in the form. Please correct them below.")
+        return super().form_invalid(form)
 
 class DPDStageMappingDeleteView(LoginRequiredMixin,DeleteView):
     model = FSI_DPD_Stage_Mapping
@@ -137,25 +200,55 @@ class CoolingPeriodDefinitionListView(LoginRequiredMixin,ListView):
     context_object_name = 'cooling_periods'
     paginate_by = 10
 
-class CoolingPeriodDefinitionCreateView(LoginRequiredMixin,CreateView):
+class CoolingPeriodDefinitionCreateView(LoginRequiredMixin, CreateView):
     model = CoolingPeriodDefinition
     form_class = CoolingPeriodDefinitionForm
     template_name = 'staging/cooling_period_definition_form.html'
     success_url = reverse_lazy('cooling_period_definitions')
 
     def form_valid(self, form):
-        messages.success(self.request, "Cooling period definition successfully added!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Cooling period definition successfully added!")
+            return response
+        except IntegrityError as e:
+            # Handle unique constraint violations or other database integrity issues
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other unexpected errors
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
 
-class CoolingPeriodDefinitionUpdateView(LoginRequiredMixin,UpdateView):
+    def form_invalid(self, form):
+        # Add a general error message for validation errors
+        messages.error(self.request, "There were errors in the form. Please correct them below.")
+        return super().form_invalid(form)
+
+class CoolingPeriodDefinitionUpdateView(LoginRequiredMixin, UpdateView):
     model = CoolingPeriodDefinition
     form_class = CoolingPeriodDefinitionForm
     template_name = 'staging/cooling_period_definition_form.html'
     success_url = reverse_lazy('cooling_period_definitions')
 
     def form_valid(self, form):
-        messages.success(self.request, "Cooling period definition successfully updated!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Cooling period definition successfully updated!")
+            return response
+        except IntegrityError as e:
+            # Handle unique constraint violations or other database integrity issues
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other unexpected errors
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        # Add a general error message for validation errors
+        messages.error(self.request, "There were errors in the form. Please correct them below.")
+        return super().form_invalid(form)
 
 class CoolingPeriodDefinitionDeleteView(LoginRequiredMixin,DeleteView):
     model = CoolingPeriodDefinition
@@ -172,25 +265,55 @@ class DimDelinquencyBandListView(LoginRequiredMixin,ListView):
     context_object_name = 'delinquency_bands'
     paginate_by = 10
 
-class DimDelinquencyBandCreateView(LoginRequiredMixin,CreateView):
+class DimDelinquencyBandCreateView(LoginRequiredMixin, CreateView):
     model = Dim_Delinquency_Band
     form_class = DimDelinquencyBandForm
     template_name = 'staging/dim_delinquency_band_form.html'
     success_url = reverse_lazy('dim_delinquency_band_list')
 
     def form_valid(self, form):
-        messages.success(self.request, "Delinquency band successfully added!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Delinquency band successfully added!")
+            return response
+        except IntegrityError as e:
+            # Handle unique constraint violations or other database integrity issues
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other unexpected errors
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
 
-class DimDelinquencyBandUpdateView(LoginRequiredMixin,UpdateView):
+    def form_invalid(self, form):
+        # Add a general error message for validation errors
+        messages.error(self.request, "There were errors in the form. Please correct them below.")
+        return super().form_invalid(form)
+
+class DimDelinquencyBandUpdateView(LoginRequiredMixin, UpdateView):
     model = Dim_Delinquency_Band
     form_class = DimDelinquencyBandForm
     template_name = 'staging/dim_delinquency_band_form.html'
     success_url = reverse_lazy('dim_delinquency_band_list')
 
     def form_valid(self, form):
-        messages.success(self.request, "Delinquency band successfully updated!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Delinquency band successfully updated!")
+            return response
+        except IntegrityError as e:
+            # Handle unique constraint violations or other database integrity issues
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other unexpected errors
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        # Add a general error message for validation errors
+        messages.error(self.request, "There were errors in the form. Please correct them below.")
+        return super().form_invalid(form)
 
 class DimDelinquencyBandDeleteView(LoginRequiredMixin,DeleteView):
     model = Dim_Delinquency_Band
@@ -207,25 +330,50 @@ class CreditRatingCodeBandListView(LoginRequiredMixin,ListView):
     context_object_name = 'rating_codes'
     paginate_by = 10
 
-class CreditRatingCodeBandCreateView(LoginRequiredMixin,CreateView):
+class CreditRatingCodeBandCreateView(LoginRequiredMixin, CreateView):
     model = Credit_Rating_Code_Band
     form_class = CreditRatingCodeBandForm
     template_name = 'staging/credit_rating_code_band_form.html'
     success_url = reverse_lazy('credit_rating_code_band_list')
 
     def form_valid(self, form):
-        messages.success(self.request, "Credit rating code successfully added!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Credit rating code successfully added!")
+            return response
+        except IntegrityError as e:
+            # Handle unique constraint violations or other database integrity issues
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other unexpected errors
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
 
-class CreditRatingCodeBandUpdateView(LoginRequiredMixin,UpdateView):
+    def form_invalid(self, form):
+        # Add a general error message for validation errors
+        messages.error(self.request, "There were errors in the form. Please correct them below.")
+        return super().form_invalid(form)
+
+class CreditRatingCodeBandUpdateView(LoginRequiredMixin, UpdateView):
     model = Credit_Rating_Code_Band
     form_class = CreditRatingCodeBandForm
     template_name = 'staging/credit_rating_code_band_form.html'
     success_url = reverse_lazy('credit_rating_code_band_list')
 
     def form_valid(self, form):
-        messages.success(self.request, "Credit rating code successfully updated!")
-        return super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Credit rating code successfully updated!")
+            return response
+        except IntegrityError as e:
+            # Handle database integrity errors, like duplicate entries
+            messages.error(self.request, f"Integrity error: {e}")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Handle any other exceptions
+            messages.error(self.request, f"An unexpected error occurred: {e}")
+            return self.form_invalid(form)
 
 class CreditRatingCodeBandDeleteView(LoginRequiredMixin,DeleteView):
     model = Credit_Rating_Code_Band
