@@ -39,6 +39,8 @@ from ..Functions.cal_forward_exposure4 import *
 from ..Functions.calculate_marginal_pd import *
 from ..Functions.populate_reporting_table import *
 from ..Functions.calculate_ecl import *
+from ..Functions.cal_reporting_currency import *
+from django.db.models import Min, Max
 
 
 @login_required
@@ -195,12 +197,14 @@ def generate_process_run_id(process, execution_date):
 
 
 # Background function for running the process
-
+# Background function for running the process
 def execute_functions_in_background(function_status_entries, process_run_id, mis_date):
     for status_entry in function_status_entries:
 
         if cancel_flags.get(process_run_id):  # Check if cancellation was requested
             status_entry.status = 'Cancelled'
+            status_entry.execution_end_date = timezone.now()
+            status_entry.duration = status_entry.execution_end_date - status_entry.execution_start_date
             status_entry.save()
             print(f"Process {process_run_id} was cancelled.")
             break  # Stop execution if cancelled
@@ -208,8 +212,9 @@ def execute_functions_in_background(function_status_entries, process_run_id, mis
         function_name = status_entry.function.function_name
         print(f"Preparing to execute function: {function_name}")
 
-        # Set the function status to "Ongoing"
+        # Set the function status to "Ongoing" and record the start date
         status_entry.status = 'Ongoing'
+        status_entry.execution_start_date = timezone.now()  # Start time for the function
         status_entry.save()
         print(f"Function {function_name} marked as Ongoing.")
 
@@ -219,15 +224,16 @@ def execute_functions_in_background(function_status_entries, process_run_id, mis
                 print(f"Executing function: {function_name} with date {mis_date}")
                 result = globals()[function_name](mis_date)  # Execute the function and capture the return value
                 
-                # Update status based on the return value (1 = Success, 0 = Failed)
-                if result == 1 or result == '1' :
+                # Update status and end date based on the return value
+                status_entry.execution_end_date = timezone.now()  # End time for the function
+                if result == 1 or result == '1':
                     status_entry.status = 'Success'
                     print(f"Function {function_name} executed successfully.")
                 elif result == 0 or result == '0':
                     status_entry.status = 'Failed'
                     print(f"Function {function_name} execution failed.")
                     status_entry.save()
-                    break  # Stop execution if the function returns 0 (failed)
+                    break  # Stop execution if the function fails
                 else:
                     status_entry.status = 'Failed'
                     print(f"Unexpected return value {result} from function {function_name}.")
@@ -236,16 +242,22 @@ def execute_functions_in_background(function_status_entries, process_run_id, mis
             else:
                 status_entry.status = 'Failed'
                 print(f"Function {function_name} not found in the global scope.")
+                status_entry.execution_end_date = timezone.now()
                 status_entry.save()
                 break  # Stop execution if the function is not found
 
         except Exception as e:
             status_entry.status = 'Failed'
+            status_entry.execution_end_date = timezone.now()
             print(f"Error executing {function_name}: {e}")
             status_entry.save()
             break  # Stop execution if any function throws an exception
 
-        # Save the final status (Success or Failed)
+        # Calculate duration
+        if status_entry.execution_start_date and status_entry.execution_end_date:
+            status_entry.duration = status_entry.execution_end_date - status_entry.execution_start_date
+
+        # Save the final status and duration
         status_entry.save()
         print(f"Updated FunctionExecutionStatus for {function_name} to {status_entry.status}")
 
@@ -266,7 +278,8 @@ def run_process_execution(request):
         print(f"Process selected: {process.process_name} (ID: {process.id})")
         
         # Fetch the RunProcess records in order of their execution (by 'order' field)
-        run_processes = RunProcess.objects.filter(id__in=selected_function_ids).order_by('order')
+        # run_processes = RunProcess.objects.filter(id__in=selected_function_ids).order_by('order')
+        run_processes = RunProcess.objects.filter(process=process).order_by('order')
         print(f"Number of selected functions to execute: {run_processes.count()}")
 
         # Generate the process_run_id and run_count
@@ -321,10 +334,14 @@ def monitor_running_process_view(request):
         processes = (
             FunctionExecutionStatus.objects.filter(reporting_date=selected_date)
             .values('process__process_name', 'process_run_id')
-            .annotate(latest_run=Max('process_run_id'))  # Annotate with the latest run ID
+            .annotate(
+                latest_run=Max('process_run_id'),  # Latest run ID
+                start_time=Min('execution_start_date'),  # Earliest start time
+                end_time=Max('execution_end_date')  # Latest end time
+            )
         )
 
-        # Calculate overall status for each process
+        # Calculate overall status and duration for each process
         for process in processes:
             process_run_id = process['process_run_id']
             function_statuses = FunctionExecutionStatus.objects.filter(process_run_id=process_run_id)
@@ -338,6 +355,15 @@ def monitor_running_process_view(request):
                 process['overall_status'] = 'Ongoing'
             else:
                 process['overall_status'] = 'Success'
+
+            # Calculate duration if start and end times are available
+            start_time = process['start_time']
+            end_time = process['end_time']
+            if start_time and end_time:
+                duration = end_time - start_time
+                process['duration'] = duration.total_seconds() / 60  # Convert to minutes
+            else:
+                process['duration'] = None
 
     context = {
         'selected_date': selected_date,
@@ -363,10 +389,15 @@ def get_updated_status_table(request):
     process_run_id = request.GET.get('process_run_id')
     
     # Get all statuses related to the process_run_id
-    function_statuses = FunctionExecutionStatus.objects.filter(process_run_id=process_run_id) \
-                            .select_related('process', 'function') \
-                            .annotate(order=models.F('function__runprocess__order')) \
-                            .order_by('order')
+    function_statuses = FunctionExecutionStatus.objects.filter(process_run_id=process_run_id).order_by('execution_order')
+    
+    # Add total_seconds to each status entry
+    for status in function_statuses:
+        if isinstance(status.duration, timedelta):
+            # Calculate total seconds and assign it as an additional attribute for template access
+            status.total_seconds = status.duration.total_seconds()
+        else:
+            status.total_seconds = None
 
     # Return the partial template with the updated table
     return render(request, 'operations/status_table.html', {'function_statuses': function_statuses})
@@ -423,7 +454,8 @@ def cancel_running_process(request, process_run_id):
 # ('update_stage_determination', 'Updates the stage determination logic.'),
 # ('update_stage_determination_accrued_interest_and_ead', 'Updates stage determination with accrued interest and EAD.'),
 # ('update_stage_determination_eir', 'Updates stage determination based on the effective interest rate.'),
-# ('update_lgd_for_stage_determination', 'Updates loss given default for stage determination.'),
+# ('update_lgd_for_stage_determination_term_structure', 'Updates loss given default for stage determination.'),
+# ('update_lgd_for_stage_determination_collateral', 'Updates loss given default for stage determination.'),
 # ('calculate_pd_for_accounts', 'Calculates probability of default for accounts.'),
 # ('insert_cash_flow_data', 'Inserts cash flow data into the system.'),
 # ('update_financial_cash_flow', 'Updates financial cash flow records.'),

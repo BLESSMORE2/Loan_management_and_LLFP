@@ -1,7 +1,50 @@
 from concurrent.futures import ThreadPoolExecutor
 from django.db import transaction
-from ..models import FCT_Stage_Determination, FCT_Reporting_Lines, Dim_Run
+from django.utils import timezone
+from ..models import FCT_Stage_Determination, FCT_Reporting_Lines, Dim_Run, ECLMethod
 from .save_log import save_log
+
+def get_next_run_skey():
+    """
+    Retrieve the next n_run_skey from the Dim_Run table.
+    """
+    try:
+        with transaction.atomic():
+            run_key_record, created = Dim_Run.objects.get_or_create(id=1)
+
+            if created:
+                run_key_record.latest_run_skey = 1
+            else:
+                run_key_record.latest_run_skey += 1
+
+            run_key_record.date = timezone.now()
+            run_key_record.save()
+
+            return run_key_record.latest_run_skey
+
+    except Exception as e:
+        save_log('get_next_run_skey', 'ERROR', f"Error in getting next run skey: {e}")
+        return 1  # Default value in case of error
+
+def get_run_skey_for_method():
+    """
+    Retrieve or generate a run_skey based on ECL method.
+    If the method is 'simple_ead', generate a new run_skey.
+    """
+    try:
+        ecl_method = ECLMethod.objects.get(method_name='simple_ead')
+        if ecl_method:
+            # Generate a new run_skey for 'simple_ead' method
+            return get_next_run_skey()
+        else:
+            # Default behavior: use the latest run key from Dim_Run
+            return Dim_Run.objects.latest('latest_run_skey').latest_run_skey
+    except ECLMethod.DoesNotExist:
+        save_log('get_run_skey_for_method', 'ERROR', "ECL Method 'simple_ead' does not exist.")
+        return Dim_Run.objects.latest('latest_run_skey').latest_run_skey
+    except Exception as e:
+        save_log('get_run_skey_for_method', 'ERROR', f"Error retrieving run_skey: {e}")
+        return None
 
 # Helper function to split data into chunks
 def chunk_data(data, chunk_size):
@@ -85,21 +128,21 @@ def process_chunk(stage_determination_chunk, last_run_skey):
 def populate_fct_reporting_lines(mis_date, chunk_size=1000):
     """
     Populate data in FCT_Reporting_Lines from FCT_Stage_Determination for the given mis_date.
-    Use last_run_skey from Dim_Run for n_run_key. Multi-threaded with bulk insert.
-    :param mis_date: The fic_mis_date used to filter records in FCT_Stage_Determination.
-    :param chunk_size: The size of data chunks to process in each thread.
     """
     try:
-        # Fetch the last_run_skey from Dim_Run
-        dim_run = Dim_Run.objects.latest('latest_run_skey')
-        last_run_skey = dim_run.latest_run_skey
+        # Retrieve appropriate run_skey based on method
+        last_run_skey = get_run_skey_for_method()
+
+        if last_run_skey is None:
+            save_log('populate_fct_reporting_lines', 'ERROR', "Failed to retrieve or generate run_skey.")
+            return '0'
 
         # Fetch records from FCT_Stage_Determination where fic_mis_date matches the provided date
         stage_determination_records = list(FCT_Stage_Determination.objects.filter(fic_mis_date=mis_date))
 
         if not stage_determination_records:
             save_log('populate_fct_reporting_lines', 'INFO', f"No records found in FCT_Stage_Determination for mis_date {mis_date}.")
-            return '0'  # Return '0' if no records are found
+            return '0'
 
         # Split the records into chunks
         chunks = list(chunk_data(stage_determination_records, chunk_size))
@@ -108,17 +151,16 @@ def populate_fct_reporting_lines(mis_date, chunk_size=1000):
         with ThreadPoolExecutor(max_workers=20) as executor:
             futures = [executor.submit(process_chunk, chunk, last_run_skey) for chunk in chunks]
 
-            # Process the results
             for future in futures:
                 try:
-                    future.result()  # This will raise any exceptions encountered in the threads
+                    future.result()
                 except Exception as exc:
                     save_log('populate_fct_reporting_lines', 'ERROR', f"Error processing chunk: {exc}")
-                    return '0'  # Return '0' if any thread encounters an error
+                    return '0'
 
         save_log('populate_fct_reporting_lines', 'INFO', f"Successfully populated FCT_Reporting_Lines for {len(stage_determination_records)} records.")
-        return '1'  # Return '1' on successful completion
+        return '1'
 
     except Exception as e:
         save_log('populate_fct_reporting_lines', 'ERROR', f"Error populating FCT_Reporting_Lines: {e}")
-        return '0'  # Return '0' in case of any exception
+        return '0'

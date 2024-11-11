@@ -4,6 +4,7 @@ from ..models import FSI_Expected_Cashflow, fsi_Financial_Cash_Flow_Cal, Dim_Run
 from django.utils import timezone
 from .save_log import save_log
 
+
 def get_next_run_skey():
     """
     Retrieve the next n_run_skey from the Dim_Run table.

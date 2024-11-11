@@ -43,7 +43,7 @@ from .Functions_view.Operations import *
 
 def dashboard_view(request):
     # Example data for financial graphs
-    mis_date = '2024-06-30'  # Input date in 'YYYY-MM-DD' format
+    mis_date = '2024-07-31'  # Input date in 'YYYY-MM-DD' format
     #perform_interpolation(mis_date) 
     #project_cash_flows(mis_date)
     #update_cash_flows_with_ead(mis_date)
@@ -55,7 +55,7 @@ def dashboard_view(request):
     #update_stage_determination(mis_date)
     #update_stage_determination_accrued_interest_and_ead(mis_date)
     #update_stage_determination_eir(mis_date)
-    #update_lgd_for_stage_determination(mis_date)
+    #update_lgd_for_stage_determination_term_structure(mis_date)
     #calculate_pd_for_accounts(mis_date)
     #insert_cash_flow_data(mis_date)
     #update_financial_cash_flow(mis_date)
@@ -65,9 +65,9 @@ def dashboard_view(request):
     #calculate_discount_factors(mis_date)
     #calculate_cashflow_fields(mis_date)
     #calculate_forward_loss_fields(mis_date)
-    #populate_fct_reporting_lines(mis_date)
-    #calculate_ecl_based_on_method(mis_date)
-    #update_reporting_lines_with_exchange_rate(mis_date)
+    populate_fct_reporting_lines(mis_date)
+    calculate_ecl_based_on_method(mis_date)
+    update_reporting_lines_with_exchange_rate(mis_date)
 
     return render(request, 'dashboard.html')
 

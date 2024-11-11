@@ -5,7 +5,7 @@ from django.utils import timezone
 
 class Ldn_Financial_Instrument(models.Model):
     fic_mis_date = models.DateField(null=True)
-    v_account_number = models.CharField(max_length=255, unique=True, null=False)
+    v_account_number = models.CharField(max_length=255, null=False)
     v_cust_ref_code = models.CharField(max_length=50, null=True)
     v_prod_code = models.CharField(max_length=50, null=True)
     n_curr_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, help_text="Fixed interest rate for the loan")    
@@ -191,9 +191,9 @@ class FSI_LLFP_APP_PREFERENCES(models.Model):
    
 
 class Ldn_LGD_Term_Structure(models.Model):
-    v_lgd_term_structure_id = models.CharField(max_length=100, primary_key=True)  # This will be filled automatically
+    v_lgd_term_structure_id = models.BigIntegerField( primary_key=True)  # This will be filled automatically
     v_lgd_term_structure_name = models.ForeignKey(FSI_Product_Segment, on_delete=models.CASCADE)  # Use ForeignKey to select segment by ID
-    v_lgd_term_structure_desc = models.CharField(max_length=50, editable=False)  # Auto-filled from v_prod_desc in FSI_Product_Segment
+    v_lgd_term_structure_desc = models.CharField(max_length=50,blank=True,null=True)  # Auto-filled from v_prod_desc in FSI_Product_Segment
     n_lgd_percent = models.DecimalField(max_digits=5, decimal_places=4)
     fic_mis_date = models.DateField()
 
@@ -498,7 +498,7 @@ STAGE_CHOICES = [
 
 # Choices for Payment Frequency
 PAYMENT_FREQUENCY_CHOICES = [
-    ('M', 'Monthly'),
+    ('D', 'Daily'),
     ('Q', 'Quarterly'),
     ('H', 'Half-Yearly'),
     ('Y', 'Yearly')
@@ -522,6 +522,7 @@ class FSI_DPD_Stage_Mapping(models.Model):
 
 # Choices for Payment Frequency
 AMRT_CHOICES = [
+    ('D', 'Daily'),
     ('M', 'Monthly'),
     ('Q', 'Quarterly'),
     ('H', 'Half-Yearly'),
@@ -611,7 +612,7 @@ class FCT_Reporting_Lines(models.Model):
     n_twelve_months_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
     n_lifetime_pd = models.DecimalField(max_digits=15, decimal_places=11, null=True, blank=True)
     n_pd_term_structure_skey = models.BigIntegerField(null=True, blank=True)
-    n_pd_term_structure_name = models.ForeignKey(FSI_Product_Segment, on_delete=models.CASCADE, null=True, blank=True)
+    n_pd_term_structure_name = models.ForeignKey(FSI_Product_Segment, on_delete=models.SET_NULL, null=True, blank=True)
     n_pd_term_structure_desc = models.CharField(max_length=50, editable=False)
     
     n_12m_pd_change = models.DecimalField(max_digits=22, decimal_places=3, null=True, blank=True)
@@ -727,7 +728,9 @@ class RunProcess(models.Model):
 class FunctionExecutionStatus(models.Model):
     process = models.ForeignKey(Process, on_delete=models.CASCADE)
     function = models.ForeignKey(Function, on_delete=models.CASCADE)
-    execution_date = models.DateTimeField(auto_now_add=True)
+    execution_start_date = models.DateTimeField(auto_now_add=True)  # Renamed from execution_date to execution_start_date
+    execution_end_date = models.DateTimeField(null=True, blank=True)  # New field for when the function finishes execution
+    duration = models.DurationField(null=True, blank=True)
     execution_order = models.PositiveIntegerField(null=True)
     reporting_date = models.DateField(null=True)
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Ongoing', 'Ongoing'), ('Success', 'Success'), ('Failed', 'Failed')], default='Pending')
@@ -738,14 +741,15 @@ class FunctionExecutionStatus(models.Model):
 
     class Meta:
         db_table = 'dim_function_execution_status'
-        ordering = ['run_count', 'execution_date']
+        ordering = ['run_count', 'execution_start_date']
         constraints = [
-            models.UniqueConstraint(fields=['execution_date', 'process_run_id','function'], name='unique_execution_process')
+            models.UniqueConstraint(fields=['execution_start_date', 'process_run_id','function'], name='unique_execution_process')
         ]
       
 
     def __str__(self):
         return f"{self.process.process_name} - {self.function.function_name} - {self.status}"
+    
     
 class Log(models.Model):
     LOG_LEVEL_CHOICES = [
