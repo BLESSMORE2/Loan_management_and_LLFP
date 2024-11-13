@@ -45,6 +45,16 @@
                             <i class="fas fa-exchange-alt me-2"></i> ECL Reconciliation Report
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'ecl_water_fall_reconciliation_main_filter' %}active{% endif %} text-white" href="{% url 'ecl_water_fall_reconciliation_main_filter' %}">
+                            <i class="fas fa-sync-alt me-2"></i> ECL Account Level Water Fall Report
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'ecl_water_fall_reconciliation_main_filter' %}active{% endif %} text-white" href="{% url 'ecl_water_fall_reconciliation_main_filter' %}">
+                            <i class="fas fa-chart-bar me-2"></i> Graphical Insights
+                        </a>
+                    </li>
                 </ul>
             </div>
         </nav>
@@ -52,7 +62,7 @@
         <!-- Main Content Area -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-3">
            
-                <h2 class="text-primary mb-4 text-center">IFRS 9 Advanced Report Dashboard</h2>
+                <h2 class="text-primary mb-4 text-center">IFRS 9 Report Dashboard</h2>
             
             {% include "reports/dashboard.html" %}
 

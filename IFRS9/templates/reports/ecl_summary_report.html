@@ -8,10 +8,15 @@
 
         <!-- Main Content Area -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-3" style="margin-left: 260px;">  <!-- Adjusted to prevent overlap -->
-            <h2 class="text-primary mb-4 text-center">IFRS 9 Advanced Report Dashboard</h2>
             <div class="container mx-auto mt-10">
                 <h1 class="text-3xl font-semibold mb-8 text-center text-primary">ECL Summary Report</h1>
                 
+                <!-- Back Button -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <a href="{% url 'list_reports' %}" class="btn btn-secondary mb-3 px-4 py-2 rounded-md shadow-md hover:bg-primary hover:text-white transition">Back</a>
+                    </div>
+                </div>
                 
                 <!-- Main Filter Section -->
                 <form method="POST" action="">

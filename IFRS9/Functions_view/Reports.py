@@ -1164,3 +1164,193 @@ def export_pd_report_to_excel(request):
     wb.save(response)
 
     return response
+
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def water_fall_main_filter_view(request):
+    errors = {}
+
+    # Handle POST request (applying the filter)
+    if request.method == 'POST':
+        # Retrieve selected FIC MIS Dates and Run Keys from the form
+        fic_mis_date1 = request.POST.get('fic_mis_date1')
+        run_key1 = request.POST.get('run_key1')
+        fic_mis_date2 = request.POST.get('fic_mis_date2')
+        run_key2 = request.POST.get('run_key2')
+
+        # Validate that both dates and run keys are provided
+        if not fic_mis_date1:
+            errors['fic_mis_date1'] = 'Please select FIC MIS Date 1.'
+        if not run_key1:
+            errors['run_key1'] = 'Please select Run Key 1.'
+        if not fic_mis_date2:
+            errors['fic_mis_date2'] = 'Please select FIC MIS Date 2.'
+        if not run_key2:
+            errors['run_key2'] = 'Please select Run Key 2.'
+
+        # If no errors, proceed with filter
+        if not errors:
+            request.session['fic_mis_date1'] = fic_mis_date1
+            request.session['run_key1'] = run_key1
+            request.session['fic_mis_date2'] = fic_mis_date2
+            request.session['run_key2'] = run_key2
+
+            # Retrieve filtered data based on the selected main filter values
+            ecl_data1 = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date1, n_run_key=run_key1)
+            ecl_data2 = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date2, n_run_key=run_key2)
+
+            # Convert the filtered data into a DataFrame
+            ecl_data1_df = pd.DataFrame(list(ecl_data1.values()))
+            ecl_data2_df = pd.DataFrame(list(ecl_data2.values()))
+
+            # Ensure both DataFrames use the same set of account numbers
+            common_account_numbers = set(ecl_data1_df['n_account_number']).intersection(ecl_data2_df['n_account_number'])
+            ecl_data1_df = ecl_data1_df[ecl_data1_df['n_account_number'].isin(common_account_numbers)]
+            ecl_data2_df = ecl_data2_df[ecl_data2_df['n_account_number'].isin(common_account_numbers)]
+
+            # Convert date fields to strings for both DataFrames
+            for df in [ecl_data1_df, ecl_data2_df]:
+                if 'fic_mis_date' in df.columns:
+                    df['fic_mis_date'] = df['fic_mis_date'].astype(str)
+                if 'd_maturity_date' in df.columns:
+                    df['d_maturity_date'] = df['d_maturity_date'].astype(str)
+
+            # Create the directory if it doesn't exist
+            if not os.path.exists(CSV_DIR):
+                os.makedirs(CSV_DIR)
+
+            # Save the data as CSV files in the session
+            csv_filename1 = os.path.join(CSV_DIR, f"ecl_data_{fic_mis_date1}_{run_key1}.csv")
+            csv_filename2 = os.path.join(CSV_DIR, f"ecl_data_{fic_mis_date2}_{run_key2}.csv")
+            ecl_data1_df.to_csv(csv_filename1, index=False)
+            ecl_data2_df.to_csv(csv_filename2, index=False)
+            request.session['csv_filename1'] = csv_filename1
+            request.session['csv_filename2'] = csv_filename2
+            request.session.modified = True
+
+            # Redirect to the sub-filter view
+            return redirect('ecl_water_fall_sub_filter')
+
+    # Handle GET request to load FIC MIS Dates
+    fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
+
+    # AJAX request for dynamically updating the Run Key dropdowns
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        field_name = request.GET.get('field')
+        field_value = request.GET.get('value')
+
+        if field_name == 'fic_mis_date':
+            # Fetch run keys corresponding to the selected FIC MIS date
+            n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=field_value).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
+            return JsonResponse({'n_run_keys': list(n_run_keys)})
+
+    # If there are errors or it's a GET request, render the form with any errors
+    return render(request, 'reports/waterfall_main_filter.html', {
+        'fic_mis_dates': fic_mis_dates,
+        'errors': errors  # Pass the errors to the template
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def water_fall_sub_filter_view(request):
+    # Retrieve CSV filenames from the session
+    csv_filename_1 = request.session.get('csv_filename1')
+    csv_filename_2 = request.session.get('csv_filename2')
+
+    # Load CSV files into DataFrames
+    ecl_data_df_1 = pd.read_csv(csv_filename_1)
+    ecl_data_df_2 = pd.read_csv(csv_filename_2)
+
+    # Merge data based on account number using an inner join
+    merged_data = pd.merge(
+        ecl_data_df_1,
+        ecl_data_df_2,
+        on=['n_account_number'],
+        how='inner',
+        suffixes=('_prev', '_curr')
+    )
+
+    # Filter based on account number from the request
+    account_number = request.GET.get('n_account_number')
+    if account_number:
+        merged_data = merged_data[merged_data['n_account_number'] == account_number]
+
+    # Prepare data for the waterfall report
+    account_details = {}
+    waterfall_data_12m = []
+    waterfall_data_lifetime = []
+    if not merged_data.empty:
+        # Retrieve ECL values and other parameters for both periods
+        twelve_month_ecl_prev = merged_data['n_12m_ecl_rcy_prev'].iloc[0]
+        twelve_month_ecl_curr = merged_data['n_12m_ecl_rcy_curr'].iloc[0]
+        lifetime_ecl_prev = merged_data['n_lifetime_ecl_rcy_prev'].iloc[0]
+        lifetime_ecl_curr = merged_data['n_lifetime_ecl_rcy_curr'].iloc[0]
+
+        # Calculate changes for the 12-month ECL waterfall
+        stage_change_12m = twelve_month_ecl_curr - twelve_month_ecl_prev if merged_data['n_stage_descr_prev'].iloc[0] != merged_data['n_stage_descr_curr'].iloc[0] else 0
+        exposure_change_12m = merged_data['n_exposure_at_default_rcy_curr'].iloc[0] - merged_data['n_exposure_at_default_rcy_prev'].iloc[0]
+        pd_change_12m = merged_data['n_twelve_months_pd_curr'].iloc[0] - merged_data['n_twelve_months_pd_prev'].iloc[0]
+        lgd_change_12m = merged_data['n_lgd_percent_curr'].iloc[0] - merged_data['n_lgd_percent_prev'].iloc[0]
+
+        # Populate waterfall data for 12-month ECL
+        waterfall_data_12m = [
+            {"description": "Beginning 12-Month ECL", "impact": twelve_month_ecl_prev},
+            {"description": "Change due to Stage (12-Month)", "impact": stage_change_12m},
+            {"description": "Change in Exposure at Default (12-Month)", "impact": exposure_change_12m},
+            {"description": "Change due to PD (12-Month)", "impact": pd_change_12m},
+            {"description": "Change due to LGD (12-Month)", "impact": lgd_change_12m},
+            {"description": "Ending 12-Month ECL", "impact": twelve_month_ecl_curr},
+        ]
+
+        # Calculate changes for the lifetime ECL waterfall
+        stage_change_lifetime = lifetime_ecl_curr - lifetime_ecl_prev if merged_data['n_stage_descr_prev'].iloc[0] != merged_data['n_stage_descr_curr'].iloc[0] else 0
+        exposure_change_lifetime = merged_data['n_exposure_at_default_rcy_curr'].iloc[0] - merged_data['n_exposure_at_default_rcy_prev'].iloc[0]
+        pd_change_lifetime = merged_data['n_lifetime_pd_curr'].iloc[0] - merged_data['n_lifetime_pd_prev'].iloc[0]
+        lgd_change_lifetime = merged_data['n_lgd_percent_curr'].iloc[0] - merged_data['n_lgd_percent_prev'].iloc[0]
+
+        # Populate waterfall data for lifetime ECL
+        waterfall_data_lifetime = [
+            {"description": "Beginning Lifetime ECL", "impact": lifetime_ecl_prev},
+            {"description": "Change due to Stage (Lifetime)", "impact": stage_change_lifetime},
+            {"description": "Change in Exposure at Default (Lifetime)", "impact": exposure_change_lifetime},
+            {"description": "Change due to PD (Lifetime)", "impact": pd_change_lifetime},
+            {"description": "Change due to LGD (Lifetime)", "impact": lgd_change_lifetime},
+            {"description": "Ending Lifetime ECL", "impact": lifetime_ecl_curr},
+        ]
+
+        # Account details for the selected account
+        account_details = {
+            'date_prev': merged_data['fic_mis_date_prev'].iloc[0],
+            'date_curr': merged_data['fic_mis_date_curr'].iloc[0],
+            'n_account_number': merged_data['n_account_number'].iloc[0],
+            'exposure_at_default_prev': merged_data['n_exposure_at_default_rcy_prev'].iloc[0],
+            'exposure_at_default_curr': merged_data['n_exposure_at_default_rcy_curr'].iloc[0],
+            'ifrs_stage_prev': merged_data['n_stage_descr_prev'].iloc[0],
+            'ifrs_stage_curr': merged_data['n_stage_descr_curr'].iloc[0],
+            'twelve_month_pd_prev': merged_data['n_twelve_months_pd_prev'].iloc[0],
+            'twelve_month_pd_curr': merged_data['n_twelve_months_pd_curr'].iloc[0],
+            'lifetime_pd_prev': merged_data['n_lifetime_pd_prev'].iloc[0],
+            'lifetime_pd_curr': merged_data['n_lifetime_pd_curr'].iloc[0],
+            'lgd_prev': merged_data['n_lgd_percent_prev'].iloc[0],
+            'lgd_curr': merged_data['n_lgd_percent_curr'].iloc[0],
+            'twelve_month_ecl_prev': twelve_month_ecl_prev,
+            'twelve_month_ecl_curr': twelve_month_ecl_curr,
+            'lifetime_ecl_prev': lifetime_ecl_prev,
+            'lifetime_ecl_curr': lifetime_ecl_curr,
+            'prod_segment_prev': merged_data['n_prod_segment_prev'].iloc[0],
+            'prod_segment_curr': merged_data['n_prod_segment_curr'].iloc[0],
+        }
+
+    # Get account options for the dropdown
+    account_options = merged_data['n_account_number'].unique().tolist()
+
+    return render(request, 'reports/waterfall_report.html', {
+        'account_details': account_details,
+        'account_options': account_options,
+        'selected_account': account_number,
+        'waterfall_data_12m': waterfall_data_12m,
+        'waterfall_data_lifetime': waterfall_data_lifetime,
+    })
