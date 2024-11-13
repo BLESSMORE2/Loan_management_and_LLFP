@@ -1,6 +1,12 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-5">
+
+    <!-- Include Operations Sidebar -->
+    {% include 'operations/operations_sidebar.html' %}
+    <!-- Main Content Area -->
+    <div class="col-md-9 ms-sm-auto col-lg-10 px-md-3" style="margin-left: 260px;"> <!-- Adjusted to prevent overlap with sidebar -->
+         
     <h1 class="h3 text-primary text-center">Monitor Running Process</h1>
 
     <!-- Back button -->
@@ -106,6 +112,7 @@
                 </tbody>
             </table>
         </div>
+    </div>
     </div>
 </div>
 

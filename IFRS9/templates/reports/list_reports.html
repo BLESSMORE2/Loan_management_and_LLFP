@@ -1,128 +1,150 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-1">
-    
-    <!-- Back Button -->
-    <div class="mb-1">
-        <a href="{% url 'reporting_home' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-    </div>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <!-- Back Button -->
+                    <li class="nav-item mb-4">
+                        <a href="{% url 'reporting_home' %}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </li>
 
-    <!-- Page Heading -->
-    <h1 class="display-4 font-weight-bold text-center mb-2" style="color: #333;">Available Reports</h1>
+                     <!-- Back Button -->
+                     <li class="nav-item mb-4">
+                        <a href="{% url 'reporting_home' %}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </li>
 
-    <!-- Row of Cards -->
-    <div class="row justify-content-center">
-        
-        <!-- ECL Summary Report Card -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-lg border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="icon mb-4">
-                        <i class="fas fa-balance-scale fa-3x text-primary"></i>
-                    </div>
-                    <h5 class="card-title font-weight-bold">ECL Summary Report</h5>
-                    <p class="card-text text-muted">Overview of the total Expected Credit Loss (ECL) for all financial instruments.</p>
-                    <a href="{% url 'ecl_summary_report' %}" class="btn btn-primary w-100">View</a>
-                </div>
+                    <!-- Sidebar Heading -->
+                    <h5 class="sidebar-heading px-3 mb-3 text-white">Reports</h5>
+
+                    <!-- Sidebar Links -->
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'ecl_summary_report' %}active{% endif %} text-white" href="{% url 'ecl_summary_report' %}">
+                            <i class="fas fa-balance-scale me-2"></i> ECL Summary Report
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'pd_analysis_main_filter' %}active{% endif %} text-white" href="{% url 'pd_analysis_main_filter' %}">
+                            <i class="fas fa-chart-pie me-2"></i> PD & LGD Analysis Report
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'ecl_account_reconciliation_main_filter' %}active{% endif %} text-white" href="{% url 'ecl_account_reconciliation_main_filter' %}">
+                            <i class="fas fa-sync-alt me-2"></i> ECL Account Level Reconciliation
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'ecl_reconciliation_main_filter' %}active{% endif %} text-white" href="{% url 'ecl_reconciliation_main_filter' %}">
+                            <i class="fas fa-exchange-alt me-2"></i> ECL Reconciliation Report
+                        </a>
+                    </li>
+                </ul>
             </div>
-        </div>
-        
-        <!-- PD & LGD Analysis Report Card -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-lg border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="icon mb-4">
-                        <i class="fas fa-chart-pie fa-3x text-primary"></i>
-                    </div>
-                    <h5 class="card-title font-weight-bold">PD & LGD Analysis Report</h5>
-                    <p class="card-text text-muted">Analysis of Probability of Default and Loss Given Default across portfolios.</p>
-                    <a href="{% url 'pd_analysis_main_filter' %}" class="btn btn-primary w-100">View</a>
-                </div>
-            </div>
-        </div>
+        </nav>
 
-        <!-- ECL Account Level Reconciliation Report Card -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-lg border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="icon mb-4">
-                        <i class="fas fa-sync-alt fa-3x text-primary"></i>
-                    </div>
-                    <h5 class="card-title font-weight-bold">ECL Account Level Reconciliation</h5>
-                    <p class="card-text text-muted">Reconcile ECL changes at the account level between reporting periods.</p>
-                    <a href="{% url 'ecl_account_reconciliation_main_filter' %}" class="btn btn-primary w-100">View</a>
-                </div>
-            </div>
-        </div>
+        <!-- Main Content Area -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-3">
+           
+                <h2 class="text-primary mb-4 text-center">IFRS 9 Advanced Report Dashboard</h2>
+            
+            {% include "reports/dashboard.html" %}
 
-        <!-- ECL Reconciliation Report Card -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-lg border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="icon mb-4">
-                        <i class="fas fa-exchange-alt fa-3x text-primary"></i>
-                    </div>
-                    <h5 class="card-title font-weight-bold">ECL Reconciliation Report</h5>
-                    <p class="card-text text-muted">Compare ECL changes between different reporting periods.</p>
-                    <a href="{% url 'ecl_reconciliation_main_filter' %}" class="btn btn-primary w-100">View</a>
-                </div>
-            </div>
-        </div>
-
+        </main>
     </div>
 </div>
-{% endblock %}
 
-{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <style>
-    /* Styling for the cards */
-    .card {
-        border-radius: 10px;
-        transition: all 0.3s ease-in-out;
+    /* Ensure the sidebar covers the full height of the page */
+    html, body {
+        height: 100%;
+        margin: 0;
     }
 
-    .card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    #sidebar {
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0; /* Align the sidebar to the far left */
+        background-color: #003366; /* Primary color */
+        color: #ffffff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        width: 250px; /* Fixed width for sidebar */
+        z-index: 1000; /* Ensure sidebar stays on top */
     }
 
-    /* Icon styling */
-    .icon {
-        margin-bottom: 20px;
+    /* Sidebar links */
+    #sidebar .nav-link {
+        font-size: 1.1rem;
+        color: #ffffff; /* Keep text color white */
+        padding: 10px 20px;
+        font-weight: bold; /* Bold text */
+        border-left: 4px solid transparent;
+        transition: background-color 0.3s ease, color 0.3s ease, border-left-color 0.3s ease;
     }
 
-    .icon i {
-        color: #007bff;
+    /* Sidebar icons */
+    #sidebar .nav-link i {
+        color: #ffffff; /* Keep icon color white by default */
+        transition: color 0.3s ease; /* Smooth transition for icon color */
     }
 
-    /* Title styling */
-    .card-title {
-        font-size: 1.5rem;
-        margin-bottom: 15px;
+    /* Hover effect for sidebar links */
+    #sidebar .nav-link:hover {
+        background-color: #2064a8; /* Darker shade of primary color */
+        border-left-color: #ffcc00; /* Yellow border on hover */
+        color: #ffcc00; /* Change text color to yellow on hover */
     }
 
-    .card-text {
-        font-size: 0.9rem;
-        margin-bottom: 20px;
+    /* Change icon color on hover */
+    #sidebar .nav-link:hover i {
+        color: #ffcc00; /* Change icon color to yellow on hover */
     }
 
-    /* Button styling */
-    .btn {
-        padding: 10px;
-        font-size: 0.95rem;
+    /* Active link styling */
+    #sidebar .nav-link.active {
+        background-color: #003366; /* Darker shade for active link */
+        color: #ffffff;
+        border-left-color: #ffffff; /* White left border for active link */
     }
 
-    /* Adjust the heading */
+    /* Back button styling */
+    #sidebar .btn-outline-light {
+        color: #ffffff;
+        border-color: #ffffff;
+    }
+    #sidebar .btn-outline-light:hover {
+        background-color: #ffffff;
+        color: #003366;
+    }
+
+    /* Sidebar heading styling */
+    .sidebar-heading {
+        font-size: 1rem;
+        color: #ffffff;
+        letter-spacing: 0.1rem;
+        text-transform: uppercase;
+    }
+
+    /* Adjust the main content area */
+    main {
+        margin-left: 260px; /* Adjust margin to account for sidebar width */
+    }
+
+    /* Heading adjustments */
     h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #333;
+     
+        color: #ffffff;
     }
 
-    .container {
+    .container-fluid {
         max-width: 1140px;
     }
 </style>

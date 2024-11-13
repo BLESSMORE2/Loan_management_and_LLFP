@@ -1,83 +1,93 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="container mt-5">
-    <h1 class="h3 text-primary text-center">Execute Process</h1>
-    <!-- Back to process list button -->
-    <a href="{% url 'operations' %}" class="btn btn-secondary mt-3">Back </a>
-    <br>
-    <br>
-    <!-- Search form -->
-    <form method="GET" action="{% url 'execute_process_view' %}" class="mb-4">
-        <div class="form-inline">
-            <input type="text" name="search" value="{{ query }}" placeholder="Search Process..." class="form-control mr-2" style="width: 70%;">
-            <button type="submit" class="btn btn-primary">Search</button>
-        </div>
-    </form>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Include Operations Sidebar -->
+        {% include 'operations/operations_sidebar.html' %}
 
-    <!-- Select process from the list -->
-    <form method="POST" action="{% url 'run_process_execution' %}">
-        {% csrf_token %}
-
-        <h4>Select a Process</h4>
-        <div class="table-responsive fixed-table-container">
-            <table id="process-table" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Select</th>
-                        <th>Process ID</th>
-                        <th>Process Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for process in processes %}
-                    <tr>
-                        <td>
-                            <input type="radio" name="process_id" value="{{ process.id }}" class="process-selector">
-                        </td>
-                        <td>{{ process.id }}</td>
-                        <td>{{ process.process_name }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Display functions dynamically when a process is selected -->
-        <div id="function-section" class="mt-4" style="display: none;">  <!-- Initially hidden -->
-            <h4>Select Functions to Execute</h4>
-            <div class="table-responsive fixed-table-container">
-                <table id="function-table" class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Select</th>
-                            <th>Function Name</th>
-                            <th>Execution Order</th>
-                        </tr>
-                    </thead>
-                    <tbody id="function-tbody">
-                        <!-- Functions will be loaded dynamically here -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Styled Execution Date Section -->
-            <div class="form-group mt-4">
-                <label for="execution_date" class="font-weight-bold">Execution Date</label>
-                <div class="input-group" style="max-width: 300px;">  <!-- Adjusted width -->
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-primary text-white" id="date-icon">
-                            <i class="fas fa-calendar-alt"></i>
-                        </span>
-                    </div>
-                    <input type="date" name="execution_date" class="form-control" aria-describedby="date-icon" required>
+        <!-- Main Content Area -->
+        <div class="col-md-9 ms-sm-auto col-lg-10 px-md-3" style="margin-left: 260px;"> <!-- Adjusted to prevent overlap with sidebar -->
+            
+            <h1 class="h3 text-primary text-center">Execute Process</h1>
+            <!-- Back to process list button -->
+            <a href="{% url 'operations' %}" class="btn btn-secondary mt-3">Back </a>
+            <br>
+            <br>
+            <!-- Search form -->
+            <form method="GET" action="{% url 'execute_process_view' %}" class="mb-4">
+                <div class="form-inline">
+                    <input type="text" name="search" value="{{ query }}" placeholder="Search Process..." class="form-control mr-2" style="width: 70%;">
+                    <button type="submit" class="btn btn-primary">Search</button>
                 </div>
-                <small class="form-text text-muted">Please select a date for process execution.</small>
-            </div>
-        </div>
+            </form>
 
-        <!-- Submit button to execute the process with selected functions -->
-        <button type="submit" class="btn btn-primary mt-3" id="execute-btn" style="display: none;">Execute Process</button>
-    </form>
+            <!-- Select process from the list -->
+            <form method="POST" action="{% url 'run_process_execution' %}">
+                {% csrf_token %}
+
+                <h4>Select a Process</h4>
+                <div class="table-responsive fixed-table-container">
+                    <table id="process-table" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Select</th>
+                                <th>Process ID</th>
+                                <th>Process Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for process in processes %}
+                            <tr>
+                                <td>
+                                    <input type="radio" name="process_id" value="{{ process.id }}" class="process-selector">
+                                </td>
+                                <td>{{ process.id }}</td>
+                                <td>{{ process.process_name }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Display functions dynamically when a process is selected -->
+                <div id="function-section" class="mt-4" style="display: none;">  <!-- Initially hidden -->
+                    <h4>Select Functions to Execute</h4>
+                    <div class="table-responsive fixed-table-container">
+                        <table id="function-table" class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Select</th>
+                                    <th>Function Name</th>
+                                    <th>Execution Order</th>
+                                </tr>
+                            </thead>
+                            <tbody id="function-tbody">
+                                <!-- Functions will be loaded dynamically here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Styled Execution Date Section -->
+                    <div class="form-group mt-4">
+                        <label for="execution_date" class="font-weight-bold">Execution Date</label>
+                        <div class="input-group" style="max-width: 300px;">  <!-- Adjusted width -->
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-primary text-white" id="date-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </span>
+                            </div>
+                            <input type="date" name="execution_date" class="form-control" aria-describedby="date-icon" required>
+                        </div>
+                        <small class="form-text text-muted">Please select a date for process execution.</small>
+                    </div>
+                </div>
+
+                <!-- Submit button to execute the process with selected functions -->
+                <button type="submit" class="btn btn-primary mt-3" id="execute-btn" style="display: none;">Execute Process</button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- Include jQuery and DataTables library -->

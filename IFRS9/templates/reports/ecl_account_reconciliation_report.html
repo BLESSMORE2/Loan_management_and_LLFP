@@ -98,6 +98,16 @@
                         <td>{{ account_details.ifrs_stage_curr }}</td>
                     </tr>
                     <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Delinquency Band Code</td>
+                        <td>{{ account_details.delq_band_code_prev }}</td>
+                        <td>{{ account_details.delq_band_code_curr }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Maturity Date</td>
+                        <td>{{ account_details.maturity_date_prev }}</td>
+                        <td>{{ account_details.maturity_date_curr }}</td>
+                    </tr>
+                    <tr>
                         <td class="font-weight-bold" style="background-color: #f5f5f5;">12 Month PD</td>
                         <td>{{ account_details.twelve_month_pd_prev|floatformat:2 }}%</td>
                         <td>{{ account_details.twelve_month_pd_curr|floatformat:2 }}%</td>

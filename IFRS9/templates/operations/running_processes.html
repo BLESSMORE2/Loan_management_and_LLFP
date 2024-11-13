@@ -1,67 +1,76 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4 text-primary">Running Processes</h2>
-    <!-- Back to process list button -->
-    <a href="{% url 'operations' %}" class="btn btn-secondary mt-3">Back </a>
-    <br>
-    <br>
-    <!-- Display any success or error messages with enhanced styling -->
-    {% if messages %}
-        <div class="container mt-3">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow" role="alert" style="border-left: 5px solid {% if message.tags == 'success' %}#28a745{% elif message.tags == 'danger' %}#dc3545{% elif message.tags == 'warning' %}#ffc107{% else %}#007bff{% endif %}; padding: 20px;">
-                    <strong>{% if message.tags == 'success' %}Success!{% elif message.tags == 'danger' %}Error!{% elif message.tags == 'warning' %}Warning!{% else %}Info!{% endif %}</strong> {{ message }}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Include Operations Sidebar -->
+        {% include 'operations/operations_sidebar.html' %}
 
-    <!-- Table displaying the running processes -->
-    {% if running_processes %}
-        <table class="table table-hover table-striped shadow-sm">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Process Name</th>
-                    <th>Function</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for process in running_processes %}
-                <tr>
-                    <td>{{ process.process.process_name }}</td>
-                    <td>{{ process.function.function_name }}</td>
-                    <td>
-                        {% if process.status == "Ongoing" %}
-                            <span class="badge badge-warning">{{ process.status }}</span>
-                        {% elif process.status == "Pending" %}
-                            <span class="badge badge-primary">{{ process.status }}</span>
-                        {% elif process.status == "Success" %}
-                            <span class="badge badge-success">{{ process.status }}</span>
-                        {% else %}
-                            <span class="badge badge-danger">{{ process.status }}</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="confirmCancel('{{ process.process_run_id }}', '{{ process.process.process_name }}')">
-                            Cancel
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="alert alert-info" role="alert">
-            No running processes at the moment.
+        <!-- Main Content Area -->
+        <div class="col-md-9 ms-sm-auto col-lg-10 px-md-3" style="margin-left: 260px;"> <!-- Adjusted to prevent overlap with sidebar -->
+            
+            <h2 class="mb-4 text-primary">Running Processes</h2>
+            <!-- Back to process list button -->
+            <a href="{% url 'operations' %}" class="btn btn-secondary mt-3">Back </a>
+            <br>
+            <br>
+            <!-- Display any success or error messages with enhanced styling -->
+            {% if messages %}
+                <div class="container mt-3">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow" role="alert" style="border-left: 5px solid {% if message.tags == 'success' %}#28a745{% elif message.tags == 'danger' %}#dc3545{% elif message.tags == 'warning' %}#ffc107{% else %}#007bff{% endif %}; padding: 20px;">
+                            <strong>{% if message.tags == 'success' %}Success!{% elif message.tags == 'danger' %}Error!{% elif message.tags == 'warning' %}Warning!{% else %}Info!{% endif %}</strong> {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Table displaying the running processes -->
+            {% if running_processes %}
+                <table class="table table-hover table-striped shadow-sm">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Process Name</th>
+                            <th>Function</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for process in running_processes %}
+                        <tr>
+                            <td>{{ process.process.process_name }}</td>
+                            <td>{{ process.function.function_name }}</td>
+                            <td>
+                                {% if process.status == "Ongoing" %}
+                                    <span class="badge badge-warning">{{ process.status }}</span>
+                                {% elif process.status == "Pending" %}
+                                    <span class="badge badge-primary">{{ process.status }}</span>
+                                {% elif process.status == "Success" %}
+                                    <span class="badge badge-success">{{ process.status }}</span>
+                                {% else %}
+                                    <span class="badge badge-danger">{{ process.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="confirmCancel('{{ process.process_run_id }}', '{{ process.process.process_name }}')">
+                                    Cancel
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    No running processes at the moment.
+                </div>
+            {% endif %}
         </div>
-    {% endif %}
+    </div>
 </div>
 
 <!-- Modal for Cancel Confirmation -->

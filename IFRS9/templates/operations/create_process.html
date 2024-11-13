@@ -3,55 +3,65 @@
 
 {% block content %}
 <div class="container-fluid">
-    <a href="{% url 'process_list' %}" class="btn btn-outline-secondary mb-3">
-        <i class="fas fa-arrow-left"></i> Back to Process List
-    </a>
-
-    <h1 class="mt-4">{{ title }}</h1>
     <div class="row">
-        <div class="col-md-10 offset-md-1">
-            <div class="card">
-                <div class="card-header bg-primary text-white">{{ title }}</div>
-                <div class="card-body">
-                    {% if messages %}
-                        <div class="alert alert-danger">
-                            {% for message in messages %}
-                                {{ message }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    <form method="post" id="process-form">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        {{ formset.management_form }}
-                        <fieldset>
-                            <legend>Select Functions and Define Execution Order</legend>
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Function</th>
-                                        <th>Execution Order</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="formset-container">
-                                    {% for item_form in formset %}
-                                    <tr class="formset-item" id="form-{{ forloop.counter }}">
-                                        <td>{{ item_form.function.errors }}{{ item_form.function }}</td>
-                                        <td>{{ item_form.order.errors }}{{ item_form.order }}</td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger btn-sm" onclick="removeForm(this)">Delete</button>
-                                        </td>
-                                    </tr>
+        <!-- Include Operations Sidebar -->
+        {% include 'operations/operations_sidebar.html' %}
+
+        <!-- Main Content Area -->
+        <div class="col-md-9 ms-sm-auto col-lg-10 px-md-3" style="margin-left: 260px;"> <!-- Adjusted to prevent overlap with sidebar -->
+            
+            <!-- Back Button -->
+            <a href="{% url 'process_list' %}" class="btn btn-outline-secondary mb-3">
+                <i class="fas fa-arrow-left"></i> Back to Process List
+            </a>
+
+            <h1 class="mt-4">{{ title }}</h1>
+            <div class="row">
+                <div class="col-md-10 offset-md-1">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">{{ title }}</div>
+                        <div class="card-body">
+                            {% if messages %}
+                                <div class="alert alert-danger">
+                                    {% for message in messages %}
+                                        {{ message }}
                                     {% endfor %}
-                                </tbody>
-                            </table>
-                        </fieldset>
-                        <div class="d-flex justify-content-between mt-3">
-                            <button type="button" class="btn btn-secondary" id="add-form-button">Add another Function</button>
-                            <button type="submit" class="btn btn-primary">Save Process</button>
+                                </div>
+                            {% endif %}
+                            <form method="post" id="process-form">
+                                {% csrf_token %}
+                                {{ form|crispy }}
+                                {{ formset.management_form }}
+                                <fieldset>
+                                    <legend>Select Functions and Define Execution Order</legend>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Function</th>
+                                                <th>Execution Order</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="formset-container">
+                                            {% for item_form in formset %}
+                                            <tr class="formset-item" id="form-{{ forloop.counter }}">
+                                                <td>{{ item_form.function.errors }}{{ item_form.function }}</td>
+                                                <td>{{ item_form.order.errors }}{{ item_form.order }}</td>
+                                                <td>
+                                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeForm(this)">Delete</button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </fieldset>
+                                <div class="d-flex justify-content-between mt-3">
+                                    <button type="button" class="btn btn-secondary" id="add-form-button">Add another Function</button>
+                                    <button type="submit" class="btn btn-primary">Save Process</button>
+                                </div>
+                            </form>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -143,4 +153,5 @@
         width: 100%;
     }
 </style>
+
 {% endblock %}

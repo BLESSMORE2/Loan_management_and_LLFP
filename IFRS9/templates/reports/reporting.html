@@ -1,68 +1,111 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container py-5">
-     <!-- Back Button -->
-     <a href="{% url 'ifrs9_home' %}" class="btn btn-outline-secondary mb-3">
-        <i class="fas fa-arrow-left"></i> Back 
-    </a>
-    
-    <br>
-    <h1 class="h3 text-primary text-center mb-5">Reporting & Analytics</h1>
+<div class="video-background">
+    <video autoplay loop muted playsinline class="background-video">
+        <source src="{% static 'videos/reports.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
-    
-    <!-- Reporting & Analytics List -->
-    <div class="row justify-content-center">
+<div class="content-overlay">
+    <div class="container py-1">
+       
         
-        <!-- First Report Option (View Results and Extract) -->
-        <div class="col-md-8 mb-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title text-dark mb-2">View Results and Extract</h5>
-                        <p class="text-muted">Analyze your reports and extract detailed insights for business decisions.</p>
+        <h1 class="h3 text-center mb-5" style="color: #ffffff; font-weight: 700;">Reporting & Analytics</h1>
+
+        <!-- Reporting & Analytics List -->
+        <div class="row justify-content-center">
+            <!-- First Report Option (View Results and Extract) -->
+            <div class="col-md-8 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-2">View Results and Extract</h5>
+                            <p class="description-text">Analyze your reports and extract detailed insights for business decisions.</p>
+                        </div>
+                        <a href="{% url 'view_results_and_extract' %}" class="btn btn-outline-light px-4">View</a>
                     </div>
-                    <a href="{% url 'view_results_and_extract' %}" class="btn btn-outline-primary px-4">View</a>
+                </div>
+            </div>
+
+            <!-- Second Report Option (Reports) -->
+            <div class="col-md-8 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-2">Reports</h5>
+                            <p class="description-text">Access various reports to drive analytics and strategic decisions.</p>
+                        </div>
+                        <a href="{% url 'list_reports' %}" class="btn btn-outline-light px-4">View</a>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Second Report Option (Reports) -->
-        <div class="col-md-8 mb-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title text-dark mb-2">Reports</h5>
-                        <p class="text-muted">Access various reports to drive analytics and strategic decisions.</p>
-                    </div>
-                    <a href="{% url 'list_reports' %}" class="btn btn-outline-success px-4">View</a>
-                </div>
-            </div>
-        </div>
-        
     </div>
 </div>
 
 <!-- Custom Styles -->
 <style>
+    /* Video Background */
+    .video-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        z-index: -1;
+    }
+    .background-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Content Overlay */
+    .content-overlay {
+        position: relative;
+        z-index: 1;
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+        color: #ffffff;
+    }
+
+    /* Card and Button Styles */
     .card {
+        background-color: rgba(64, 64, 66, 0.9); /* Increased opacity for better readability */
         border-radius: 15px;
+        border: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     }
     .card-title {
         font-size: 1.25rem;
         font-weight: 600;
+        color: #ffffff; /* Brightened for readability */
     }
-    .card-body p {
+    .card-body .description-text {
         margin: 0;
         font-size: 0.95rem;
+        color: #f0f0f0; /* Soft white for high contrast */
     }
-    .btn {
-        font-size: 0.9rem;
-        font-weight: 500;
+    .btn-outline-light {
+        color: #ffffff;
+        border-color: #ffffff;
+    }
+    .btn-outline-light:hover {
+        background-color: #ffffff;
+        color: #333333;
     }
     .container h1 {
         font-weight: 700;
         text-transform: uppercase;
+        color: #ffffff;
     }
 </style>
 {% endblock %}

@@ -1,0 +1,178 @@
+<div class="container mt-4">
+    <h2 class="text-primary mb-3">IFRS 9 Report Dashboard</h2>
+
+    <!-- Dashboard Grid Layout -->
+    <div class="dashboard-grid">
+        
+        <!-- 12-Month and Lifetime ECL Summary Card -->
+        <div class="report-card card shadow-sm" id="eclCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title">12-Month and Lifetime ECL Summary</h5>
+                <div>
+                    <button type="button" class="btn btn-link" onclick="openFilterModal('eclCard')">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <button type="button" class="btn btn-link" onclick="toggleExpand('eclCard')">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="eclCard-content">
+                <div class="summary-view">
+                    <p>Total 12-Month ECL: <strong>{{ ecl_summary.total_12m_ecl }}</strong></p>
+                    <p>Total Lifetime ECL: <strong>{{ ecl_summary.total_lifetime_ecl }}</strong></p>
+                </div>
+                <div class="detailed-view" style="display: none;">
+                    <canvas id="eclChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- LGD Distribution Card -->
+        <div class="report-card card shadow-sm" id="lgdCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title">LGD Distribution</h5>
+                <div>
+                    <button type="button" class="btn btn-link" onclick="openFilterModal('lgdCard')">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <button type="button" class="btn btn-link" onclick="toggleExpand('lgdCard')">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="lgdCard-content">
+                <div class="summary-view">
+                    <p>Overview of Loss Given Default (LGD) Distribution</p>
+                </div>
+                <div class="detailed-view" style="display: none;">
+                    <canvas id="lgdChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- PD Distribution Card -->
+        <div class="report-card card shadow-sm" id="pdCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title">PD Distribution</h5>
+                <div>
+                    <button type="button" class="btn btn-link" onclick="openFilterModal('pdCard')">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <button type="button" class="btn btn-link" onclick="toggleExpand('pdCard')">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="pdCard-content">
+                <div class="summary-view">
+                    <p>Probability of Default (PD) Distribution Overview</p>
+                </div>
+                <div class="detailed-view" style="display: none;">
+                    <canvas id="pdChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts by Stage Card -->
+        <div class="report-card card shadow-sm" id="accountsStageCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title">Accounts by Stage</h5>
+                <div>
+                    <button type="button" class="btn btn-link" onclick="openFilterModal('accountsStageCard')">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <button type="button" class="btn btn-link" onclick="toggleExpand('accountsStageCard')">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="accountsStageCard-content">
+                <div class="summary-view">
+                    <p>Accounts grouped by IFRS 9 Stage Description</p>
+                </div>
+                <div class="detailed-view" style="display: none;">
+                    <canvas id="accountsStageChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include FontAwesome and Chart.js libraries -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Function to toggle expand/collapse view and adjust layout
+    function toggleExpand(cardId) {
+        const card = document.getElementById(cardId);
+        card.classList.toggle('expanded');
+
+        const summaryView = card.querySelector('.summary-view');
+        const detailedView = card.querySelector('.detailed-view');
+        
+        if (card.classList.contains('expanded')) {
+            summaryView.style.display = 'none';
+            detailedView.style.display = 'block';
+        } else {
+            summaryView.style.display = 'block';
+            detailedView.style.display = 'none';
+        }
+        
+        adjustGridLayout();
+    }
+
+    // Function to adjust grid layout when a card is expanded
+    function adjustGridLayout() {
+        const expandedCard = document.querySelector('.report-card.expanded');
+        const gridContainer = document.querySelector('.dashboard-grid');
+
+        if (expandedCard) {
+            gridContainer.classList.add('expanded-layout');
+        } else {
+            gridContainer.classList.remove('expanded-layout');
+        }
+    }
+</script>
+
+<style>
+    /* Dashboard grid layout */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        transition: all 0.3s ease;
+    }
+
+    /* Expanded layout with full width for expanded card */
+    .dashboard-grid.expanded-layout .report-card.expanded {
+        grid-column: span 2;
+    }
+
+    /* Report card styling */
+    .report-card {
+        transition: all 0.3s ease;
+        height: 250px; /* Set a taller default height for each card */
+    }
+
+    /* Expanded card styling */
+    .report-card.expanded {
+        grid-column: span 2;
+        height: 75vh; /* Set the expanded height to take 75% of the viewport height */
+    }
+
+    /* Hide the detailed view by default */
+    .detailed-view {
+        display: none;
+    }
+
+    /* Full width for expanded card */
+    .expanded .detailed-view {
+        display: block !important;
+    }
+
+    .expanded .summary-view {
+        display: none !important;
+    }
+</style>

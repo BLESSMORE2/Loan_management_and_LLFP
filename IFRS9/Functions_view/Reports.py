@@ -17,6 +17,7 @@ import openpyxl
 from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Max, Sum, Count, Q
 
 
 @login_required
@@ -27,6 +28,8 @@ def reporting_home(request):
 def list_reports(request):
     # This view will render the list of available reports
     return render(request, 'reports/list_reports.html')
+
+
 
 
 @login_required
@@ -863,6 +866,10 @@ def ecl_account_reconciliation_sub_filter_view(request):
             'exposure_at_default_curr': merged_data['n_exposure_at_default_rcy_curr'].iloc[0],
             'ifrs_stage_prev': merged_data['n_stage_descr_prev'].iloc[0],
             'ifrs_stage_curr': merged_data['n_stage_descr_curr'].iloc[0],
+            'delq_band_code_prev': merged_data['n_delq_band_code_prev'].iloc[0],
+            'delq_band_code_curr': merged_data['n_delq_band_code_curr'].iloc[0],
+            'maturity_date_prev': merged_data['d_maturity_date_prev'].iloc[0],
+            'maturity_date_curr': merged_data['d_maturity_date_curr'].iloc[0],
             'twelve_month_pd_prev': merged_data['n_twelve_months_pd_prev'].iloc[0],
             'twelve_month_pd_curr': merged_data['n_twelve_months_pd_curr'].iloc[0],
             'lifetime_pd_prev': merged_data['n_lifetime_pd_prev'].iloc[0],
@@ -934,6 +941,10 @@ def export_full_ecl_report_to_excel(request):
         f'Exposure at Default ({fic_mis_date_2} - Run Key {run_key_2})',
         f'IFRS Stage ({fic_mis_date_1} - Run Key {run_key_1})',
         f'IFRS Stage ({fic_mis_date_2} - Run Key {run_key_2})',
+        f'Delinquency Band Code ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'Delinquency Band Code ({fic_mis_date_2} - Run Key {run_key_2})',
+        f'Maturity Date ({fic_mis_date_1} - Run Key {run_key_1})',
+        f'Maturity Date ({fic_mis_date_2} - Run Key {run_key_2})',
         f'12 Month PD ({fic_mis_date_1} - Run Key {run_key_1})',
         f'12 Month PD ({fic_mis_date_2} - Run Key {run_key_2})',
         f'Lifetime PD ({fic_mis_date_1} - Run Key {run_key_1})',
@@ -964,6 +975,8 @@ def export_full_ecl_report_to_excel(request):
             row.get('n_carrying_amount_rcy_prev', ''), row.get('n_carrying_amount_rcy_curr', ''),
             row.get('n_exposure_at_default_rcy_prev', ''), row.get('n_exposure_at_default_rcy_curr', ''),
             row.get('n_stage_descr_prev', ''), row.get('n_stage_descr_curr', ''),
+            row.get('n_delq_band_code_prev', ''), row.get('n_delq_band_code_curr', ''),
+            row.get('d_maturity_date_prev', ''), row.get('d_maturity_date_curr', ''),
             row.get('n_twelve_months_pd_prev', ''), row.get('n_twelve_months_pd_curr', ''),
             row.get('n_lifetime_pd_prev', ''), row.get('n_lifetime_pd_curr', ''),
             row.get('n_lgd_percent_prev', ''), row.get('n_lgd_percent_curr', ''),
