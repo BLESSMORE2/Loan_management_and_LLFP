@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Include Sidebar -->
+        {% include 'reports/sidebar.html' %}
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-3" style="margin-left: 260px;">  <!-- Adjusted to prevent overlap -->
+            <div class="container mx-auto mt-10">
+                <h1 class="text-3xl font-semibold mb-8 text-center text-primary">ECL Summary Report Visualization</h1>
+                
+                <!-- Back Button -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <a href="{% url 'list_reports' %}" class="btn btn-secondary mb-3 px-4 py-2 rounded-md shadow-md hover:bg-primary hover:text-white transition">Back</a>
+                    </div>
+                </div>
+                
+                <!-- Main Filter Section -->
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="bg-light p-6 rounded-lg shadow-lg">
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-4">
+                                <label for="fic_mis_date" class="block text-sm font-medium text-gray-700">FIC MIS Date</label>
+                                <select id="fic_mis_date" name="fic_mis_date" class="form-control mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                                    <option value="">-- Select Date --</option>
+                                    {% for date in fic_mis_dates %}
+                                        <option value="{{ date|date:"Y-m-d" }}">{{ date|date:"Y-m-d" }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <label for="n_run_key" class="block text-sm font-medium text-gray-700">Run Key</label>
+                                <select id="n_run_key" name="n_run_key" class="form-control mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                                    <option value="">-- Select Run Key --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Apply and Reset Buttons -->
+                        <div class="row">
+                            <div class="col-md-12 text-right">
+                                <button type="submit" class="btn btn-primary px-6 py-2 rounded-md shadow-md hover:bg-primary-dark transition">Apply</button>
+                                <button type="reset" class="btn btn-secondary px-6 py-2 rounded-md shadow-md hover:bg-secondary-dark transition">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Function to handle dynamic filter changes
+                        function updateDropdown(field, value) {
+                            fetch(`/ecl-graphs-main-filter/?field=${field}&value=${encodeURIComponent(value)}`, {
+                                headers: { "X-Requested-With": "XMLHttpRequest" }
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`Error: ${response.status} - ${response.statusText}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (field === 'fic_mis_date') {
+                                    const runKeyDropdown = document.getElementById('n_run_key');
+                                    runKeyDropdown.innerHTML = ''; // Clear current options
+                                    let defaultOption = document.createElement('option');
+                                    defaultOption.textContent = '-- Select Run Key --';
+                                    runKeyDropdown.appendChild(defaultOption);
+
+                                    data.n_run_keys.forEach(function(runKey) {
+                                        let option = document.createElement('option');
+                                        option.value = runKey;
+                                        option.textContent = runKey;
+                                        runKeyDropdown.appendChild(option);
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error in updating dropdown:', error);
+                            });
+                        }
+
+                        // Event listener for the FIC MIS Date dropdown
+                        document.getElementById('fic_mis_date').addEventListener('change', function() {
+                            let fic_mis_date = this.value;
+                            updateDropdown('fic_mis_date', fic_mis_date);
+                        });
+                    });
+                </script>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

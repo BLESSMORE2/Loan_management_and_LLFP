@@ -2,213 +2,140 @@
 {% load custom_filters %}
 
 {% block content %}
-<div class="container mx-auto mt-10">
-    <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">ECL Reconciliation Report - Grouped by {{ group_by_field }}</h1>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Include Sidebar Template -->
+        <div id="sidebar-container" class="col-md-3 col-lg-2 d-md-block sidebar">
+            {% include 'reports/report_sidebar.html' %}
+        </div>
 
-    <!-- Display error messages, if any -->
-    {% if messages %}
-        <div class="alert alert-danger">
-            <ul>
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
-     <!-- Back Button -->
-     <div class="row mb-1">
-        <div class="col-12">
-            <a href="{% url 'list_reports' %}" class="btn btn-secondary mt-3">Back </a>
-        </div>
+        <!-- Main Content Area -->
+        <main class="col-md-9 col-lg-10 px-md-4" id="main-content">
+            <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">ECL Reconciliation Report - Grouped by {{ group_by_field }}</h1>
+
+            <!-- Data Table with Green Header -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #71aeee; color: black; text-align: center;">
+                            <th colspan="1"></th>
+                            <th colspan="4">Reporting date 1 ({{ request.session.fic_mis_date1 }}) - Run Key 1 ({{ request.session.run_key1 }})</th>
+                            <th colspan="4">Reporting date 2 ({{ request.session.fic_mis_date2 }}) - Run Key 2 ({{ request.session.run_key2 }})</th>
+                            <th colspan="3">Differences</th>
+                            <th>Total Accounts</th>
+                            <th>Status</th>
+                        </tr>
+                        <tr style="background-color: #005082; color: white; text-align: center;">
+                            <th>{{ group_by_field }}</th>
+                            <th>EAD Orig Currency</th>
+                            <th>EAD Reporting Currency</th>
+                            <th>12 Month ECL</th>
+                            <th>Lifetime ECL</th>
+                            <th>EAD Orig Currency</th>
+                            <th>EAD Reporting Currency</th>
+                            <th>12 Month ECL</th>
+                            <th>Lifetime ECL</th>
+                            <th>EAD Reporting Currency</th>
+                            <th>12 Month ECL</th>
+                            <th>Lifetime ECL</th>
+                            <th>Total Accounts</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in grouped_data %}
+                        <tr>
+                            <td>{{ row|get_item:group_by_field }}</td>
+                            <td>{{ row.n_exposure_at_default_ncy_higher|floatformat:2 }}</td>
+                            <td>{{ row.n_exposure_at_default_rcy_higher|floatformat:2 }}</td>
+                            <td>{{ row.n_12m_ecl_rcy_higher|floatformat:2 }}</td>
+                            <td>{{ row.n_lifetime_ecl_rcy_higher|floatformat:2 }}</td>
+                            <td>{{ row.n_exposure_at_default_ncy_lower|floatformat:2 }}</td>
+                            <td>{{ row.n_exposure_at_default_rcy_lower|floatformat:2 }}</td>
+                            <td>{{ row.n_12m_ecl_rcy_lower|floatformat:2 }}</td>
+                            <td>{{ row.n_lifetime_ecl_rcy_lower|floatformat:2 }}</td>
+                            <td>{{ row.difference_ead_rcy|floatformat:2 }}</td>
+                            <td>{{ row.difference_12m_ecl|floatformat:2 }}</td>
+                            <td>{{ row.difference_lifetime_ecl|floatformat:2 }}</td>
+                            <td>{{ row.n_accounts_in_higher }}</td>
+                            <td>{{ row.status_ead_ncy }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #d1e7dd; font-weight: bold;">
+                            <td><strong>Grand Total</strong></td>
+                            <td>{{ grand_totals.n_exposure_at_default_ncy_higher|floatformat:2 }}</td>
+                            <td>{{ grand_totals.n_exposure_at_default_rcy_higher|floatformat:2 }}</td>
+                            <td>{{ grand_totals.n_12m_ecl_rcy_higher|floatformat:2 }}</td>
+                            <td>{{ grand_totals.n_lifetime_ecl_rcy_higher|floatformat:2 }}</td>
+                            <td>{{ grand_totals.n_exposure_at_default_ncy_lower|floatformat:2 }}</td>
+                            <td>{{ grand_totals.n_exposure_at_default_rcy_lower|floatformat:2 }}</td>
+                            <td>{{ grand_totals.n_12m_ecl_rcy_lower|floatformat:2 }}</td>
+                            <td>{{ grand_totals.n_lifetime_ecl_rcy_lower|floatformat:2 }}</td>
+                            <td>{{ grand_totals.difference_ead_rcy|floatformat:2 }}</td>
+                            <td>{{ grand_totals.difference_12m_ecl|floatformat:2 }}</td>
+                            <td>{{ grand_totals.difference_lifetime_ecl|floatformat:2 }}</td>
+                            <td>{{ grand_totals.n_accounts_in_higher }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <form method="POST" action="{% url 'export_ecl_reconciliation_to_excel' %}">
+                {% csrf_token %}
+                <button class="btn btn-secondary mt-3">Download Report as Excel</button>
+            </form>
+        </main>
     </div>
-
-    <!-- Sub-Filter Section -->
-    <form method="GET" action="">
-        <div class="row mb-4 shadow-sm p-3 bg-white rounded" style="background-color: #b4d5f6; padding: 10px; border: 1px solid #ccc;">
-            <!-- Currency Code -->
-            <div class="col-md-2 mb-3">
-                <label for="v_ccy_code" class="form-label">Currency Code</label>
-                <select id="v_ccy_code" name="v_ccy_code" class="form-select">
-                    <option value="">-- Select --</option>
-                    {% for currency in distinct_currency_codes %}
-                        <option value="{{ currency }}" {% if request.GET.v_ccy_code == currency %}selected{% endif %}>{{ currency }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Product Segment -->
-            <div class="col-md-2 mb-3">
-                <label for="n_prod_segment" class="form-label">Product Segment</label>
-                <select id="n_prod_segment" name="n_prod_segment" class="form-select">
-                    <option value="">-- Select --</option>
-                    {% for segment in distinct_prod_segments %}
-                        <option value="{{ segment }}" {% if request.GET.n_prod_segment == segment %}selected{% endif %}>{{ segment }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Product Type -->
-            <div class="col-md-2 mb-3">
-                <label for="n_prod_type" class="form-label">Product Type</label>
-                <select id="n_prod_type" name="n_prod_type" class="form-select">
-                    <option value="">-- Select --</option>
-                    {% for prod_type in distinct_prod_types %}
-                        <option value="{{ prod_type }}" {% if request.GET.n_prod_type == prod_type %}selected{% endif %}>{{ prod_type }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Stage Description -->
-            <div class="col-md-2 mb-3">
-                <label for="n_stage_descr" class="form-label">Stage Description</label>
-                <select id="n_stage_descr" name="n_stage_descr" class="form-select">
-                    <option value="">-- Select --</option>
-                    {% for stage_descr in distinct_stage_descrs %}
-                        <option value="{{ stage_descr }}" {% if request.GET.n_stage_descr == stage_descr %}selected{% endif %}>{{ stage_descr }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Loan Type -->
-            <div class="col-md-2 mb-3">
-                <label for="n_loan_type" class="form-label">Loan Type</label>
-                <select id="n_loan_type" name="n_loan_type" class="form-select">
-                    <option value="">-- Select --</option>
-                    {% for loan_type in distinct_loan_types %}
-                        <option value="{{ loan_type }}" {% if request.GET.n_loan_type == loan_type %}selected{% endif %}>{{ loan_type }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Apply Button -->
-            <div class="col-md-2 mb-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100" style="background-color: #4da6ff;">Apply Filter</button>
-            </div>
-        </div>
-
-        <!-- Group By Section -->
-        <div class="row mb-4 shadow-sm p-3 bg-light rounded" style="background-color: #78f7ca;">
-            <div class="col-md-6">
-                <label for="group_by_field" class="form-label">Group By</label>
-                <select id="group_by_field" name="group_by_field" class="form-select">
-                    <option value="v_ccy_code" {% if group_by_field == 'v_ccy_code' %}selected{% endif %}>Currency Code</option>
-                    <option value="n_prod_segment" {% if group_by_field == 'n_prod_segment' %}selected{% endif %}>Product Segment</option>
-                    <option value="n_prod_type" {% if group_by_field == 'n_prod_type' %}selected{% endif %}>Product Type</option>
-                    <option value="n_stage_descr" {% if group_by_field == 'n_stage_descr' %}selected{% endif %}>Stage Description</option>
-                    <option value="n_loan_type" {% if group_by_field == 'n_loan_type' %}selected{% endif %}>Loan Type</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-success w-100" style="background-color: #28a745;">Apply Group By</button>
-            </div>
-        </div>
-    </form>
-
-    <!-- Data Table -->
-    <div class="table-responsive">
-        <table class="table table-bordered mt-4" style="font-size: 14px; text-align: center;">
-            <thead style="background-color: #73aee2;">
-                <!-- Dynamic MIS Date and Run Key Spanning Headers -->
-                <tr style="background-color: #73aee2; color: black;">
-                    <th rowspan="2">{{ group_by_field }}</th>
-                    <th colspan="4">FIC MIS Date 1 ({{ request.session.fic_mis_date1 }}) - Run Key 1 ({{ request.session.run_key1 }})</th>
-                    <th colspan="4">FIC MIS Date 2 ({{ request.session.fic_mis_date2 }}) - Run Key 2 ({{ request.session.run_key2 }})</th>
-                    <th colspan="3">Differences</th>
-                    <th></th>
-                    <th></th>
-                    <th rowspan="2">Status</th>
-                </tr>
-                <!-- Sub-headers for EAD and ECL -->
-                <tr >
-                    <th style="background-color: #b2ddc8; color: rgb(14, 13, 13);" colspan="2">Exposure at Default</th>
-                    <th style="background-color: #b2ddc8; color:rgb(14, 13, 13); " colspan="2">Expected Credit Loss</th>
-                    <th  colspan="2">Exposure at Default</th>
-                    <th  colspan="2">Expected Credit Loss</th>
-                    <!-- Updated Difference Columns -->
-                    <th style="background-color: #b2ddc8; color: rgb(14, 13, 13);" >EAD Reporting Currency</th>
-                    <th style="background-color: #b2ddc8; color: rgb(14, 13, 13);" >12 Month ECL Difference</th>
-                    <th style="background-color: #b2ddc8; color: rgb(14, 13, 13);" >Lifetime ECL Difference</th>
-                    <th>Total Accounts ({{ request.session.fic_mis_date1 }})</th>
-                    <th>Total Accounts ({{ request.session.fic_mis_date2 }})</th>
-                </tr>
-                <tr style="background-color: #005082; color: white;">
-                    <th></th>
-                    <th>EAD Orig Currency</th>
-                    <th>EAD Reporting Currency</th>
-                    <th>12 Month ECL</th>
-                    <th>Lifetime ECL</th>
-                    <th>EAD Orig Currency</th>
-                    <th>EAD Reporting Currency</th>
-                    <th>12 Month ECL</th>
-                    <th>Lifetime ECL</th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            
-            <tbody>
-                {% for row in grouped_data %}
-                <tr>
-                    <td>{{ row|get_item:group_by_field }}</td>
-                    <!-- FIC MIS Date 1 Columns -->
-                    <td class="text-end">{{ row.n_exposure_at_default_ncy_higher|floatformat:2 }}</td>
-                    <td class="text-end">{{ row.n_exposure_at_default_rcy_higher|floatformat:2 }}</td>
-                    <td class="text-end">{{ row.n_12m_ecl_rcy_higher|floatformat:2 }}</td>
-                    <td class="text-end">{{ row.n_lifetime_ecl_rcy_higher|floatformat:2 }}</td>
-                    <!-- FIC MIS Date 2 Columns -->
-                    <td class="text-end">{{ row.n_exposure_at_default_ncy_lower|floatformat:2 }}</td>
-                    <td class="text-end">{{ row.n_exposure_at_default_rcy_lower|floatformat:2 }}</td>
-                    <td class="text-end">{{ row.n_12m_ecl_rcy_lower|floatformat:2 }}</td>
-                    <td class="text-end">{{ row.n_lifetime_ecl_rcy_lower|floatformat:2 }}</td>
-                    <!-- Differences -->
-                    <td class="text-end">{{ row.difference_ead_rcy|floatformat:2 }}</td>
-                    <td class="text-end">{{ row.difference_12m_ecl|floatformat:2 }}</td>
-                    <td class="text-end">{{ row.difference_lifetime_ecl|floatformat:2 }}</td>
-                    <!-- Total Accounts for each group -->
-                    <td style="text-align: right;">{{ row.n_accounts_in_higher }}</td>
-                    <td style="text-align: right;">{{ row.n_accounts_in_lower }}</td>
-                    <!-- Status -->
-                    <td class="text-center">{{ row.status_ead_ncy }}</td>
-                </tr>
-                {% endfor %}
-              
-            </tbody>
-            <!-- Grand Total Row -->
-            <tfoot>
-                <tr style="background-color: #d1e7dd; font-weight: bold;">
-                    <td><strong>Grand Total</strong></td>
-                    
-                    <!-- FIC MIS Date 1 (ncy) - Run Key 1 -->
-                    <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_ncy_higher|floatformat:2 }}</td>
-                    <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_rcy_higher|floatformat:2 }}</td>
-                    <td style="text-align: right;">{{ grand_totals.n_12m_ecl_rcy_higher|floatformat:2 }}</td>
-                    <td style="text-align: right;">{{ grand_totals.n_lifetime_ecl_rcy_higher|floatformat:2 }}</td>
-            
-                    <!-- FIC MIS Date 2 (ncy) - Run Key 2 -->
-                    <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_ncy_lower|floatformat:2 }}</td>
-                    <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_rcy_lower|floatformat:2 }}</td>
-                    <td style="text-align: right;">{{ grand_totals.n_12m_ecl_rcy_lower|floatformat:2 }}</td>
-                    <td style="text-align: right;">{{ grand_totals.n_lifetime_ecl_rcy_lower|floatformat:2 }}</td>
-            
-                    <!-- Differences -->
-                    <td style="text-align: right;">{{ grand_totals.difference_ead_rcy|floatformat:2 }}</td>
-                    <td style="text-align: right;">{{ grand_totals.difference_12m_ecl|floatformat:2 }}</td>
-                    <td style="text-align: right;">{{ grand_totals.difference_lifetime_ecl|floatformat:2 }}</td>
-                    <!-- Grand Total for account counts -->
-                    <td style="text-align: right;">{{ grand_totals.n_accounts_in_higher }}</td>
-                    <td style="text-align: right;">{{ grand_totals.n_accounts_in_lower }}</td>
-                </tr>
-            </tfoot>
-                              
-            
-        </table>
-    </div>
-    <br>
-    <form method="POST" action="{% url 'export_ecl_reconciliation_to_excel' %}">
-        {% csrf_token %}
-        <button class="btn btn-secondary">Download Report as Excel</button>
-    </form>
-    
 </div>
 {% endblock %}
+
+<style>
+    /* Adjust sidebar and main content for screen sizes */
+    #sidebar-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 250px;
+        height: 100vh;
+        background-color: #003366;
+        color: #ffffff;
+        overflow-y: auto;
+        padding-top: 20px;
+    }
+
+    #main-content {
+        margin-left: 250px;
+        padding-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        #sidebar-container {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+        #main-content {
+            margin-left: 0;
+            padding-top: 20px;
+        }
+    }
+
+    /* Style table headers */
+    .table thead th {
+        background-color: #005082;
+        color: white;
+        text-align: center;
+    }
+    
+    .table tfoot tr {
+        background-color: #d1e7dd;
+        font-weight: bold;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+</style>

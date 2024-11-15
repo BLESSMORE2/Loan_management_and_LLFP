@@ -218,6 +218,8 @@ def ecl_sub_filter_view(request):
     n_prod_type = request.GET.get('n_prod_type')
     n_stage_descr = request.GET.get('n_stage_descr')
     n_loan_type = request.GET.get('n_loan_type')
+    n_stage_descr = request.GET.get('n_party_type')
+    n_loan_type = request.GET.get('n_delq_band_code')
 
     # Apply sub-filters if provided
     if n_prod_segment:
@@ -1353,4 +1355,118 @@ def water_fall_sub_filter_view(request):
         'selected_account': account_number,
         'waterfall_data_12m': waterfall_data_12m,
         'waterfall_data_lifetime': waterfall_data_lifetime,
+    })
+
+
+
+@require_http_methods(["GET", "POST"])
+def ecl_graphs_main_filter_view(request):
+    # Handle POST request (applying the filter)
+    if request.method == 'POST':
+        # Retrieve selected FIC MIS Date and Run Key from the form
+        fic_mis_date = request.POST.get('fic_mis_date')
+        n_run_key = request.POST.get('n_run_key')
+        
+        if fic_mis_date and n_run_key:
+            # Store the selected filter values in session for later use
+            request.session['fic_mis_date'] = fic_mis_date
+            request.session['n_run_key'] = n_run_key
+
+            # Retrieve filtered data based on the selected main filter values
+            ecl_data = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date, n_run_key=n_run_key)
+
+            # Convert the filtered data into a DataFrame
+            ecl_data_df = pd.DataFrame(list(ecl_data.values()))
+
+            # Convert date fields to strings
+            if 'fic_mis_date' in ecl_data_df.columns:
+                ecl_data_df['fic_mis_date'] = ecl_data_df['fic_mis_date'].astype(str)
+            if 'd_maturity_date' in ecl_data_df.columns:
+                ecl_data_df['d_maturity_date'] = ecl_data_df['d_maturity_date'].astype(str)
+
+            # Create the directory if it doesn't exist
+            if not os.path.exists(CSV_DIR):
+                os.makedirs(CSV_DIR)
+
+            # Save the data as a CSV file in the session (store the filename)
+            csv_filename = os.path.join(CSV_DIR, f"ecl_data_{fic_mis_date}_{n_run_key}.csv")
+            ecl_data_df.to_csv(csv_filename, index=False)
+            request.session['csv_filename'] = csv_filename
+
+            # Redirect to the sub-filter view
+            return redirect('ecl_graphs_sub_filter_view')
+
+    # Handle GET request
+    fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
+
+    # Check for AJAX requests to dynamically update run key dropdown
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        field_name = request.GET.get('field')
+        field_value = request.GET.get('value')
+
+        if field_name == 'fic_mis_date':
+            # Fetch run keys corresponding to the selected FIC MIS date
+            n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=field_value).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
+            return JsonResponse({'n_run_keys': list(n_run_keys)})
+
+    # Render the main filter template with FIC MIS Dates
+    return render(request, 'reports/ecl_graphs_report_main.html', {'fic_mis_dates': fic_mis_dates})
+
+
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def ecl_graphs_sub_filter_view(request):
+    # Retrieve the CSV filename from the session
+    csv_filename = request.session.get('csv_filename')
+
+    # If no data is available, redirect to the main filter page
+    if not csv_filename or not os.path.exists(csv_filename):
+        return redirect('ecl_main_filter_view')
+
+    # Load the data from the CSV file
+    ecl_data_df = pd.read_csv(csv_filename)
+
+    # Retrieve sub-filter form fields from the request
+    n_prod_segment = request.GET.get('n_prod_segment')
+    n_prod_type = request.GET.get('n_prod_type')
+    n_stage_descr = request.GET.get('n_stage_descr')
+    n_loan_type = request.GET.get('n_loan_type')
+
+    # Apply sub-filters if provided
+    if n_prod_segment:
+        ecl_data_df = ecl_data_df[ecl_data_df['n_prod_segment'] == n_prod_segment]
+    if n_prod_type:
+        ecl_data_df = ecl_data_df[ecl_data_df['n_prod_type'] == n_prod_type]
+    if n_stage_descr:
+        ecl_data_df = ecl_data_df[ecl_data_df['n_stage_descr'] == n_stage_descr]
+    if n_loan_type:
+        ecl_data_df = ecl_data_df[ecl_data_df['n_loan_type'] == n_loan_type]
+
+    # Retrieve the selected group by field from the request (GET or POST)
+    group_by_field = request.GET.get('group_by_field', 'n_stage_descr')  # Default group by 'n_stage_descr'
+
+    # Calculate percentages based on `n_12m_ecl_rcy`
+    grouped_df = ecl_data_df.groupby(group_by_field).agg({'n_12m_ecl_rcy': 'sum'}).reset_index()
+    total_12m_ecl_rcy = grouped_df['n_12m_ecl_rcy'].sum()
+    grouped_df['percentage'] = (grouped_df['n_12m_ecl_rcy'] / total_12m_ecl_rcy) * 100
+
+    # Convert grouped data to a list of dictionaries for the template
+    chart_data = grouped_df.to_dict(orient='records')
+
+    # Distinct values for sub-filters
+    distinct_prod_segments = list(ecl_data_df['n_prod_segment'].unique())
+    distinct_prod_types = list(ecl_data_df['n_prod_type'].unique())
+    distinct_stage_descrs = list(ecl_data_df['n_stage_descr'].unique())
+    distinct_loan_types = list(ecl_data_df['n_loan_type'].unique())
+
+    # Render the sub-filter view template with calculated percentages
+    return render(request, 'reports/ecl_graphs_report_sub.html', {
+        'chart_data': chart_data,
+        'group_by_field': group_by_field,
+        'distinct_prod_segments': distinct_prod_segments,
+        'distinct_prod_types': distinct_prod_types,
+        'distinct_stage_descrs': distinct_stage_descrs,
+        'distinct_loan_types': distinct_loan_types,
     })

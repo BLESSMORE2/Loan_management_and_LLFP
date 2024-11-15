@@ -1,123 +1,134 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
 {% block content %}
-<div class="container mx-auto mt-10">
-    <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">PD Analysis Report - Grouped by {{ group_by_field }}</h1>
-
-    {% if error_message %}
-        <div class="alert alert-danger text-center">{{ error_message }}</div>
-    {% endif %}
-    <!-- Back Button -->
-    <div class="row mb-1">
-        <div class="col-12">
-            <a href="{% url 'list_reports' %}" class="btn btn-secondary mt-3">Back</a>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar inclusion -->
+        <div class="col-md-3 col-lg-2 d-none d-md-block" id="sidebar-wrapper">
+            {% include 'reports/report_sidebar.html' %}
         </div>
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 col-lg-10 col-12 px-md-4" id="main-content">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="text-2xl font-bold mb-8 text-gray-800">PD Analysis Report - Grouped by {{ group_by_field }}</h1>
+            </div>
+
+            {% if error_message %}
+                <div class="alert alert-danger text-center">{{ error_message }}</div>
+            {% endif %}
+
+            <!-- Data Table -->
+            <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                <thead>
+                    <tr style="background-color: #71aeee; color: black; text-align: center;">
+                        <th>{{ group_by_field }}</th>
+                        <th>12 Month PD Min</th>
+                        <th>12 Month PD Max</th>
+                        <th>Lifetime PD Min</th>
+                        <th>Lifetime PD Max</th>
+                        <th>LGD Min</th>
+                        <th>LGD Max</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in grouped_data %}
+                    <tr>
+                        <td>{{ row|get_item:group_by_field }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"12 Month PD Min"|floatformat:4 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"12 Month PD Max"|floatformat:4 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"Lifetime PD Min"|floatformat:4 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"Lifetime PD Max"|floatformat:4 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"LGD Min"|floatformat:2 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"LGD Max"|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Download Button -->
+            <form method="POST" action="{% url 'export_pd_report_to_excel' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary" style="background-color: #3a253f; font-weight: bold;">Download Report as Excel</button>
+            </form>
+        </main>
     </div>
-
-    <!-- Filter Section -->
-    <form method="GET" action="">
-        <div class="row mb-4" style="background-color: #b4d5f6; padding: 10px; border: 1px solid #ccc;">
-            <!-- Product Segment -->
-            <div class="col-md-2" style="width: 15%; min-width: 150px;">
-                <label for="n_prod_segment">Product Segment</label>
-                <select id="n_prod_segment" name="n_prod_segment" class="form-control">
-                    <option value="">-- Select --</option>
-                    {% for segment in distinct_prod_segments %}
-                        <option value="{{ segment }}" {% if selected_prod_segment == segment %}selected{% endif %}>{{ segment }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Product Type -->
-            <div class="col-md-2" style="width: 15%; min-width: 150px;">
-                <label for="n_prod_type">Product Type</label>
-                <select id="n_prod_type" name="n_prod_type" class="form-control">
-                    <option value="">-- Select --</option>
-                    {% for prod_type in distinct_prod_types %}
-                        <option value="{{ prod_type }}" {% if selected_prod_type == prod_type %}selected{% endif %}>{{ prod_type }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Stage Description -->
-            <div class="col-md-2" style="width: 15%; min-width: 150px;">
-                <label for="n_stage_descr">Stage Description</label>
-                <select id="n_stage_descr" name="n_stage_descr" class="form-control">
-                    <option value="">-- Select --</option>
-                    {% for stage_descr in distinct_stage_descrs %}
-                        <option value="{{ stage_descr }}" {% if selected_stage_descr == stage_descr %}selected{% endif %}>{{ stage_descr }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Loan Type -->
-            <div class="col-md-2" style="width: 15%; min-width: 150px;">
-                <label for="n_loan_type">Loan Type</label>
-                <select id="n_loan_type" name="n_loan_type" class="form-control">
-                    <option value="">-- Select --</option>
-                    {% for loan_type in distinct_loan_types %}
-                        <option value="{{ loan_type }}" {% if selected_loan_type == loan_type %}selected{% endif %}>{{ loan_type }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Apply Button -->
-            <div class="col-md-2" style="width: 10%; display: flex; align-items: flex-end; min-width: 120px;">
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Apply Filter</button>
-            </div>
-        </div>
-
-        <!-- Group By Section -->
-        <div class="row mb-4" style="background-color: #e7f5f0; padding: 10px; border: 1px solid #ccc;">
-            <!-- Group By -->
-            <div class="col-md-6">
-                <label for="group_by_field">Group By</label>
-                <select id="group_by_field" name="group_by_field" class="form-control">
-                    <option value="n_prod_segment" {% if group_by_field == 'n_prod_segment' %}selected{% endif %}>Product Segment</option>
-                    <option value="n_prod_type" {% if group_by_field == 'n_prod_type' %}selected{% endif %}>Product Type</option>
-                    <option value="n_stage_descr" {% if group_by_field == 'n_stage_descr' %}selected{% endif %}>Stage Description</option>
-                    <option value="n_delq_band_code" {% if group_by_field == 'n_delq_band_code' %}selected{% endif %}>Delq Band Code</option>
-                    <option value="n_credit_rating_code" {% if group_by_field == 'n_credit_rating_code' %}selected{% endif %}>Credit Rating Code</option>
-          
-                </select>
-            </div>
-            <div class="col-md-2" style="display: flex; align-items: flex-end;">
-                <button type="submit" class="btn btn-success" style="width: 100%;">Apply Group By</button>
-            </div>
-        </div>
-    </form>
-
-    <!-- Data Table -->
-    <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
-        <thead>
-            <tr style="background-color: #71aeee; color: black; text-align: center;">
-                <th>{{ group_by_field }}</th>
-                <th>12 Month PD Min</th>
-                <th>12 Month PD Max</th>
-                <th>Lifetime PD Min</th>
-                <th>Lifetime PD Max</th>
-                <th>LGD Min</th>
-                <th>LGD Max</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in grouped_data %}
-            <tr>
-                <td>{{ row|get_item:group_by_field }}</td>
-                <td style="text-align: right;">{{ row|get_item:"12 Month PD Min"|floatformat:4 }}</td>
-                <td style="text-align: right;">{{ row|get_item:"12 Month PD Max"|floatformat:4 }}</td>
-                <td style="text-align: right;">{{ row|get_item:"Lifetime PD Min"|floatformat:4 }}</td>
-                <td style="text-align: right;">{{ row|get_item:"Lifetime PD Max"|floatformat:4 }}</td>
-                <td style="text-align: right;">{{ row|get_item:"LGD Min"|floatformat:2 }}</td>
-                <td style="text-align: right;">{{ row|get_item:"LGD Max"|floatformat:2 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <form method="POST" action="{% url 'export_pd_report_to_excel' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-secondary" style="background-color: #3a253f; font-weight: bold;">Download Report as Excel</button>
-    </form>
 </div>
+
+<style>
+    /* Sidebar Styling */
+    #sidebar-wrapper {
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        width: 250px;
+        background-color: #003366;
+        color: #ffffff;
+        overflow-y: auto;
+        z-index: 1000;
+    }
+
+    /* Adjust main content to offset from the sidebar */
+    #main-content {
+        margin-left: 250px; /* Space for sidebar on larger screens */
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 767px) {
+        /* Hide the sidebar and expand main content to full width */
+        #sidebar-wrapper {
+            display: none;
+        }
+
+        #main-content {
+            margin-left: 0;
+        }
+
+        /* Add a button to toggle the sidebar on small screens */
+        .sidebar-toggle-btn {
+            display: block;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1100;
+            background-color: #003366;
+            color: #ffffff;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+    }
+
+    /* Main content styling */
+    .table {
+        margin-top: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+</style>
+
+<!-- Sidebar Toggle Script for Small Screens -->
+<script>
+    // Function to toggle sidebar on small screens
+    function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar-wrapper");
+        if (sidebar.style.display === "none" || sidebar.style.display === "") {
+            sidebar.style.display = "block";
+        } else {
+            sidebar.style.display = "none";
+        }
+    }
+</script>
+
+<!-- Sidebar Toggle Button for Small Screens -->
+<button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰ Menu</button>
 {% endblock %}
