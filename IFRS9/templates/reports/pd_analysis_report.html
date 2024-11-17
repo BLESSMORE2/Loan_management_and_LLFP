@@ -49,7 +49,9 @@
             <!-- Download Button -->
             <form method="POST" action="{% url 'export_pd_report_to_excel' %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-secondary" style="background-color: #3a253f; font-weight: bold;">Download Report as Excel</button>
+                <button id="download-button" class="btn btn-success btn-sm shadow-sm"  type="submit">
+                    <i class="fas fa-download"></i> Download Report as Excel
+                </button>
             </form>
         </main>
     </div>

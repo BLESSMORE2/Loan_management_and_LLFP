@@ -35,27 +35,26 @@ def list_reports(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def view_results_and_extract(request):
-    # Handle AJAX request for dynamic Run Key loading based on selected FIC MIS Date
+    # Handle AJAX request for dynamic Run Key loading (unchanged)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.GET.get('field') == 'fic_mis_date':
         fic_mis_date = request.GET.get('value')
-
-        # Fetch available Run Keys for the selected FIC MIS Date in descending order
         n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
+        return JsonResponse({'n_run_keys': list(n_run_keys) if n_run_keys.exists() else []})
 
-        # Check if any Run Keys were found and return them as JSON
-        if n_run_keys.exists():
-            return JsonResponse({'n_run_keys': list(n_run_keys)})
-        else:
-            return JsonResponse({'n_run_keys': []})  # Return empty list if no keys found
-
-    # Non-AJAX requests for normal processing
+    # Non-AJAX processing
     fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
-
-    # Get FIC MIS Date and Run Key from the request (No default values, user must select)
     fic_mis_date = request.GET.get('fic_mis_date')
     n_run_key = request.GET.get('n_run_key')
 
-    # Ensure that FIC MIS Date and Run Key are provided
+    # Save selected filters to the session
+    if fic_mis_date and n_run_key:
+        request.session['fic_mis_date'] = fic_mis_date
+        request.session['n_run_key'] = n_run_key
+    else:
+        request.session.pop('fic_mis_date', None)
+        request.session.pop('n_run_key', None)
+
+    # Ensure filters are provided
     if not fic_mis_date or not n_run_key:
         messages.error(request, "Both FIC MIS Date and Run Key are required.")
         return render(request, 'reports/report_view.html', {
@@ -67,28 +66,18 @@ def view_results_and_extract(request):
             'n_run_key': n_run_key,
         })
 
-    # Apply filters based on selected FIC MIS Date and Run Key
-    filters = {
-        'fic_mis_date': fic_mis_date,
-        'n_run_key': n_run_key,
-    }
-
-    # Fetch the selected columns based on the report configuration
+    # Apply filters and fetch data (unchanged)
+    filters = {'fic_mis_date': fic_mis_date, 'n_run_key': n_run_key}
     report_config = get_object_or_404(ReportColumnConfig, report_name="default_report")
     selected_columns = report_config.selected_columns
-
-    # Fetch the report data based on filters
     report_data = FCT_Reporting_Lines.objects.filter(**filters).values(*selected_columns)
 
-    # Paginate the data (25 results per page)
     paginator = Paginator(report_data, 25)
     page = request.GET.get('page', 1)
     try:
         paginated_report_data = paginator.page(page)
-    except PageNotAnInteger:
+    except (PageNotAnInteger, EmptyPage):
         paginated_report_data = paginator.page(1)
-    except EmptyPage:
-        paginated_report_data = paginator.page(paginator.num_pages)
 
     return render(request, 'reports/report_view.html', {
         'selected_columns': selected_columns,
@@ -100,38 +89,34 @@ def view_results_and_extract(request):
     })
 
 
-
 @login_required
 def download_report(request):
-    # Fetch the same filters as used in the view_results_and_extract
-    filters = {
-        'fic_mis_date': request.GET.get('fic_mis_date'),
-        'n_run_key': request.GET.get('n_run_key'),
-        'n_prod_code': request.GET.get('n_prod_code'),
-        'n_prod_type': request.GET.get('n_prod_type'),
-        'n_pd_term_structure_name': request.GET.get('n_pd_term_structure_name'),
-        'n_curr_ifrs_stage_skey': request.GET.get('n_curr_ifrs_stage_skey'),
-    }
-    
-    # Remove None values from filters
-    filters = {k: v for k, v in filters.items() if v is not None}
+    # Retrieve filters from the session
+    fic_mis_date = request.session.get('fic_mis_date')
+    n_run_key = request.session.get('n_run_key')
 
-    # Fetch the saved column mappings
-    report_config = ReportColumnConfig.objects.get(report_name="default_report")
-    selected_columns = report_config.selected_columns
+    # Validate filters
+    if not fic_mis_date or not n_run_key:
+        return HttpResponse("Both FIC MIS Date and Run Key are required.", status=400)
 
-    # Query the FCT_Reporting_Lines with the filters
+    # Apply filters to fetch data
+    filters = {'fic_mis_date': fic_mis_date, 'n_run_key': n_run_key}
+    try:
+        report_config = ReportColumnConfig.objects.get(report_name="default_report")
+        selected_columns = report_config.selected_columns
+    except ReportColumnConfig.DoesNotExist:
+        return HttpResponse("Report configuration not found.", status=404)
+
     report_data = FCT_Reporting_Lines.objects.filter(**filters).values(*selected_columns)
+    if not report_data.exists():
+        return HttpResponse("No data found for the selected filters.", status=404)
 
-    # Create a CSV response
+    # Create CSV response
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="report.csv"'
-
-    # Write the selected columns as the header
+    response['Content-Disposition'] = 'attachment; filename="filtered_report.csv"'
     writer = csv.writer(response)
     writer.writerow(selected_columns)
 
-    # Write the data rows
     for row in report_data:
         writer.writerow([row[column] for column in selected_columns])
 
@@ -218,8 +203,6 @@ def ecl_sub_filter_view(request):
     n_prod_type = request.GET.get('n_prod_type')
     n_stage_descr = request.GET.get('n_stage_descr')
     n_loan_type = request.GET.get('n_loan_type')
-    n_stage_descr = request.GET.get('n_party_type')
-    n_loan_type = request.GET.get('n_delq_band_code')
 
     # Apply sub-filters if provided
     if n_prod_segment:
@@ -257,6 +240,20 @@ def ecl_sub_filter_view(request):
         'n_account_number': ecl_data_df['n_account_number'].nunique(),  # Grand total for unique accounts
     }
 
+    # Calculate percentages for the second table
+    grouped_data_percentages = []
+    total_ecl_12m = grand_totals['n_12m_ecl_rcy']
+    total_ecl_lifetime = grand_totals['n_lifetime_ecl_rcy']
+    total_accounts = grand_totals['n_account_number']
+
+    for row in grouped_data:
+        grouped_data_percentages.append({
+            group_by_field: row[group_by_field],
+            'percent_12m_ecl_rcy': (row['n_12m_ecl_rcy'] / total_ecl_12m * 100) if total_ecl_12m else 0,
+            'percent_lifetime_ecl_rcy': (row['n_lifetime_ecl_rcy'] / total_ecl_lifetime * 100) if total_ecl_lifetime else 0,
+            'percent_accounts': (row['n_account_number'] / total_accounts * 100) if total_accounts else 0,
+        })
+
     # Distinct values for sub-filters
     distinct_prod_segments = list(ecl_data_df['n_prod_segment'].unique())
     distinct_prod_types = list(ecl_data_df['n_prod_type'].unique())
@@ -267,10 +264,12 @@ def ecl_sub_filter_view(request):
     request.session['grouped_data'] = grouped_data
     request.session['group_by_field'] = group_by_field
     request.session['grand_totals'] = grand_totals
+    request.session['grouped_data_percentages'] = grouped_data_percentages
 
     # Render the sub-filter view template
     return render(request, 'reports/ecl_summary_report_sub.html', {
         'grouped_data': grouped_data,
+        'grouped_data_percentages': grouped_data_percentages,
         'group_by_field': group_by_field,
         'distinct_prod_segments': distinct_prod_segments,
         'distinct_prod_types': distinct_prod_types,
@@ -280,71 +279,97 @@ def ecl_sub_filter_view(request):
     })
 
 
-
 # Export to Excel dynamically based on the current filtered and grouped data
 @login_required
 def export_ecl_report_to_excel(request):
-    # Retrieve the filtered data and grand totals from session
+    # Retrieve the filtered data, grouped data, grouped percentages, and grand totals from session
     grouped_data = request.session.get('grouped_data', [])
+    grouped_data_percentages = request.session.get('grouped_data_percentages', [])
     group_by_field = request.session.get('group_by_field', 'n_stage_descr')
     grand_totals = request.session.get('grand_totals', {})
 
-    # Convert the grouped data into a pandas DataFrame
-    df = pd.DataFrame(grouped_data)
+    # Convert the grouped data into pandas DataFrames
+    df_grouped = pd.DataFrame(grouped_data)
+    df_percentages = pd.DataFrame(grouped_data_percentages)
 
-    # Create a new Excel workbook and add a sheet
+    # Check if percentages data exists and add missing fields
+    if not df_percentages.empty and group_by_field not in df_percentages.columns:
+        df_percentages[group_by_field] = [row[group_by_field] for row in grouped_data]
+
+    # Create a new Excel workbook
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "ECL Report"
 
-    # Add the column headers dynamically based on the DataFrame columns
-    headers = [group_by_field, "EAD Orig Currency ", 
-               "EAD Reporting Currency ", 
-               "12 Month Reporting ECL ", "Lifetime Reporting ECL"]
-    ws.append(headers)
+    # Add the first sheet for the absolute numbers
+    ws1 = wb.active
+    ws1.title = "ECL Report (Absolute)"
+    headers = [group_by_field, "EAD Orig Currency", "EAD Reporting Currency", "12 Month Reporting ECL", "Lifetime Reporting ECL", "Number of Accounts"]
+    ws1.append(headers)
 
-    # Add the grouped data to the sheet
-    for row in dataframe_to_rows(df, index=False, header=False):
-        ws.append(row)
+    # Add the grouped data to the first sheet
+    for row in dataframe_to_rows(df_grouped, index=False, header=False):
+        ws1.append(row)
 
-    # Add the grand totals at the bottom
-    ws.append(['Grand Total', grand_totals['n_exposure_at_default_ncy'], 
-               grand_totals['n_exposure_at_default_rcy'], 
-               grand_totals['n_12m_ecl_rcy'], 
-               grand_totals['n_lifetime_ecl_rcy']])
+    # Add the grand totals at the bottom of the first sheet
+    ws1.append([
+        'Grand Total',
+        grand_totals['n_exposure_at_default_ncy'],
+        grand_totals['n_exposure_at_default_rcy'],
+        grand_totals['n_12m_ecl_rcy'],
+        grand_totals['n_lifetime_ecl_rcy'],
+        grand_totals['n_account_number']
+    ])
 
-    # Apply styling to the header row (first row)
+    # Add styling to the first sheet
+    style_excel_sheet(ws1, len(grouped_data), headers)
+
+    # Add a second sheet for percentages
+    ws2 = wb.create_sheet(title="ECL Report (Percentages)")
+    percentage_headers = [group_by_field, "% of 12 Month Reporting ECL", "% of Lifetime Reporting ECL", "% of Number of Accounts"]
+    ws2.append(percentage_headers)
+
+    # Ensure percentages data is not empty before adding rows
+    if not df_percentages.empty:
+        for row in dataframe_to_rows(df_percentages, index=False, header=False):
+            ws2.append(row)
+
+    # Add styling to the second sheet
+    style_excel_sheet(ws2, len(grouped_data_percentages), percentage_headers)
+
+    # Create an HTTP response with an Excel attachment
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="ecl summary report.xlsx"'
+
+    # Save the workbook to the response
+    wb.save(response)
+    return response
+
+def style_excel_sheet(ws, data_row_count, headers):
+    """Apply styling to an Excel sheet."""
     header_fill = PatternFill(start_color="2d5c8e", end_color="2d5c8e", fill_type="solid")
     header_font = Font(color="FFFFFF", bold=True)
     alignment = Alignment(horizontal="center", vertical="center")
 
+    # Style the header row
     for cell in ws[1]:
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = alignment
 
-    # Apply styling to the data rows (zebra striping)
+    # Apply zebra striping for data rows
     light_fill = PatternFill(start_color="d1e7dd", end_color="d1e7dd", fill_type="solid")
-    for row in ws.iter_rows(min_row=2, max_row=len(grouped_data) + 2, min_col=1, max_col=5):
+    for row in ws.iter_rows(min_row=2, max_row=data_row_count + 1, min_col=1, max_col=len(headers)):
         for cell in row:
             cell.fill = light_fill
 
-    # Apply bold font for the grand total row
-    for cell in ws[len(grouped_data) + 2]:
-        cell.font = Font(bold=True)
+    # Apply bold font for the grand total row if it exists
+    if data_row_count > 0:
+        for cell in ws[data_row_count + 1]:
+            cell.font = Font(bold=True)
 
-    # Adjust the column widths
+    # Adjust column widths
     for column in ws.columns:
-        max_length = max(len(str(cell.value)) for cell in column)
+        max_length = max(len(str(cell.value)) for cell in column if cell.value is not None)
         ws.column_dimensions[column[0].column_letter].width = max_length + 2
-
-    # Create an HTTP response with an Excel attachment
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="ecl_report.xlsx"'
-
-    # Save the workbook to the response
-    wb.save(response)
-    return response
 
 
 
@@ -563,11 +588,27 @@ def ecl_reconciliation_sub_filter_view(request):
         'n_accounts_in_higher': int(grouped_data['n_accounts_in_higher'].sum()),
         'n_accounts_in_lower': int(grouped_data['n_accounts_in_lower'].sum()),
     }
+    # Calculate percentages for 12 Month ECL, Lifetime ECL, differences, and total accounts
+    grouped_data['percent_12m_ecl_higher'] = (grouped_data['n_12m_ecl_rcy_higher'] / grand_totals['n_12m_ecl_rcy_higher'] * 100) if grand_totals['n_12m_ecl_rcy_higher'] else 0
+    grouped_data['percent_12m_ecl_lower'] = (grouped_data['n_12m_ecl_rcy_lower'] / grand_totals['n_12m_ecl_rcy_lower'] * 100) if grand_totals['n_12m_ecl_rcy_lower'] else 0
+    grouped_data['percent_lifetime_ecl_higher'] = (grouped_data['n_lifetime_ecl_rcy_higher'] / grand_totals['n_lifetime_ecl_rcy_higher'] * 100) if grand_totals['n_lifetime_ecl_rcy_higher'] else 0
+    grouped_data['percent_lifetime_ecl_lower'] = (grouped_data['n_lifetime_ecl_rcy_lower'] / grand_totals['n_lifetime_ecl_rcy_lower'] * 100) if grand_totals['n_lifetime_ecl_rcy_lower'] else 0
+    grouped_data['percent_total_accounts_higher'] = (grouped_data['n_accounts_in_higher'] / grand_totals['n_accounts_in_higher'] * 100) if grand_totals['n_accounts_in_higher'] else 0
+    grouped_data['percent_total_accounts_lower'] = (grouped_data['n_accounts_in_lower'] / grand_totals['n_accounts_in_lower'] * 100) if grand_totals['n_accounts_in_lower'] else 0
+    # Calculate percentage differences based on higher values
+    grouped_data['percent_difference_12m_ecl'] = (grouped_data['difference_12m_ecl'] / grouped_data['n_12m_ecl_rcy_higher'] * 100).replace([np.inf, -np.inf], 0).fillna(0)
+    grouped_data['percent_difference_lifetime_ecl'] = (grouped_data['difference_lifetime_ecl'] / grouped_data['n_lifetime_ecl_rcy_higher'] * 100).replace([np.inf, -np.inf], 0).fillna(0)
+    grouped_data['percent_difference_ead_rcy'] = (grouped_data['difference_ead_rcy'] / grouped_data['n_exposure_at_default_rcy_higher'] * 100).replace([np.inf, -np.inf], 0).fillna(0)
+
+
+    # Convert grouped_data to JSON-serializable format for percentages
+    grouped_data_percentages = grouped_data.to_dict(orient='records')
 
     # Store the grouped data and grand totals in the session for Excel export (JSON serializable format)
     request.session['grouped_data'] = grouped_data_json
     request.session['group_by_field'] = group_by_field
     request.session['grand_totals'] = grand_totals
+    request.session['grouped_data_percentages'] = grouped_data_percentages
 
     # Distinct values for sub-filters
     distinct_currency_codes = list(merged_data['v_ccy_code'].unique())
@@ -578,7 +619,8 @@ def ecl_reconciliation_sub_filter_view(request):
 
     # Render the sub-filter view with the reconciliation data
     return render(request, 'reports/ecl_reconciliation_report_sub.html', {
-        'grouped_data': grouped_data_json,  # Pass the JSON-serializable grouped data
+        'grouped_data': grouped_data_json,
+        'grouped_data_percentages': grouped_data_percentages,
         'group_by_field': group_by_field,
         'distinct_currency_codes': distinct_currency_codes,
         'distinct_prod_segments': distinct_prod_segments,
@@ -592,8 +634,9 @@ def ecl_reconciliation_sub_filter_view(request):
 @login_required
 @require_http_methods(["POST"])
 def export_ecl_reconciliation_to_excel(request):
-    # Retrieve the filtered data and grand totals from session
+    # Retrieve the filtered data, grouped percentages, and grand totals from session
     grouped_data = request.session.get('grouped_data', [])
+    grouped_data_percentages = request.session.get('grouped_data_percentages', [])
     group_by_field = request.session.get('group_by_field', 'n_stage_descr')
     grand_totals = request.session.get('grand_totals', {})
     fic_mis_date1 = request.session.get('fic_mis_date1', '')
@@ -601,16 +644,18 @@ def export_ecl_reconciliation_to_excel(request):
     fic_mis_date2 = request.session.get('fic_mis_date2', '')
     run_key2 = request.session.get('run_key2', '')
 
-    # Create a new Excel workbook and add a sheet
+    # Create a new Excel workbook
     wb = Workbook()
-    ws = wb.active
-    ws.title = "ECL Reconciliation Report"
 
-    # Merge cells for the header to replicate the multi-level column headers
-    ws.merge_cells('B1:E1')
-    ws.merge_cells('F1:I1')
-    ws.merge_cells('J1:L1')
-    ws.merge_cells('M1:N1')
+    # First Sheet: ECL Reconciliation Report (Absolute Values)
+    ws1 = wb.active
+    ws1.title = "ECL Reconciliation Report"
+
+    # Merge cells for the header
+    ws1.merge_cells('B1:E1')
+    ws1.merge_cells('F1:I1')
+    ws1.merge_cells('J1:L1')
+    ws1.merge_cells('M1:N1')
 
     # Add the main headers
     headers = [
@@ -629,7 +674,7 @@ def export_ecl_reconciliation_to_excel(request):
         "Total Accounts",
         ""
     ]
-    ws.append(headers)
+    ws1.append(headers)
 
     # Add sub-headers for the columns under the merged headers
     sub_headers = [
@@ -648,11 +693,11 @@ def export_ecl_reconciliation_to_excel(request):
         f"Total Accounts ({fic_mis_date1})",
         f"Total Accounts ({fic_mis_date2})"
     ]
-    ws.append(sub_headers)
+    ws1.append(sub_headers)
 
-    # Add the grouped data to the sheet
+    # Add the grouped data to the first sheet
     for row in grouped_data:
-        ws.append([
+        ws1.append([
             row.get(group_by_field, ''),
             row.get('n_exposure_at_default_ncy_higher', 0),
             row.get('n_exposure_at_default_rcy_higher', 0),
@@ -669,8 +714,8 @@ def export_ecl_reconciliation_to_excel(request):
             row.get('n_accounts_in_lower', 0),
         ])
 
-    # Add the grand totals at the bottom
-    ws.append([
+    # Add the grand totals to the first sheet
+    ws1.append([
         'Grand Total',
         grand_totals.get('n_exposure_at_default_ncy_higher', 0),
         grand_totals.get('n_exposure_at_default_rcy_higher', 0),
@@ -684,59 +729,96 @@ def export_ecl_reconciliation_to_excel(request):
         grand_totals.get('difference_12m_ecl', 0),
         grand_totals.get('difference_lifetime_ecl', 0),
         grand_totals.get('n_accounts_in_higher', 0),
-        grand_totals.get('n_accounts_in_lower', 0)
+        grand_totals.get('n_accounts_in_lower', 0),
     ])
 
-    # Apply styling to the header row (first row)
-    header_fill = PatternFill(start_color="2d5c8e", end_color="2d5c8e", fill_type="solid")
-    header_font = Font(color="FFFFFF", bold=True)
-    alignment = Alignment(horizontal="center", vertical="center")
+    # Second Sheet: Percentage Table
+    ws2 = wb.create_sheet(title="ECL Percentages")
 
-    for cell in ws[1]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = alignment
+    # Add headers for percentages
+    percentage_headers = [
+        group_by_field,
+        "% of 12 Month ECL (Date 1)",
+        "% of Lifetime ECL (Date 1)",
+        "% of 12 Month ECL (Date 2)",
+        "% of Lifetime ECL (Date 2)",
+        "% of Total Accounts (Date 1)",
+        "% of Total Accounts (Date 2)",
+        "% of EAD Reporting Currency Difference",
+        "% of 12 Month ECL Difference",
+        "% of Lifetime ECL Difference",
+    ]
+    ws2.append(percentage_headers)
 
-    # Apply styling to the sub-headers
-    for cell in ws[2]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = alignment
+    # Add grouped percentage data to the second sheet
+    for row in grouped_data_percentages:
+        ws2.append([
+            row.get(group_by_field, ''),
+            row.get('percent_12m_ecl_higher', 0),
+            row.get('percent_lifetime_ecl_higher', 0),
+            row.get('percent_12m_ecl_lower', 0),
+            row.get('percent_lifetime_ecl_lower', 0),
+            row.get('percent_total_accounts_higher', 0),
+            row.get('percent_total_accounts_lower', 0),
+            row.get('percent_difference_ead_rcy', 0),
+            row.get('percent_difference_12m_ecl', 0),
+            row.get('percent_difference_lifetime_ecl', 0),
+        ])
 
-    # Apply zebra striping and numeric alignment for data rows
-    light_fill = PatternFill(start_color="d1e7dd", end_color="d1e7dd", fill_type="solid")
-    for row in ws.iter_rows(min_row=3, max_row=len(grouped_data) + 3, min_col=1, max_col=len(sub_headers)):
-        for cell in row:
-            if isinstance(cell.value, (int, float)):
-                cell.number_format = '#,##0.00'  # Apply number format
-                cell.alignment = Alignment(horizontal="right")
-            else:
-                cell.alignment = Alignment(horizontal="left")
-            cell.fill = light_fill
-
-    # Apply bold font for the grand total row
-    for cell in ws[len(grouped_data) + 3]:
-        cell.font = Font(bold=True)
-
-    # Adjust the column widths for better appearance
-    for col in ws.columns:
-        max_length = 0
-        column = col[0].column_letter if hasattr(col[0], 'column_letter') else None  # Ensure the first cell has column_letter
-        if column:  # Only adjust if column is valid (not merged cell)
-            for cell in col:
-                if cell.value and not isinstance(cell, openpyxl.cell.cell.MergedCell):  # Skip merged cells
-                    max_length = max(max_length, len(str(cell.value)))
-            adjusted_width = (max_length + 2)
-            ws.column_dimensions[column].width = adjusted_width
+    # Apply styling to both sheets (optional: customize as needed)
+    style_excel_sheet(ws1, len(grouped_data), sub_headers)
+    style_excel_sheet(ws2, len(grouped_data_percentages), percentage_headers)
 
     # Create an HTTP response with an Excel attachment
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename="ecl_reconciliation_report_{fic_mis_date1}_{fic_mis_date2}.xlsx"'
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="ecl_reconciliation_{fic_mis_date1}_{fic_mis_date2}.xlsx"'
 
     # Save the workbook to the response
     wb.save(response)
     return response
 
+
+def style_excel_sheet(ws, data_row_count, headers):
+    """Applies consistent styling to the Excel sheet."""
+    header_fill = PatternFill(start_color="2d5c8e", end_color="2d5c8e", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    alignment = Alignment(horizontal="center", vertical="center")
+
+    # Style the header row
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = alignment
+
+    # Style the sub-headers
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = alignment
+
+    # Zebra striping for data rows
+    light_fill = PatternFill(start_color="d1e7dd", end_color="d1e7dd", fill_type="solid")
+    for row in ws.iter_rows(min_row=2, max_row=data_row_count + 3, min_col=1, max_col=len(headers)):
+        for cell in row:
+            if isinstance(cell.value, (int, float)):
+                cell.number_format = '#,##0.00'
+                cell.alignment = Alignment(horizontal="right")
+            else:
+                cell.alignment = Alignment(horizontal="left")
+            cell.fill = light_fill
+
+    # Adjust column widths
+    for col in ws.columns:
+        max_length = 0
+        column_letter = col[0].column_letter if not isinstance(col[0], openpyxl.cell.cell.MergedCell) else None
+        if column_letter:  # Only adjust if column is valid (not a merged cell)
+            for cell in col:
+                if cell.value and not isinstance(cell, openpyxl.cell.cell.MergedCell):  # Skip merged cells
+                    max_length = max(max_length, len(str(cell.value)))
+            adjusted_width = (max_length + 2)
+            ws.column_dimensions[column_letter].width = adjusted_width
 
 CSV_DIR = os.path.join(os.getcwd(), 'csv_files')
 

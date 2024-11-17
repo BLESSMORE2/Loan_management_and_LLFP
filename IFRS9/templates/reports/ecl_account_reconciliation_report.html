@@ -140,7 +140,9 @@
     <p class="text-muted mt-4 text-center">No account selected or no data available for the selected account.</p>
     {% endif %}
     <form method="GET" action="{% url 'export_full_ecl_report_to_excel' %}">
-        <button type="submit" class="btn btn-secondary mt-3">Download Full Report as Excel</button>
+        <button id="download-button" class="btn btn-success btn-sm shadow-sm"  type="submit">
+            <i class="fas fa-download"></i> Download Full Report as Excel
+        </button>
     </form>
     
 </div>

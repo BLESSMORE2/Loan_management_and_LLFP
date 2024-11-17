@@ -15,7 +15,7 @@
                         </a>
                     </li>
                     <!-- Back Button -->
-                    <li class="nav-item mb-4">
+                    <li class="nav-item mb-1">
                         <a href="{% url 'ecl_graphs_main_filter_view' %}" class="btn btn-outline-light w-100">
                             <i class="fas fa-arrow-left"></i> Back
                         </a>
@@ -24,7 +24,7 @@
                     <!-- Chart Options Section -->
                     <div class="sidebar-section">
                         <h5 class="sidebar-heading text-white">CHART OPTIONS</h5>
-                        <div class="mb-3">
+                        <div class="mb-1">
                             <label for="chartType" class="form-label text-white">Select Chart Type</label>
                             <select id="chartType" class="form-select">
                                 <option value="pie">Pie Chart</option>
@@ -35,10 +35,10 @@
                     </div>
 
                     <!-- Group By Section -->
-                    <div class="sidebar-section mt-4">
+                    <div class="sidebar-section mt-1">
                         <h5 class="sidebar-heading text-white">GROUP BY</h5>
                         <form method="GET" action="" id="filterForm">
-                            <div class="mb-3">
+                            <div class="mb-1">
                                 <label for="group_by_field" class="form-label text-white">Group By</label>
                                 <select id="group_by_field" name="group_by_field" class="form-select">
                                     <option value="v_ccy_code" {% if group_by_field == 'v_ccy_code' %}selected{% endif %}>Currency Code</option>
@@ -57,10 +57,10 @@
                     </div>
 
                     <!-- Filter Section -->
-                    <div class="sidebar-section mt-4">
+                    <div class="sidebar-section mt-2">
                         <h5 class="sidebar-heading text-white">FILTERS</h5>
                         <form method="GET" action="" id="filterForm">
-                            <div class="mb-3">
+                            <div class="mb-1">
                                 <label for="n_prod_segment" class="form-label text-white">Product Segment</label>
                                 <select id="n_prod_segment" name="n_prod_segment" class="form-select">
                                     <option value="">-- Select --</option>
@@ -70,7 +70,7 @@
                                 </select>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-1">
                                 <label for="n_prod_type" class="form-label text-white">Product Type</label>
                                 <select id="n_prod_type" name="n_prod_type" class="form-select">
                                     <option value="">-- Select --</option>
@@ -80,7 +80,7 @@
                                 </select>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-1">
                                 <label for="n_stage_descr" class="form-label text-white">Stage Description</label>
                                 <select id="n_stage_descr" name="n_stage_descr" class="form-select">
                                     <option value="">-- Select --</option>
@@ -90,7 +90,7 @@
                                 </select>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-1">
                                 <label for="n_loan_type" class="form-label text-white">Loan Type</label>
                                 <select id="n_loan_type" name="n_loan_type" class="form-select">
                                     <option value="">-- Select --</option>
@@ -112,7 +112,7 @@
 
         <!-- Main Content Area for Chart -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 ml-5 border-bottom">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-1 ml-5 border-bottom">
                 <div class="report-heading">
                     <h1>ECL Summary Report - Grouped by {{ group_by_field }}</h1>
                 </div>

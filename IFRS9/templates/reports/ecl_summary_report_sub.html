@@ -11,24 +11,16 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="margin-left: 250px;">
             <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">ECL Summary Report - Grouped by {{ group_by_field }}</h1>
 
-           
-
-            <!-- Data Table with Green Header -->
+            <!-- First Table: Absolute Numbers -->
             <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
                 <thead>
                     <tr style="background-color: #71aeee; color: black; text-align: center;">
-                        <th colspan="1"></th> 
-                        <th colspan="2">EXPOSURE AT DEFAULT</th>
-                        <th colspan="2">EXPECTED CREDIT LOSS</th>
-                        <th colspan="1">Account Count</th>  <!-- Added Account Count Column -->
-                    </tr>
-                    <tr style="background-color: #2d5c8e; color: white; text-align: center;">
                         <th>{{ group_by_field }}</th>
                         <th>EAD Orig Currency</th>
                         <th>EAD Reporting Currency</th>
                         <th>12 Month Reporting ECL</th>
                         <th>Lifetime Reporting ECL</th>
-                        <th>Number of Accounts</th> <!-- Added Account Count Column -->
+                        <th>Number of Accounts</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -39,7 +31,7 @@
                         <td style="text-align: right;">{{ row.n_exposure_at_default_rcy|floatformat:2 }}</td>
                         <td style="text-align: right;">{{ row.n_12m_ecl_rcy|floatformat:2 }}</td>
                         <td style="text-align: right;">{{ row.n_lifetime_ecl_rcy|floatformat:2 }}</td>
-                        <td style="text-align: right;">{{ row.n_account_number }}</td> <!-- Account Count -->
+                        <td style="text-align: right;">{{ row.n_account_number }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -50,58 +42,40 @@
                         <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_rcy|floatformat:2 }}</td>
                         <td style="text-align: right;">{{ grand_totals.n_12m_ecl_rcy|floatformat:2 }}</td>
                         <td style="text-align: right;">{{ grand_totals.n_lifetime_ecl_rcy|floatformat:2 }}</td>
-                        <td style="text-align: right;">{{ grand_totals.n_account_number }}</td> <!-- Grand Total Account Count -->
+                        <td style="text-align: right;">{{ grand_totals.n_account_number }}</td>
                     </tr>
                 </tfoot>
             </table>
 
+            <!-- Second Table: Percentages -->
+            <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                <thead>
+                    <tr style="background-color: #71aeee; color: black; text-align: center;">
+                        <th>{{ group_by_field }}</th>
+                        <th>% of 12 Month Reporting ECL</th>
+                        <th>% of Lifetime Reporting ECL</th>
+                        <th>% of Number of Accounts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in grouped_data_percentages %}
+                    <tr>
+                        <td>{{ row|get_item:group_by_field }}</td>
+                        <td style="text-align: right;">{{ row.percent_12m_ecl_rcy|floatformat:2 }}%</td>
+                        <td style="text-align: right;">{{ row.percent_lifetime_ecl_rcy|floatformat:2 }}%</td>
+                        <td style="text-align: right;">{{ row.percent_accounts|floatformat:2 }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
             <form method="POST" action="{% url 'export_ecl_report_to_excel' %}">
                 {% csrf_token %}
-                <button style="background-color: #3a253f; font-weight: bold;" type="submit" class="btn btn-secondary">Download Report as Excel</button>
+                <button id="download-button" class="btn btn-success btn-sm shadow-sm"  type="submit">
+                    <i class="fas fa-download"></i> Download Report as Excel
+                </button>
             </form>
         </main>
     </div>
 </div>
 {% endblock %}
-
-<style>
-    /* Sidebar styling */
-    #sidebar {
-        height: 100vh;
-        position: fixed;
-        top: 0;
-        left: 0;
-        background-color: #003366;
-        color: #ffffff;
-        width: 250px;
-        overflow-y: auto;
-    }
-
-    .sidebar-content {
-        padding-top: 10px;
-    }
-
-    /* Main content styling */
-    main {
-        margin-left: 250px; /* Align main content to the right of the sidebar */
-        padding-top: 20px;
-    }
-
-    /* Additional styling for data table */
-    .table thead th, .table tfoot th {
-        background-color: #71aeee;
-        color: black;
-        text-align: center;
-    }
-
-    .table thead th:nth-child(1),
-    .table tfoot th:nth-child(1) {
-        background-color: #2d5c8e;
-        color: white;
-    }
-    
-    .table tfoot tr {
-        background-color: #d1e7dd;
-        font-weight: bold;
-    }
-</style>
