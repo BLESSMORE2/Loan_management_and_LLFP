@@ -140,38 +140,50 @@ def update_reporting_lines(fic_mis_date, exchange_rate_dict, target_currency_cod
     return f"Update successful. {len(updated_entries)} rows updated."
 
 def update_reporting_lines_with_exchange_rate(fic_mis_date):
+    """
+    Main function to update reporting lines based on exchange rates.
+    Returns:
+        1: Success
+        0: Failure
+    """
     try:
+        # Fetch exchange rate configuration
         exchange_rate_conf = DimExchangeRateConf.objects.first()
         if not exchange_rate_conf:
             save_log('update_reporting_lines_with_exchange_rate', 'ERROR', "No valid exchange rate configuration found.")
-            return "No valid exchange rate configuration found."
+            return 0  # Failure
 
         use_online = exchange_rate_conf.use_on_exchange_rates
         use_latest = exchange_rate_conf.use_latest_exchange_rates
 
+        # Fetch reporting currency
         reporting_currency = ReportingCurrency.objects.first()
         if not reporting_currency:
             save_log('update_reporting_lines_with_exchange_rate', 'ERROR', "No reporting currency defined.")
-            return "Error: No reporting currency defined."
+            return 0  # Failure
         
         target_currency_code = reporting_currency.currency_code.code
 
+        # Fetch exchange rates
         if use_online:
             exchange_rate_dict = fetch_and_save_exchange_rates_from_api(target_currency_code, fic_mis_date, use_latest)
         else:
             exchange_rate_dict = fetch_manual_exchange_rates(target_currency_code, fic_mis_date)
 
         if not exchange_rate_dict:
-            return "Error: Unable to retrieve exchange rates."
+            save_log('update_reporting_lines_with_exchange_rate', 'ERROR', "Unable to retrieve exchange rates.")
+            return 0  # Failure
 
-        return update_reporting_lines(fic_mis_date, exchange_rate_dict, target_currency_code)
+        # Update reporting lines
+        update_result = update_reporting_lines(fic_mis_date, exchange_rate_dict, target_currency_code)
+        return 1 
 
     except ValueError as ve:
         save_log('update_reporting_lines_with_exchange_rate', 'ERROR', f"Value Error: {str(ve)}")
-        return f"Value Error: {str(ve)}"
+        return 0  # Failure
     except Exception as e:
         save_log('update_reporting_lines_with_exchange_rate', 'ERROR', f"Error during update: {str(e)}")
-        return f"Error during update: {str(e)}"
+        return 0  # Failure
 
 
 

@@ -77,7 +77,7 @@ def update_ecl_based_on_cash_shortfall(n_run_key, fic_mis_date, uses_discounting
         }
 
         updated_entries = []
-        with ThreadPoolExecutor(max_workers=20) as executor:
+        with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(process_entry, entry, cash_flow_cache, uses_discounting) for entry in reporting_lines]
 
             for future in futures:
@@ -108,7 +108,7 @@ def update_ecl_based_on_internal_calculations(n_run_key, fic_mis_date):
                 entry.n_12m_ecl_ncy = entry.n_exposure_at_default_ncy * entry.n_twelve_months_pd * entry.n_lgd_percent
             return entry
 
-        with ThreadPoolExecutor(max_workers=20) as executor:
+        with ThreadPoolExecutor(max_workers=5) as executor:
             updated_entries = list(executor.map(process_internal, reporting_lines))
 
         with transaction.atomic():
