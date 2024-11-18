@@ -3,12 +3,12 @@
 <div class="container-fluid mt-5">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-3 pe-0">
+        <div class="col-md-2 pe-0">
             {% include 'operations/operations_sidebar.html' %}
         </div>
 
         <!-- Main Content -->
-        <div class="col-md-9 ps-2">
+        <div class="col-md-10 ps-2">
             <h1 class="h3 text-primary text-center mb-4">Monitor Running Process</h1>
 
             <!-- Date Selection Form -->
@@ -113,8 +113,7 @@
                     </tbody>
                 </table>
             </div>
-            {% else %}
-            <p class="text-muted">Please select a date to view available processes.</p>
+         
             {% endif %}
 
             <!-- Function Execution Status -->

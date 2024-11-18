@@ -4,12 +4,12 @@
 <div class="container-fluid mt-4">
     <div class="row">
         <!-- Include Operations Sidebar -->
-        <div class="col-md-3 pe-0">
+        <div class="col-md-2 pe-0">
             {% include 'operations/operations_sidebar.html' %}
         </div>
 
         <!-- Main Content Area -->
-        <div class="col-md-9 ps-3">
+        <div class="col-md-10 ps-3 ">
             <!-- Error Message Section -->
             {% if messages %}
             <div class="alert-container mb-4">
@@ -30,8 +30,7 @@
                         id="search-input" 
                         class="form-control rounded-pill shadow-sm" 
                         placeholder="Search processes..."
-                        style="padding-left: 40px;"
-                    >
+                        style="padding-left: 40px;">
                     <i 
                         class="fas fa-search" 
                         style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 1.3rem;">
@@ -112,19 +111,59 @@
                         </table>
                     </div>
                 </div>
+                <!-- Pagination Controls -->
+                <div class="card-footer d-flex justify-content-center align-items-center">
+                    <button class="btn btn-secondary btn-sm me-3" id="prev-btn">Previous</button>
+                    <span class="badge bg-light text-dark" id="page-indicator">1</span>
+                    <button class="btn btn-secondary btn-sm ms-3" id="next-btn">Next</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-function handleSearch() {
-    const searchValue = document.getElementById('search-input').value.toLowerCase();
-    const table = document.getElementById('process-table');
-    const rows = table.getElementsByTagName('tr');
+document.addEventListener("DOMContentLoaded", function() {
+    const rowsPerPage = 10;
+    const table = document.getElementById("process-table");
+    const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    const totalRows = rows.length;
+    const pageIndicator = document.getElementById("page-indicator");
+    let currentPage = 1;
 
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].getElementsByTagName('td');
+    function updateTable() {
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = currentPage * rowsPerPage;
+        for (let i = 0; i < totalRows; i++) {
+            rows[i].style.display = i >= start && i < end ? "" : "none";
+        }
+        pageIndicator.textContent = currentPage;
+    }
+
+    document.getElementById("prev-btn").addEventListener("click", function() {
+        if (currentPage > 1) {
+            currentPage--;
+            updateTable();
+        }
+    });
+
+    document.getElementById("next-btn").addEventListener("click", function() {
+        if (currentPage * rowsPerPage < totalRows) {
+            currentPage++;
+            updateTable();
+        }
+    });
+
+    updateTable(); // Initial rendering
+});
+
+function handleSearch() {
+    const searchValue = document.getElementById("search-input").value.toLowerCase();
+    const table = document.getElementById("process-table");
+    const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+
+    for (let i = 0; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName("td");
         let rowVisible = false;
 
         for (let j = 0; j < cells.length; j++) {
@@ -134,56 +173,12 @@ function handleSearch() {
             }
         }
 
-        rows[i].style.display = rowVisible ? '' : 'none';
+        rows[i].style.display = rowVisible ? "" : "none";
     }
 }
 </script>
 
 <style>
-/* Enhanced Search Bar Styling */
-#search-input {
-    border-radius: 50px;
-    border: 2px solid #007bff;
-    padding: 10px 15px;
-    font-size: 1rem;
-    background-color: #f8f9fa;
-    box-shadow: none;
-    transition: all 0.3s ease;
-}
-
-#search-input:focus {
-    border-color: #0056b3;
-    outline: none;
-    background-color: #fff;
-}
-
-/* Search Icon Styling */
-#search-input + i {
-    color: #aaa;
-    pointer-events: none;
-    font-size: 1.3rem;
-}
-
-/* Search Button Styling */
-#search-button {
-    font-size: 1rem;
-    border: none;
-    background-color: #007bff;
-    color: white;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-#search-button:hover {
-    background-color: #0056b3;
-    transform: scale(1.05);
-}
-
-#search-button:active {
-    background-color: #003d80;
-    transform: scale(0.95);
-}
-
-/* Table Styling */
 .table-dark th {
     font-size: 1rem;
     font-weight: bold;
@@ -201,15 +196,10 @@ function handleSearch() {
     transition: background-color 0.3s ease;
 }
 
-/* Card Header */
-.card-header {
-    font-weight: bold;
+.card-footer .badge {
     font-size: 1.1rem;
-    text-align: center;
-}
-
-.container-fluid {
-    padding: 0 20px;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
 }
 </style>
 {% endblock %}

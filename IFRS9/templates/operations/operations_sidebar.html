@@ -9,7 +9,7 @@
                 </a>
             </li>
             <!-- Back Button -->
-            <li class="nav-item mb-1">
+            <li class="nav-item mb-4">
                 <a href="{% if request.resolver_match.url_name == 'process_detail' or request.resolver_match.url_name == 'create_process'  or request.resolver_match.url_name == 'edit_process'  %}
                             {% url 'process_list' %}
                         {% elif request.resolver_match.url_name == 'monitor_specific_process' %}
@@ -24,7 +24,7 @@
 
 
             <!-- Sidebar Heading -->
-            <h5 class="sidebar-heading px-3 mb-3 text-white">Operations</h5>
+            <h5 class="sidebar-heading px-3 mb-2 text-green">Operations</h5>
 
             <!-- Sidebar Links for Operations -->
             <li class="nav-item">

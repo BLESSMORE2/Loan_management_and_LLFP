@@ -222,6 +222,9 @@ class SubmitToDatabaseView(LoginRequiredMixin, View):
             df = pd.DataFrame(df_data)
             df = df[selected_columns].rename(columns=mappings)
 
+            # Clean the data
+            df = self.clean_data(df)
+
             # Convert date columns to YYYY-MM-DD format
             for column in df.columns:
                 if 'date' in column.lower():
@@ -265,6 +268,28 @@ class SubmitToDatabaseView(LoginRequiredMixin, View):
 
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f"Unexpected error: {str(e)}"}, status=500)
+        
+    def clean_data(self, df):
+        """
+        Cleans the DataFrame by applying various data cleaning steps.
+        """
+        # Remove leading and trailing spaces from all string columns
+        for column in df.select_dtypes(include=['object']).columns:
+            df[column] = df[column].str.strip()
+
+        # Trim whitespace and normalize spaces between words
+        for column in df.select_dtypes(include=['object']).columns:
+            df[column] = df[column].str.strip().str.replace(r'\s+', ' ', regex=True)
+
+        # Convert all text to uppercase
+        for column in df.select_dtypes(include=['object']).columns:
+            df[column] = df[column].str.upper()
+        # Additional cleaning steps can be added here, such as:
+        df.dropna(how='all', inplace=True)  # Drop rows where all values are NaN
+        # Drop duplicates
+        df.drop_duplicates(inplace=True)
+
+        return df
 class CheckProgressView(LoginRequiredMixin, View):
     def get(self, request):
         progress = request.session.get('progress', 0)
