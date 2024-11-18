@@ -135,6 +135,7 @@ urlpatterns = [
     path('processes/', views.process_list, name='process_list'),
     path('process/<int:process_id>/', views.process_detail, name='process_detail'),
     path('process/create/', views.create_process, name='create_process'),
+    path('edit_process/<int:process_id>/', views.edit_process, name='edit_process'),
     path('process/delete/<int:process_id>/', views.delete_process, name='delete_process'),
     path('process/execute/', views.execute_process_view, name='execute_process_view'),
     path('process/run/', views.run_process_execution, name='run_process_execution'),

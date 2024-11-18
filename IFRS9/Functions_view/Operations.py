@@ -139,6 +139,67 @@ def create_process(request, process_id=None):
         'title': form_title,
     })
 
+def edit_process(request, process_id):
+    """
+    View to edit an existing process and its corresponding run processes.
+    """
+    # Define the formset for RunProcess with can_delete=True
+    RunProcessFormSet = inlineformset_factory(
+        Process,
+        RunProcess,
+        form=RunProcessForm,
+        extra=1,
+        can_delete=True,  # Enables deletion functionality
+    )
+
+    # Fetch the process object to edit or return 404 if not found
+    process = get_object_or_404(Process, id=process_id)
+    form_title = "Edit Process"
+
+    if request.method == "POST":
+        form = ProcessForm(request.POST, instance=process)
+        formset = RunProcessFormSet(request.POST, instance=process)
+
+        # Debugging: Log errors for clarity
+        print("Edit Form POST Data:", request.POST)
+        print("Edit Form Errors:", form.errors)
+        print("Edit Formset Errors:", formset.errors)
+
+        if form.is_valid() and formset.is_valid():
+            try:
+                with transaction.atomic():
+                    # Save the process
+                    process = form.save(commit=False)
+                    process.save()
+
+                    # Save the formset (RunProcess instances), including deletions
+                    formset.save()
+
+                    messages.success(request, "Process updated successfully.")
+                    return redirect("process_list")
+            except Exception as e:
+                messages.error(request, f"Error updating process: {str(e)}")
+                print(f"Error: {e}")
+        else:
+            messages.error(
+                request,
+                "There were errors in the form. Please correct them and try again.",
+            )
+    else:
+        form = ProcessForm(instance=process)
+        formset = RunProcessFormSet(instance=process)
+
+    return render(
+        request,
+        "operations/edit_process.html",
+        {
+            "form": form,
+            "formset": formset,
+            "title": form_title,
+            "process": process,
+        },
+    )
+
 
 @login_required
 def delete_process(request, process_id):
@@ -369,6 +430,7 @@ def monitor_running_process_view(request):
         'selected_date': selected_date,
         'processes': processes,
         'available_dates': available_dates,
+
     }
     return render(request, 'operations/monitor_running_process.html', context)
 
@@ -404,9 +466,25 @@ def get_updated_status_table(request):
 
 @login_required
 def get_process_function_status(request, process_run_id):
-    run_processes = FunctionExecutionStatus.objects.filter(process_run_id=process_run_id).order_by('execution_order')  # ordering by execution order
+    # Get all statuses related to the process_run_id
+    run_processes = FunctionExecutionStatus.objects.filter(process_run_id=process_run_id).order_by('execution_order')
+
+    # Compute duration details for each process
+    for process in run_processes:
+        if isinstance(process.duration, timedelta):
+            total_seconds = process.duration.total_seconds()
+            process.total_seconds = total_seconds
+            process.minutes = int(total_seconds // 60)
+            process.remaining_seconds = int(total_seconds % 60)
+        else:
+            process.total_seconds = None
+            process.minutes = None
+            process.remaining_seconds = None
+
+    # Render the updated table to HTML
     functions_html = render_to_string('operations/_function_status_list.html', {'run_processes': run_processes})
     return JsonResponse({'html': functions_html})
+
 
 
 @login_required

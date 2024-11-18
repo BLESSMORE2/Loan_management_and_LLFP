@@ -450,12 +450,15 @@ class RunProcessForm(forms.ModelForm):
     # Custom validation (example)
     def clean(self):
         cleaned_data = super().clean()
+
+        # Skip validation if the form is marked for deletion
+        if self.cleaned_data.get('DELETE', False):
+            return cleaned_data
+
         order = cleaned_data.get('order')
 
         # Validation: Order should be a positive number
-        if order <= 0:
-            raise forms.ValidationError("Order must be a positive number.")
-        if order <= 0:
+        if order is None or order <= 0:
             raise forms.ValidationError("Order must be a positive number.")
 
         return cleaned_data

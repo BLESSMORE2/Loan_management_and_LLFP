@@ -10,7 +10,7 @@
             </li>
             <!-- Back Button -->
             <li class="nav-item mb-1">
-                <a href="{% if request.resolver_match.url_name == 'process_detail' or request.resolver_match.url_name == 'create_process'  %}
+                <a href="{% if request.resolver_match.url_name == 'process_detail' or request.resolver_match.url_name == 'create_process'  or request.resolver_match.url_name == 'edit_process'  %}
                             {% url 'process_list' %}
                         {% elif request.resolver_match.url_name == 'monitor_specific_process' %}
                             {% url 'execute_process_view' %}

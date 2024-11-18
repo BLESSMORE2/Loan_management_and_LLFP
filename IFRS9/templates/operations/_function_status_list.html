@@ -29,11 +29,14 @@
         {% endif %}
     </td>
     <td>
-        {% if run_process.duration %}
-            {% if run_process.duration.total_seconds < 60 %}
-                {{ run_process.duration.total_seconds|floatformat:2 }} seconds
+        {% if run_process.total_seconds %}
+            {% if run_process.minutes > 0 %}
+                {{ run_process.minutes }} minutes 
+                {% if run_process.remaining_seconds > 0 %}
+                    {{ run_process.remaining_seconds }} seconds
+                {% endif %}
             {% else %}
-                {{ run_process.duration.total_seconds|divisibleby:60|floatformat:2 }} minutes
+                {{ run_process.remaining_seconds }} seconds
             {% endif %}
         {% else %}
             --

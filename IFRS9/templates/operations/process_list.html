@@ -1,91 +1,215 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid mt-4">
     <div class="row">
         <!-- Include Operations Sidebar -->
-        {% include 'operations/operations_sidebar.html' %}
+        <div class="col-md-3 pe-0">
+            {% include 'operations/operations_sidebar.html' %}
+        </div>
 
         <!-- Main Content Area -->
-        <div class="col-md-9 ms-sm-auto col-lg-10 px-md-3" style="margin-left: 260px;"> <!-- Adjusted to prevent overlap with sidebar -->
-            
-            <!-- Page Title -->
-            <!-- <div class="card shadow mb-4">
-                <div class="card-body text-center">
-                    <h1 class="h3 text-primary">Process List</h1>
+        <div class="col-md-9 ps-3">
+            <!-- Error Message Section -->
+            {% if messages %}
+            <div class="alert-container mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <h1 class="h4 text-primary mb-4 d-flex justify-content-between align-items-center">
+                Manage Processes
+                <!-- Enhanced Search Bar -->
+                <div class="d-flex" style="max-width: 400px; position: relative;">
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        class="form-control rounded-pill shadow-sm" 
+                        placeholder="Search processes..."
+                        style="padding-left: 40px;"
+                    >
+                    <i 
+                        class="fas fa-search" 
+                        style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 1.3rem;">
+                    </i>
+                    <button 
+                        id="search-button" 
+                        class="btn btn-primary rounded-pill ms-2 shadow-sm" 
+                        style="padding: 5px 20px;" 
+                        onclick="handleSearch()">
+                        Search
+                    </button>
                 </div>
-            </div> -->
+            </h1>
 
             <!-- Process List Table -->
             <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Process List</h5>
+                </div>
                 <div class="card-body p-0">
-                    <table class="table table-striped table-hover mb-0">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>Process ID</th>
-                                <th>Process Description</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for process in processes %}
-                            <tr>
-                                <td>{{ process.id }}</td>
-                                <td>{{ process.process_name }}</td>
-                                <td>
-                                    <!-- View Button -->
-                                    <a href="{% url 'process_detail' process.id %}" class="btn btn-info btn-sm">
-                                        <i class="fas fa-eye"></i> View
-                                    </a>
-                                    <!-- Delete Button with Confirmation Modal -->
-                                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal-{{ process.id }}">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </td>
-                            </tr>
+                    <div class="table-responsive">
+                        <table id="process-table" class="table table-striped table-hover mb-0">
+                            <thead class="table-dark text-center">
+                                <tr>
+                                    <th>Process ID</th>
+                                    <th>Process Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for process in processes %}
+                                <tr>
+                                    <td class="text-center">{{ process.id }}</td>
+                                    <td>{{ process.process_name }}</td>
+                                    <td class="text-center">
+                                        <!-- View Button -->
+                                        <a href="{% url 'process_detail' process.id %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <!-- Edit Button -->
+                                        <a href="{% url 'edit_process' process.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <!-- Delete Button -->
+                                        <button 
+                                            type="button" 
+                                            class="btn btn-danger btn-sm" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal-{{ process.id }}">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </td>
+                                </tr>
 
-                            <!-- Delete Confirmation Modal -->
-                            <div class="modal fade" id="deleteModal-{{ process.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-                                <div class="modal-dialog" role="document">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                        <div class="modal-body">
-                                            Are you sure you want to delete the process "{{ process.process_name }}"?
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                            <form action="{% url 'delete_process' process.id %}" method="POST" style="display:inline;">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger">Delete</button>
-                                            </form>
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal-{{ process.id }}" tabindex="-1" aria-labelledby="deleteModalLabel-{{ process.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel-{{ process.id }}">Confirm Deletion</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete the process <strong>"{{ process.process_name }}"</strong>?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{% url 'delete_process' process.id %}" method="POST">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="d-flex justify-content-between mt-4">
-                <a href="{% url 'create_process' %}" class="btn btn-success">
-                    <i class="fas fa-plus"></i> Create New Process
-                </a>
-               
             </div>
         </div>
     </div>
 </div>
 
-<!-- Ensure jQuery and Bootstrap JS are included for the modals -->
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<script>
+function handleSearch() {
+    const searchValue = document.getElementById('search-input').value.toLowerCase();
+    const table = document.getElementById('process-table');
+    const rows = table.getElementsByTagName('tr');
 
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        let rowVisible = false;
+
+        for (let j = 0; j < cells.length; j++) {
+            if (cells[j].textContent.toLowerCase().includes(searchValue)) {
+                rowVisible = true;
+                break;
+            }
+        }
+
+        rows[i].style.display = rowVisible ? '' : 'none';
+    }
+}
+</script>
+
+<style>
+/* Enhanced Search Bar Styling */
+#search-input {
+    border-radius: 50px;
+    border: 2px solid #007bff;
+    padding: 10px 15px;
+    font-size: 1rem;
+    background-color: #f8f9fa;
+    box-shadow: none;
+    transition: all 0.3s ease;
+}
+
+#search-input:focus {
+    border-color: #0056b3;
+    outline: none;
+    background-color: #fff;
+}
+
+/* Search Icon Styling */
+#search-input + i {
+    color: #aaa;
+    pointer-events: none;
+    font-size: 1.3rem;
+}
+
+/* Search Button Styling */
+#search-button {
+    font-size: 1rem;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#search-button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+#search-button:active {
+    background-color: #003d80;
+    transform: scale(0.95);
+}
+
+/* Table Styling */
+.table-dark th {
+    font-size: 1rem;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.table td {
+    vertical-align: middle;
+    text-align: center;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease;
+}
+
+/* Card Header */
+.card-header {
+    font-weight: bold;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.container-fluid {
+    padding: 0 20px;
+}
+</style>
 {% endblock %}
