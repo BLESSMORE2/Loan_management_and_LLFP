@@ -55,7 +55,7 @@
                     document.addEventListener('DOMContentLoaded', function() {
                         // Function to handle dynamic filter changes
                         function updateDropdown(field, value) {
-                            fetch(`/ecl-graphs-main-filter/?field=${field}&value=${encodeURIComponent(value)}`, {
+                            fetch(`/vintage-analysis-main-filter/?field=${field}&value=${encodeURIComponent(value)}`, {
                                 headers: { "X-Requested-With": "XMLHttpRequest" }
                             })
                             .then(response => {

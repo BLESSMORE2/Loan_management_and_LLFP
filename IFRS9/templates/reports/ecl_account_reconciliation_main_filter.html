@@ -14,9 +14,9 @@
             <form method="POST" action="{% url 'ecl_account_reconciliation_main_filter' %}">
                 {% csrf_token %}
                 <div class="row mb-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-                    <!-- FIC MIS Date 1 and Run Key 1 -->
+                    <!-- Reporting Date 1 and Run Key 1 -->
                     <div class="col-md-6">
-                        <label for="fic_mis_date1" class="form-label">FIC MIS Date 1</label>
+                        <label for="fic_mis_date1" class="form-label">Reporting Date 1</label>
                         <select id="fic_mis_date1" name="fic_mis_date1" class="form-control {% if errors.fic_mis_date1 %}is-invalid{% endif %}">
                             <option value="">-- Select Date 1 --</option>
                             {% for date in fic_mis_dates %}
@@ -45,10 +45,10 @@
                     </div>
                 </div>
 
-                <!-- FIC MIS Date 2 and Run Key 2 -->
+                <!-- Reporting Date 2 and Run Key 2 -->
                 <div class="row mb-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
                     <div class="col-md-6">
-                        <label for="fic_mis_date2" class="form-label">FIC MIS Date 2</label>
+                        <label for="fic_mis_date2" class="form-label">Reporting Date 2</label>
                         <select id="fic_mis_date2" name="fic_mis_date2" class="form-control {% if errors.fic_mis_date2 %}is-invalid{% endif %}">
                             <option value="">-- Select Date 2 --</option>
                             {% for date in fic_mis_dates %}

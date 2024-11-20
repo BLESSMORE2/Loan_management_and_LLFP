@@ -27,9 +27,9 @@
                 </div>
                 <div class="card-body">
                     <form method="GET" class="filter-form">
-                        <!-- FIC MIS Date -->
+                        <!-- Reporting Date -->
                         <div class="form-group mb-3">
-                            <label for="fic_mis_date" class="form-label text-primary">FIC MIS Date:</label>
+                            <label for="fic_mis_date" class="form-label text-primary">Reporting Date:</label>
                             <select id="fic_mis_date" name="fic_mis_date" class="form-select form-select-sm">
                                 <option value="">-- Select Date --</option>
                                 {% for date in fic_mis_dates %}
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Event listener for the FIC MIS Date dropdown
+    // Event listener for the Reporting Date dropdown
     document.getElementById('fic_mis_date').addEventListener('change', function() {
         let fic_mis_date = this.value;
         updateDropdown('fic_mis_date', fic_mis_date);

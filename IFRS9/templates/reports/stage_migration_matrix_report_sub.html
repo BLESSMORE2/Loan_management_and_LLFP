@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Include Sidebar Template -->
+        <div id="sidebar-container" class="col-md-3 col-lg-2 d-md-block sidebar">
+            {% include 'reports/stage_matrix_sidebar.html' %}
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 col-lg-10 px-md-4" id="main-content">
+            <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">Stage Migration Matrix Report</h1>
+
+            <!-- Stage Migration Matrix Table -->
+            <h5 class="text-muted mt-3">
+                Stage Migration Matrix (From {{ date_1|date:"d M Y" }} to {{ date_2|date:"d M Y" }})
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #005082; color: white; text-align: center;">
+                            <th>From/To</th>
+                            {% for stage in stages %}
+                                <th>{{ stage }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in migration_data %}
+                        <tr>
+                            <td>{{ row|get_item:"from_stage" }}</td>
+                            {% for to_stage in stages %}
+                                <td>
+                                    {% with row|get_item:to_stage as cell %}
+                                        {% if cell %}
+                                            <span>{{ cell.count }}</span><br>
+                                            <span class="text-muted">({{ cell.percentage|floatformat:2 }}%)</span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Number of Accounts and Percentages Table -->
+            <h5 class="text-muted mt-5">Number of Accounts and Percentages per Stage</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #005082; color: white; text-align: center;">
+                            <th>Stage</th>
+                            <th>{{ date_1|date:"d M Y" }} (Count)</th>
+                            <th>{{ date_1|date:"d M Y" }} (Percentage)</th>
+                            <th>{{ date_2|date:"d M Y" }} (Count)</th>
+                            <th>{{ date_2|date:"d M Y" }} (Percentage)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stage_data in account_summary.date_1 %}
+                        <tr>
+                            <td>{{ stage_data.stage }}</td>
+                            <td>{{ stage_data.count }}</td>
+                            <td>{{ stage_data.percentage|floatformat:2 }}%</td>
+                            <td>
+                                {% with account_summary.date_2|get_item_for_stage:stage_data.stage as stage_2_data %}
+                                    {% if stage_2_data %}
+                                        {{ stage_2_data.count }}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                {% with account_summary.date_2|get_item_for_stage:stage_data.stage as stage_2_data %}
+                                    {% if stage_2_data %}
+                                        {{ stage_2_data.percentage|floatformat:2 }}%
+                                    {% else %}
+                                        0.00%
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #d1e7dd; font-weight: bold;">
+                            <td>Total</td>
+                            <td>{{ account_summary.total_date_1.count }}</td>
+                            <td>{{ account_summary.total_date_1.percentage|floatformat:2 }}%</td>
+                            <td>{{ account_summary.total_date_2.count }}</td>
+                            <td>{{ account_summary.total_date_2.percentage|floatformat:2 }}%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- New Accounts Table -->
+            <h5 class="text-muted mt-5">New Accounts in {{ date_2|date:"d M Y" }}</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #005082; color: white; text-align: center;">
+                            <th>Stage</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in new_accounts_summary %}
+                        <tr>
+                            <td>{{ account.stage }}</td>
+                            <td>{{ account.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+
+            <!-- Download Button -->
+            <form method="POST" action="#">
+                {% csrf_token %}
+                <button id="download-button" class="btn btn-success btn-sm shadow-sm mt-3" type="submit">
+                    <i class="fas fa-download"></i> Download Report as Excel
+                </button>
+            </form>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+
+<style>
+    /* Sidebar styling */
+    #sidebar-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 250px;
+        height: 100vh;
+        background-color: #003366;
+        color: #ffffff;
+        overflow-y: auto;
+        padding-top: 20px;
+    }
+
+    #main-content {
+        margin-left: 250px;
+        padding-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        #sidebar-container {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+        #main-content {
+            margin-left: 0;
+        }
+    }
+
+    /* Table styling */
+    .table thead th {
+        background-color: #005082;
+        color: white;
+        text-align: center;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+</style>

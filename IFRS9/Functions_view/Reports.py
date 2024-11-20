@@ -11,6 +11,7 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 import pandas as pd
 import numpy as np
+from datetime import datetime
 import os
 from openpyxl import Workbook
 import openpyxl
@@ -56,7 +57,7 @@ def view_results_and_extract(request):
 
     # Ensure filters are provided
     if not fic_mis_date or not n_run_key:
-        messages.error(request, "Both FIC MIS Date and Run Key are required.")
+        messages.error(request, "Both Reporting Date and Run Key are required.")
         return render(request, 'reports/report_view.html', {
             'selected_columns': [],
             'report_data': [],
@@ -97,7 +98,7 @@ def download_report(request):
 
     # Validate filters
     if not fic_mis_date or not n_run_key:
-        return HttpResponse("Both FIC MIS Date and Run Key are required.", status=400)
+        return HttpResponse("Both Reporting Date and Run Key are required.", status=400)
 
     # Apply filters to fetch data
     filters = {'fic_mis_date': fic_mis_date, 'n_run_key': n_run_key}
@@ -133,7 +134,7 @@ CSV_DIR = os.path.join(os.getcwd(), 'csv_files')
 def ecl_main_filter_view(request):
     # Handle POST request (applying the filter)
     if request.method == 'POST':
-        # Retrieve selected FIC MIS Date and Run Key from the form
+        # Retrieve selected Reporting Date and Run Key from the form
         fic_mis_date = request.POST.get('fic_mis_date')
         n_run_key = request.POST.get('n_run_key')
         
@@ -179,7 +180,7 @@ def ecl_main_filter_view(request):
             n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=field_value).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
             return JsonResponse({'n_run_keys': list(n_run_keys)})
 
-    # Render the main filter template with FIC MIS Dates
+    # Render the main filter template with Reporting Dates
     return render(request, 'reports/ecl_summary_report.html', {'fic_mis_dates': fic_mis_dates})
 
 
@@ -383,7 +384,7 @@ def ecl_reconciliation_main_filter_view(request):
 
     # Handle POST request (applying the filter)
     if request.method == 'POST':
-        # Retrieve selected FIC MIS Dates and Run Keys from the form
+        # Retrieve selected Reporting Dates and Run Keys from the form
         fic_mis_date1 = request.POST.get('fic_mis_date1')
         run_key1 = request.POST.get('run_key1')
         fic_mis_date2 = request.POST.get('fic_mis_date2')
@@ -391,11 +392,11 @@ def ecl_reconciliation_main_filter_view(request):
 
         # Validate that both dates and run keys are provided
         if not fic_mis_date1:
-            errors['fic_mis_date1'] = 'Please select FIC MIS Date 1.'
+            errors['fic_mis_date1'] = 'Please select Reporting Date 1.'
         if not run_key1:
             errors['run_key1'] = 'Please select Run Key 1.'
         if not fic_mis_date2:
-            errors['fic_mis_date2'] = 'Please select FIC MIS Date 2.'
+            errors['fic_mis_date2'] = 'Please select Reporting Date 2.'
         if not run_key2:
             errors['run_key2'] = 'Please select Run Key 2.'
 
@@ -439,7 +440,7 @@ def ecl_reconciliation_main_filter_view(request):
             # Redirect to the sub-filter view
             return redirect('ecl_reconciliation_sub_filter_view')
 
-    # Handle GET request to load FIC MIS Dates
+    # Handle GET request to load Reporting Dates
     fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
 
     # Check for AJAX requests to dynamically update run key dropdown
@@ -470,14 +471,14 @@ def ecl_reconciliation_sub_filter_view(request):
     # Check if the CSV files exist and display error if missing
     errors = []
     if not csv_filename_1:
-        errors.append('The first dataset is missing. Please select a valid FIC MIS Date 1 and Run Key 1.')
+        errors.append('The first dataset is missing. Please select a valid Reporting Date 1 and Run Key 1.')
     elif not os.path.exists(csv_filename_1):
-        errors.append(f"The file for FIC MIS Date 1 does not exist: {csv_filename_1}")
+        errors.append(f"The file for Reporting Date 1 does not exist: {csv_filename_1}")
     
     if not csv_filename_2:
-        errors.append('The second dataset is missing. Please select a valid FIC MIS Date 2 and Run Key 2.')
+        errors.append('The second dataset is missing. Please select a valid Reporting Date 2 and Run Key 2.')
     elif not os.path.exists(csv_filename_2):
-        errors.append(f"The file for FIC MIS Date 2 does not exist: {csv_filename_2}")
+        errors.append(f"The file for Reporting Date 2 does not exist: {csv_filename_2}")
 
     # If there are any errors, display them and do not proceed further
     if errors:
@@ -651,20 +652,32 @@ def export_ecl_reconciliation_to_excel(request):
     ws1 = wb.active
     ws1.title = "ECL Reconciliation Report"
 
-    # Merge cells for the header
-    ws1.merge_cells('B1:E1')
-    ws1.merge_cells('F1:I1')
-    ws1.merge_cells('J1:L1')
-    ws1.merge_cells('M1:N1')
+    # Merge cells for the headers
+    ws1.merge_cells('B1:E1')  # Merge columns B to E in the first row for Date 1
+    ws1['B1'] = f"Reporting Date 1 ({fic_mis_date1}) - Run Key 1 ({run_key1})"
+    ws1['B1'].alignment = Alignment(horizontal='center', vertical='center')
+
+    ws1.merge_cells('F1:I1')  # Merge columns F to I in the first row for Date 2
+    ws1['F1'] = f"Reporting Date 2 ({fic_mis_date2}) - Run Key 2 ({run_key2})"
+    ws1['F1'].alignment = Alignment(horizontal='center', vertical='center')
+
+    ws1.merge_cells('J1:L1')  # Merge columns J to L in the first row for Differences
+    ws1['J1'] = "Differences"
+    ws1['J1'].alignment = Alignment(horizontal='center', vertical='center')
+
+    ws1.merge_cells('M1:N1')  # Merge columns M to N in the first row for Total Accounts
+    ws1['M1'] = "Total Accounts"
+    ws1['M1'].alignment = Alignment(horizontal='center', vertical='center')
+
 
     # Add the main headers
     headers = [
         group_by_field,
-        f"FIC MIS Date 1 ({fic_mis_date1}) - Run Key 1 ({run_key1})",
+        f"Reporting Date 1 ({fic_mis_date1}) - Run Key 1 ({run_key1})",
         "",
         "",
         "",
-        f"FIC MIS Date 2 ({fic_mis_date2}) - Run Key 2 ({run_key2})",
+        f"Reporting Date 2 ({fic_mis_date2}) - Run Key 2 ({run_key2})",
         "",
         "",
         "",
@@ -674,11 +687,10 @@ def export_ecl_reconciliation_to_excel(request):
         "Total Accounts",
         ""
     ]
-    ws1.append(headers)
 
     # Add sub-headers for the columns under the merged headers
     sub_headers = [
-        "",
+        group_by_field,
         "EAD Orig Currency",
         "EAD Reporting Currency",
         "12 Month ECL",
@@ -734,6 +746,23 @@ def export_ecl_reconciliation_to_excel(request):
 
     # Second Sheet: Percentage Table
     ws2 = wb.create_sheet(title="ECL Percentages")
+
+     # Merge cells for the headers
+    ws2.merge_cells('B1:C1')  # Merge columns B to E in the first row for Date 1
+    ws2['B1'] = f"Reporting Date 1 ({fic_mis_date1}) - Run Key 1 ({run_key1})"
+    ws2['B1'].alignment = Alignment(horizontal='center', vertical='center')
+
+    ws2.merge_cells('D1:E1')  # Merge columns F to I in the first row for Date 2
+    ws2['D1'] = f"Reporting Date 2 ({fic_mis_date2}) - Run Key 2 ({run_key2})"
+    ws2['D1'].alignment = Alignment(horizontal='center', vertical='center')
+
+    ws2.merge_cells('F1:G1')  # Merge columns J to L in the first row for Differences
+    ws2['F1'] = "Total Accounts"
+    ws2['F1'].alignment = Alignment(horizontal='center', vertical='center')
+
+    ws2.merge_cells('H1:J1')  # Merge columns M to N in the first row for Total Accounts
+    ws2['H1'] = "Differences"
+    ws2['H1'].alignment = Alignment(horizontal='center', vertical='center')
 
     # Add headers for percentages
     percentage_headers = [
@@ -829,7 +858,7 @@ def ecl_account_reconciliation_main_filter_view(request):
 
     # Handle POST request (applying the filter)
     if request.method == 'POST':
-        # Retrieve selected FIC MIS Dates and Run Keys from the form
+        # Retrieve selected Reporting Dates and Run Keys from the form
         fic_mis_date1 = request.POST.get('fic_mis_date1')
         run_key1 = request.POST.get('run_key1')
         fic_mis_date2 = request.POST.get('fic_mis_date2')
@@ -837,11 +866,11 @@ def ecl_account_reconciliation_main_filter_view(request):
 
         # Validate that both dates and run keys are provided
         if not fic_mis_date1:
-            errors['fic_mis_date1'] = 'Please select FIC MIS Date 1.'
+            errors['fic_mis_date1'] = 'Please select Reporting Date 1.'
         if not run_key1:
             errors['run_key1'] = 'Please select Run Key 1.'
         if not fic_mis_date2:
-            errors['fic_mis_date2'] = 'Please select FIC MIS Date 2.'
+            errors['fic_mis_date2'] = 'Please select Reporting Date 2.'
         if not run_key2:
             errors['run_key2'] = 'Please select Run Key 2.'
 
@@ -888,7 +917,7 @@ def ecl_account_reconciliation_main_filter_view(request):
             # Redirect to the sub-filter view
             return redirect('ecl_account_reconciliation_sub_filter')
 
-    # Handle GET request to load FIC MIS Dates
+    # Handle GET request to load Reporting Dates
     fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
 
     # AJAX request for dynamically updating the Run Key dropdowns
@@ -1083,7 +1112,7 @@ def export_full_ecl_report_to_excel(request):
 def pd_analysis_main_filter_view(request):
     # Handle POST request (applying the filter)
     if request.method == 'POST':
-        # Retrieve selected FIC MIS Date and Run Key from the form
+        # Retrieve selected Reporting Date and Run Key from the form
         fic_mis_date = request.POST.get('fic_mis_date')
         n_run_key = request.POST.get('n_run_key')
         
@@ -1113,7 +1142,7 @@ def pd_analysis_main_filter_view(request):
             # Redirect to the sub-filter view
             return redirect('pd_analysis_sub_filter_view')
 
-    # Handle GET request for FIC MIS Dates
+    # Handle GET request for Reporting Dates
     fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
 
     # AJAX request handling for dynamic run key dropdown
@@ -1126,7 +1155,7 @@ def pd_analysis_main_filter_view(request):
             n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=field_value).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
             return JsonResponse({'n_run_keys': list(n_run_keys)})
 
-    # Render the main filter template with FIC MIS Dates
+    # Render the main filter template with Reporting Dates
     return render(request, 'reports/pd_analysis_main_filter.html', {'fic_mis_dates': fic_mis_dates})
 
 
@@ -1258,7 +1287,7 @@ def water_fall_main_filter_view(request):
 
     # Handle POST request (applying the filter)
     if request.method == 'POST':
-        # Retrieve selected FIC MIS Dates and Run Keys from the form
+        # Retrieve selected Reporting Dates and Run Keys from the form
         fic_mis_date1 = request.POST.get('fic_mis_date1')
         run_key1 = request.POST.get('run_key1')
         fic_mis_date2 = request.POST.get('fic_mis_date2')
@@ -1266,11 +1295,11 @@ def water_fall_main_filter_view(request):
 
         # Validate that both dates and run keys are provided
         if not fic_mis_date1:
-            errors['fic_mis_date1'] = 'Please select FIC MIS Date 1.'
+            errors['fic_mis_date1'] = 'Please select Reporting Date 1.'
         if not run_key1:
             errors['run_key1'] = 'Please select Run Key 1.'
         if not fic_mis_date2:
-            errors['fic_mis_date2'] = 'Please select FIC MIS Date 2.'
+            errors['fic_mis_date2'] = 'Please select Reporting Date 2.'
         if not run_key2:
             errors['run_key2'] = 'Please select Run Key 2.'
 
@@ -1317,7 +1346,7 @@ def water_fall_main_filter_view(request):
             # Redirect to the sub-filter view
             return redirect('ecl_water_fall_sub_filter')
 
-    # Handle GET request to load FIC MIS Dates
+    # Handle GET request to load Reporting Dates
     fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
 
     # AJAX request for dynamically updating the Run Key dropdowns
@@ -1445,7 +1474,7 @@ def water_fall_sub_filter_view(request):
 def ecl_graphs_main_filter_view(request):
     # Handle POST request (applying the filter)
     if request.method == 'POST':
-        # Retrieve selected FIC MIS Date and Run Key from the form
+        # Retrieve selected Reporting Date and Run Key from the form
         fic_mis_date = request.POST.get('fic_mis_date')
         n_run_key = request.POST.get('n_run_key')
         
@@ -1491,7 +1520,7 @@ def ecl_graphs_main_filter_view(request):
             n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=field_value).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
             return JsonResponse({'n_run_keys': list(n_run_keys)})
 
-    # Render the main filter template with FIC MIS Dates
+    # Render the main filter template with Reporting Dates
     return render(request, 'reports/ecl_graphs_report_main.html', {'fic_mis_dates': fic_mis_dates})
 
 
@@ -1551,4 +1580,376 @@ def ecl_graphs_sub_filter_view(request):
         'distinct_prod_types': distinct_prod_types,
         'distinct_stage_descrs': distinct_stage_descrs,
         'distinct_loan_types': distinct_loan_types,
+    })
+
+
+
+@require_http_methods(["GET", "POST"])
+def vintage_analysis_main_filter_view(request):
+    # Handle POST request (applying the filter)
+    if request.method == 'POST':
+        # Retrieve selected Reporting Date and Run Key from the form
+        fic_mis_date = request.POST.get('fic_mis_date')
+        n_run_key = request.POST.get('n_run_key')
+        
+        if fic_mis_date and n_run_key:
+            # Store the selected filter values in session for later use
+            request.session['fic_mis_date'] = fic_mis_date
+            request.session['n_run_key'] = n_run_key
+
+            # Retrieve filtered data based on the selected main filter values
+            ecl_data = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date, n_run_key=n_run_key)
+
+            # Convert the filtered data into a DataFrame
+            ecl_data_df = pd.DataFrame(list(ecl_data.values()))
+
+            # Convert date fields to strings
+            if 'fic_mis_date' in ecl_data_df.columns:
+                ecl_data_df['fic_mis_date'] = ecl_data_df['fic_mis_date'].astype(str)
+            if 'd_maturity_date' in ecl_data_df.columns:
+                ecl_data_df['d_maturity_date'] = ecl_data_df['d_maturity_date'].astype(str)
+
+            # Create the directory if it doesn't exist
+            if not os.path.exists(CSV_DIR):
+                os.makedirs(CSV_DIR)
+
+            # Save the data as a CSV file in the session (store the filename)
+            csv_filename = os.path.join(CSV_DIR, f"ecl_data_{fic_mis_date}_{n_run_key}.csv")
+            ecl_data_df.to_csv(csv_filename, index=False)
+            request.session['csv_filename'] = csv_filename
+
+            # Redirect to the sub-filter view
+            return redirect('vintage_analysis_sub_filter_view')
+
+    # Handle GET request
+    fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
+
+    # Check for AJAX requests to dynamically update run key dropdown
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        field_name = request.GET.get('field')
+        field_value = request.GET.get('value')
+
+        if field_name == 'fic_mis_date':
+            # Fetch run keys corresponding to the selected FIC MIS date
+            n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=field_value).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
+            return JsonResponse({'n_run_keys': list(n_run_keys)})
+
+    # Render the main filter template with Reporting Dates
+    return render(request, 'reports/vintage_analysis_report_main.html', {'fic_mis_dates': fic_mis_dates})
+
+
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def vintage_analysis_sub_filter_view(request):
+    # Retrieve the CSV filename from the session
+    csv_filename = request.session.get('csv_filename')
+
+    # If no data is available, redirect to the main filter page
+    if not csv_filename or not os.path.exists(csv_filename):
+        return redirect('ecl_main_filter_view')
+
+    # Load the data from the CSV file
+    ecl_data_df = pd.read_csv(csv_filename)
+
+    # Retrieve date range filters from the request
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Apply date range filter if provided
+    if start_date:
+        ecl_data_df = ecl_data_df[ecl_data_df['d_acct_start_date'] >= start_date]
+    if end_date:
+        ecl_data_df = ecl_data_df[ecl_data_df['d_acct_start_date'] <= end_date]
+
+    # Retrieve the selected group by field from the request (GET or POST)
+    group_by_field = request.GET.get('group_by_field', 'n_stage_descr')  # Default group by 'n_stage_descr'
+
+    # Calculate aggregated data
+    grouped_df = ecl_data_df.groupby(group_by_field).agg({
+        'n_12m_ecl_rcy': 'sum',  # Total ECL
+        'n_account_number': 'count'  # Count of accounts (use the actual column for account IDs)
+    }).reset_index()
+
+    # Calculate totals and percentages
+    total_12m_ecl_rcy = grouped_df['n_12m_ecl_rcy'].sum()
+    total_accounts = grouped_df['n_account_number'].sum()
+    grouped_df['percentage'] = (grouped_df['n_12m_ecl_rcy'] / total_12m_ecl_rcy) * 100
+    grouped_df['percentage_accounts'] = (grouped_df['n_account_number'] / total_accounts) * 100
+
+    # Add a Grand Total Row
+    grand_total = {
+        group_by_field: 'Grand Total',
+        'n_12m_ecl_rcy': total_12m_ecl_rcy,
+        'n_account_number': total_accounts,
+        'percentage': 100.0,
+        'percentage_accounts': 100.0
+    }
+
+    grouped_df = pd.concat([grouped_df, pd.DataFrame([grand_total])], ignore_index=True)
+
+    # Convert grouped data to a list of dictionaries for the template
+    # Prepare data for the chart (excluding the Grand Total row)
+    chart_data = grouped_df[grouped_df[group_by_field] != 'Grand Total'].to_dict(orient='records')
+    table_data = grouped_df.to_dict(orient='records')
+
+
+    # Distinct values for sub-filters
+    distinct_prod_segments = list(ecl_data_df['n_prod_segment'].unique())
+    distinct_prod_types = list(ecl_data_df['n_prod_type'].unique())
+    distinct_stage_descrs = list(ecl_data_df['n_stage_descr'].unique())
+    distinct_loan_types = list(ecl_data_df['n_loan_type'].unique())
+
+    # Convert start_date and end_date to datetime.date objects if they exist
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        except ValueError:
+            start_date = None  # Handle invalid dates gracefully
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            end_date = None  # Handle invalid dates gracefully
+
+    print(start_date)
+    # Render the sub-filter view template with calculated percentages
+    return render(request, 'reports/vintage_analysis_report_sub.html', {
+        'chart_data': chart_data,
+        'table_data':table_data,
+        'group_by_field': group_by_field,
+        'distinct_prod_segments': distinct_prod_segments,
+        'distinct_prod_types': distinct_prod_types,
+        'distinct_stage_descrs': distinct_stage_descrs,
+        'distinct_loan_types': distinct_loan_types,
+        'start_date': start_date,
+        'end_date': end_date,
+    })
+
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def stage_migration_matrix_main_filter_view(request):
+    # Initialize an empty errors dictionary
+    errors = {}
+
+    # Handle POST request (applying the filter)
+    if request.method == 'POST':
+        # Retrieve selected Reporting Dates and Run Keys from the form
+        fic_mis_date1 = request.POST.get('fic_mis_date1')
+        run_key1 = request.POST.get('run_key1')
+        fic_mis_date2 = request.POST.get('fic_mis_date2')
+        run_key2 = request.POST.get('run_key2')
+
+        # Validate that both dates and run keys are provided
+        if not fic_mis_date1:
+            errors['fic_mis_date1'] = 'Please select Reporting Date 1.'
+        if not run_key1:
+            errors['run_key1'] = 'Please select Run Key 1.'
+        if not fic_mis_date2:
+            errors['fic_mis_date2'] = 'Please select Reporting Date 2.'
+        if not run_key2:
+            errors['run_key2'] = 'Please select Run Key 2.'
+
+        # If there are no errors, proceed to filtering
+        if not errors:
+            # Store the selected filter values in session for later use
+            request.session['fic_mis_date1'] = fic_mis_date1
+            request.session['run_key1'] = run_key1
+            request.session['fic_mis_date2'] = fic_mis_date2
+            request.session['run_key2'] = run_key2
+
+            # Retrieve filtered data based on the selected main filter values
+            ecl_data1 = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date1, n_run_key=run_key1)
+            ecl_data2 = FCT_Reporting_Lines.objects.filter(fic_mis_date=fic_mis_date2, n_run_key=run_key2)
+
+            # Convert the filtered data into a DataFrame
+            ecl_data1_df = pd.DataFrame(list(ecl_data1.values()))
+            ecl_data2_df = pd.DataFrame(list(ecl_data2.values()))
+
+            # Convert date fields to strings for both DataFrames
+            for df in [ecl_data1_df, ecl_data2_df]:
+                if 'fic_mis_date' in df.columns:
+                    df['fic_mis_date'] = df['fic_mis_date'].astype(str)
+                if 'd_maturity_date' in df.columns:
+                    df['d_maturity_date'] = df['d_maturity_date'].astype(str)
+
+            # Create the directory if it doesn't exist
+            if not os.path.exists(CSV_DIR):
+                os.makedirs(CSV_DIR)
+
+            # Save the data as CSV files in the session (store the filenames)
+            csv_filename1 = os.path.join(CSV_DIR, f"ecl_data_{fic_mis_date1}_{run_key1}.csv")
+            csv_filename2 = os.path.join(CSV_DIR, f"ecl_data_{fic_mis_date2}_{run_key2}.csv")
+            
+            ecl_data1_df.to_csv(csv_filename1, index=False)
+            ecl_data2_df.to_csv(csv_filename2, index=False)
+            # Store the filenames in the session and explicitly mark the session as modified
+            request.session['csv_filename1'] = csv_filename1
+            request.session['csv_filename2'] = csv_filename2
+            request.session.modified = True
+            # Redirect to the sub-filter view
+            return redirect('stage_migration_matrix_sub_filter_view')
+
+    # Handle GET request to load Reporting Dates
+    fic_mis_dates = FCT_Reporting_Lines.objects.order_by('-fic_mis_date').values_list('fic_mis_date', flat=True).distinct()
+
+    # Check for AJAX requests to dynamically update run key dropdown
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        field_name = request.GET.get('field')
+        field_value = request.GET.get('value')
+
+        if field_name == 'fic_mis_date':
+            # Fetch run keys corresponding to the selected FIC MIS date
+            n_run_keys = FCT_Reporting_Lines.objects.filter(fic_mis_date=field_value).order_by('-n_run_key').values_list('n_run_key', flat=True).distinct()
+            return JsonResponse({'n_run_keys': list(n_run_keys)})
+
+    # If there are errors or it's a GET request, render the form with any errors
+    return render(request, 'reports/stage_migration_matrix_main_filter.html', {
+        'fic_mis_dates': fic_mis_dates,
+        'errors': errors  # Pass the errors to the template
+    })
+
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def stage_migration_matrix_sub_filter_view(request):
+    # Retrieve CSV filenames from the session
+    csv_filename_1 = request.session.get('csv_filename1')
+    csv_filename_2 = request.session.get('csv_filename2')
+
+    # Validate file existence
+    if not csv_filename_1 or not os.path.exists(csv_filename_1):
+        messages.error(request, "Dataset 1 is missing or invalid.")
+        return redirect('ecl_main_filter_view')
+
+    if not csv_filename_2 or not os.path.exists(csv_filename_2):
+        messages.error(request, "Dataset 2 is missing or invalid.")
+        return redirect('ecl_main_filter_view')
+
+    # Load datasets
+    ecl_data_1 = pd.read_csv(csv_filename_1)
+    ecl_data_2 = pd.read_csv(csv_filename_2)
+
+    # Combine datasets for distinct filters
+    ecl_data_combined = pd.concat([ecl_data_1, ecl_data_2])
+
+    # Distinct values for filters
+    distinct_prod_segments = list(ecl_data_combined['n_prod_segment'].dropna().unique())
+    distinct_prod_types = list(ecl_data_combined['n_prod_type'].dropna().unique())
+    distinct_stage_descrs = list(ecl_data_combined['n_stage_descr'].dropna().unique())
+    distinct_loan_types = list(ecl_data_combined['n_loan_type'].dropna().unique())
+    distinct_customer_types = list(ecl_data_combined['n_party_type'].dropna().unique())
+
+    # Extract the actual dates from the datasets
+    date_1 = ecl_data_1['fic_mis_date'].iloc[0] if 'fic_mis_date' in ecl_data_1.columns else "Unknown"
+    date_2 = ecl_data_2['fic_mis_date'].iloc[0] if 'fic_mis_date' in ecl_data_2.columns else "Unknown"
+
+    # Apply filters based on user input
+    v_ccy_code = request.GET.get('v_ccy_code')
+    n_prod_segment = request.GET.get('n_prod_segment')
+    n_prod_type = request.GET.get('n_prod_type')
+    n_loan_type = request.GET.get('n_loan_type')
+    customer_type = request.GET.get('customer_type')
+
+    filters = {
+        'v_ccy_code': v_ccy_code,
+        'n_prod_segment': n_prod_segment,
+        'n_prod_type': n_prod_type,
+        'n_loan_type': n_loan_type,
+        'customer_type': customer_type,
+    }
+
+    for column, value in filters.items():
+        if value:
+            ecl_data_1 = ecl_data_1[ecl_data_1[column] == value]
+            ecl_data_2 = ecl_data_2[ecl_data_2[column] == value]
+
+    # Merge datasets on `n_account_number` for stage comparison
+    merged_data = pd.merge(
+        ecl_data_1[['n_account_number', 'n_stage_descr']],
+        ecl_data_2[['n_account_number', 'n_stage_descr']],
+        on='n_account_number',
+        how='inner',
+        suffixes=('_start', '_end')
+    )
+
+    # Create Stage Migration Matrix
+    migration_matrix_counts = pd.crosstab(
+        merged_data['n_stage_descr_start'],
+        merged_data['n_stage_descr_end'],
+        margins=True,
+        margins_name="Total"
+    )
+
+    # Calculate percentages
+    migration_matrix_percentages = migration_matrix_counts.div(
+        migration_matrix_counts.loc["Total"], axis=1
+    ) * 100
+
+    # Prepare data for the matrix table
+    stages = ["Stage 1", "Stage 2", "Stage 3"]
+    migration_data = []
+
+    for from_stage in migration_matrix_counts.index[:-1]:  # Exclude 'Total'
+        row_data = {"from_stage": from_stage}
+        for to_stage in stages:
+            count = migration_matrix_counts.loc[from_stage, to_stage] if to_stage in migration_matrix_counts.columns else 0
+            percentage = migration_matrix_percentages.loc[from_stage, to_stage] if to_stage in migration_matrix_percentages.columns else 0
+            row_data[to_stage] = {"count": int(count), "percentage": percentage}
+        migration_data.append(row_data)
+
+    # Calculate the number of accounts and percentages for each date
+    date_1_data = ecl_data_1['n_stage_descr'].value_counts(normalize=False).to_dict()
+    date_2_data = ecl_data_2['n_stage_descr'].value_counts(normalize=False).to_dict()
+
+    date_1_percentages = ecl_data_1['n_stage_descr'].value_counts(normalize=True) * 100
+    date_2_percentages = ecl_data_2['n_stage_descr'].value_counts(normalize=True) * 100
+
+    # Calculate totals for each date
+    total_date_1_count = sum(date_1_data.values())
+    total_date_2_count = sum(date_2_data.values())
+    total_date_1_percentage = 100.0
+    total_date_2_percentage = 100.0
+
+    account_summary = {
+        "date_1": [{"stage": stage, "count": date_1_data.get(stage, 0), "percentage": date_1_percentages.get(stage, 0)} for stage in stages],
+        "date_2": [{"stage": stage, "count": date_2_data.get(stage, 0), "percentage": date_2_percentages.get(stage, 0)} for stage in stages],
+        "total_date_1": {"count": total_date_1_count, "percentage": total_date_1_percentage},
+        "total_date_2": {"count": total_date_2_count, "percentage": total_date_2_percentage},
+    }
+
+    # Identify new accounts in date_2 but not in date_1
+    new_accounts = ecl_data_2[~ecl_data_2['n_account_number'].isin(ecl_data_1['n_account_number'])]
+    new_accounts_summary = new_accounts['n_stage_descr'].value_counts().reindex(stages, fill_value=0).reset_index()
+    new_accounts_summary.columns = ['stage', 'count']
+
+    if date_1:
+        try:
+            date_1 = datetime.strptime(date_1, "%Y-%m-%d").date()
+        except ValueError:
+            date_1 = None  # Handle invalid dates gracefully
+    if date_2:
+        try:
+            date_2 = datetime.strptime(date_2, "%Y-%m-%d").date()
+        except ValueError:
+            date_2 = None  # Handle invalid dates gracefully
+
+    # Render the template with data
+    return render(request, 'reports/stage_migration_matrix_report_sub.html', {
+        'stages': stages,
+        'migration_data': migration_data,
+        'account_summary': account_summary,
+        'new_accounts_summary': new_accounts_summary.to_dict(orient='records'),
+        'date_1': date_1,
+        'date_2': date_2,
+        'filters': filters,
+        'distinct_prod_segments': distinct_prod_segments,
+        'distinct_prod_types': distinct_prod_types,
+        'distinct_stage_descrs': distinct_stage_descrs,
+        'distinct_loan_types': distinct_loan_types,
+        'distinct_customer_types': distinct_customer_types,
     })

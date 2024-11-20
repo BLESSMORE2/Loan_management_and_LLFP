@@ -402,7 +402,7 @@ def stage_reassignment(request):
     filter_form = StageReassignmentFilterForm(request.GET or None)
     records = None
 
-    # Fetch available FIC MIS Dates in descending order
+    # Fetch available Reporting Dates in descending order
     fic_mis_dates = FCT_Reporting_Lines.objects.values_list('fic_mis_date', flat=True).distinct().order_by('-fic_mis_date')
 
     try:

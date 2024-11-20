@@ -8,7 +8,7 @@ class Ldn_Financial_Instrument(models.Model):
     v_account_number = models.CharField(max_length=255, null=False)
     v_cust_ref_code = models.CharField(max_length=50, null=True)
     v_prod_code = models.CharField(max_length=50, null=True)
-    n_curr_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, help_text="Fixed interest rate for the loan")    
+    n_curr_interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=False, help_text="Fixed interest rate for the loan")    
     # The changing interest rate (e.g., LIBOR or SOFR)
     n_interest_changing_rate = models.DecimalField(max_digits=5, decimal_places=4, null=True, help_text="Changing interest rate value, e.g., LIBOR rate at a specific time")   
     v_interest_freq_unit = models.CharField(max_length=50, null=True)
@@ -22,12 +22,12 @@ class Ldn_Financial_Instrument(models.Model):
     d_start_date = models.DateField(null=True)
     d_last_payment_date = models.DateField(null=True)
     d_next_payment_date = models.DateField(null=True)
-    d_maturity_date = models.DateField(null=True)
+    d_maturity_date = models.DateField(null=False)
     v_amrt_repayment_type = models.CharField(max_length=50, null=True)
     v_amrt_term_unit = models.CharField(max_length=50, null=True)
     n_eop_curr_prin_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_eop_int_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    n_eop_bal = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    n_eop_bal = models.DecimalField(max_digits=10, decimal_places=2, null=False)
     n_curr_payment_recd= models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_collateral_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     n_delinquent_days = models.IntegerField(null=True)
@@ -56,7 +56,7 @@ class Ldn_Financial_Instrument(models.Model):
 
     
 class Ldn_Customer_Rating_Detail(models.Model):
-    fic_mis_date = models.DateField(null=False)
+    fic_mis_date = models.DateField(null=True)
     v_party_cd = models.CharField(max_length=50,unique=True)
     v_rating_code = models.CharField(max_length=50)
     v_purpose = models.CharField(max_length=50)  # No choices, just a CharField
@@ -325,6 +325,7 @@ class Ldn_Payment_Schedule(models.Model):
     v_payment_type_cd = models.CharField(max_length=20, null=True)  # Payment type code
     class Meta:
         db_table = 'Ldn_Payment_Schedule'
+        unique_together = ('fic_mis_date', 'v_account_number', 'd_payment_date')
 
 
 
@@ -370,7 +371,7 @@ class TableMetadata(models.Model):
 
 
 class fsi_Financial_Cash_Flow_Cal(models.Model):
-    n_run_skey = models.BigIntegerField(null=True,default=1)
+    n_run_skey = models.BigIntegerField(null=False,default=1)
     v_account_number = models.CharField(max_length=20, null=False)
     d_cash_flow_date = models.DateField(null=False)
     fic_mis_date = models.DateField(null=False)

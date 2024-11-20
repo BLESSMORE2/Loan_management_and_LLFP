@@ -8,12 +8,12 @@
 
         <!-- Main Content Area -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-3" style="margin-left: 260px;">  <!-- Adjusted to prevent overlap -->
-            <h1 class="text-3xl font-semibold mb-8 text-center text-primary">ECL Reconciliation Report</h1>
+            <h1 class="text-3xl font-semibold mb-8 text-center text-primary">ECL Stage Migration Matrix Report</h1>
 
             
 
             <!-- Main Filter Section -->
-            <form method="POST" action="{% url 'ecl_reconciliation_main_filter' %}">
+            <form method="POST" action="{% url 'stage_migration_matrix_main_filter' %}">
                 {% csrf_token %}
                 <div class="row mb-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
 
@@ -94,7 +94,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     function updateDropdown(field, value, runKeyFieldId) {
-        fetch(`/ecl-reconciliation-main-filter/?field=${field}&value=${encodeURIComponent(value)}`, {
+        fetch(`/stage-migration-matrix-main-filter/?field=${field}&value=${encodeURIComponent(value)}`, {
             headers: { "X-Requested-With": "XMLHttpRequest" }
         })
         .then(response => {

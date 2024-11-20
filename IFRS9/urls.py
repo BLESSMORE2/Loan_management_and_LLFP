@@ -168,6 +168,11 @@ urlpatterns = [
     path('export-pd-report-to-excel/', export_pd_report_to_excel, name='export_pd_report_to_excel'),
     path('ecl-graphs-main-filter/', views.ecl_graphs_main_filter_view, name='ecl_graphs_main_filter_view'),
     path('ecl-graphs-sub-filter/', views.ecl_graphs_sub_filter_view, name='ecl_graphs_sub_filter_view'),
+    path('vintage-analysis-main-filter/', views.vintage_analysis_main_filter_view, name='vintage_analysis_main_filter_view'),
+    path('vintage-analysis-sub-filter/', views.vintage_analysis_sub_filter_view, name='vintage_analysis_sub_filter_view'),
+    path('stage-migration-matrix-main-filter/', stage_migration_matrix_main_filter_view, name='stage_migration_matrix_main_filter'),
+    path('stage-migration-matrix-sub-filter/', views.stage_migration_matrix_sub_filter_view, name='stage_migration_matrix_sub_filter_view'),
+    
 
 
 

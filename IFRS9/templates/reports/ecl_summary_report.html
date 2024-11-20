@@ -24,7 +24,7 @@
                     <div class="bg-light p-6 rounded-lg shadow-lg">
                         <div class="row mb-4">
                             <div class="col-md-6 mb-4">
-                                <label for="fic_mis_date" class="block text-sm font-medium text-gray-700">FIC MIS Date</label>
+                                <label for="fic_mis_date" class="block text-sm font-medium text-gray-700">Reporting Date</label>
                                 <select id="fic_mis_date" name="fic_mis_date" class="form-control mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
                                     <option value="">-- Select Date --</option>
                                     {% for date in fic_mis_dates %}
@@ -85,7 +85,7 @@
                             });
                         }
 
-                        // Event listener for the FIC MIS Date dropdown
+                        // Event listener for the Reporting Date dropdown
                         document.getElementById('fic_mis_date').addEventListener('change', function() {
                             let fic_mis_date = this.value;
                             updateDropdown('fic_mis_date', fic_mis_date);
