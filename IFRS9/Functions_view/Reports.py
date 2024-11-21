@@ -1927,6 +1927,12 @@ def stage_migration_matrix_sub_filter_view(request):
     new_accounts_summary = new_accounts['n_stage_descr'].value_counts().reindex(stages, fill_value=0).reset_index()
     new_accounts_summary.columns = ['stage', 'count']
 
+    # Identify dropped accounts in date_1 but not in date_2
+    dropped_accounts = ecl_data_1[~ecl_data_1['n_account_number'].isin(ecl_data_2['n_account_number'])]
+    dropped_accounts_summary = dropped_accounts['n_stage_descr'].value_counts().reindex(stages, fill_value=0).reset_index()
+    dropped_accounts_summary.columns = ['stage', 'count']
+
+
     if date_1:
         try:
             date_1 = datetime.strptime(date_1, "%Y-%m-%d").date()
@@ -1944,6 +1950,7 @@ def stage_migration_matrix_sub_filter_view(request):
         'migration_data': migration_data,
         'account_summary': account_summary,
         'new_accounts_summary': new_accounts_summary.to_dict(orient='records'),
+        'dropped_accounts_summary': dropped_accounts_summary.to_dict(orient='records'),
         'date_1': date_1,
         'date_2': date_2,
         'filters': filters,
@@ -1953,3 +1960,114 @@ def stage_migration_matrix_sub_filter_view(request):
         'distinct_loan_types': distinct_loan_types,
         'distinct_customer_types': distinct_customer_types,
     })
+
+
+@require_http_methods(["GET"])
+def export_stage_migration_report_to_excel(request):
+    # Retrieve CSV filenames and filters from the session
+    csv_filename_1 = request.session.get('csv_filename1')
+    csv_filename_2 = request.session.get('csv_filename2')
+    filters = request.session.get('filters', {})
+
+    # Load datasets
+    ecl_data_1 = pd.read_csv(csv_filename_1)
+    ecl_data_2 = pd.read_csv(csv_filename_2)
+
+    # Apply filters to datasets
+    for column, value in filters.items():
+        if value:
+            ecl_data_1 = ecl_data_1[ecl_data_1[column] == value]
+            ecl_data_2 = ecl_data_2[ecl_data_2[column] == value]
+
+    # Extract dates for naming sheets
+    date_1 = ecl_data_1['fic_mis_date'].iloc[0] if 'fic_mis_date' in ecl_data_1.columns else "Unknown"
+    date_2 = ecl_data_2['fic_mis_date'].iloc[0] if 'fic_mis_date' in ecl_data_2.columns else "Unknown"
+
+    # Identify new accounts and dropped accounts
+    new_accounts = ecl_data_2[~ecl_data_2['n_account_number'].isin(ecl_data_1['n_account_number'])]
+    dropped_accounts = ecl_data_1[~ecl_data_1['n_account_number'].isin(ecl_data_2['n_account_number'])]
+
+    # Merge datasets for detailed stage migration
+    merged_data = pd.merge(
+        ecl_data_1,
+        ecl_data_2,
+        on=['n_account_number'],
+        how='inner',
+        suffixes=('_prev', '_curr')
+    )
+
+    # Generate Stage Migration Matrix
+    migration_matrix_counts = pd.crosstab(
+        merged_data['n_stage_descr_prev'],
+        merged_data['n_stage_descr_curr'],
+        margins=True,
+        margins_name="Total"
+    )
+    migration_matrix_percentages = migration_matrix_counts.div(
+        migration_matrix_counts.loc["Total"], axis=1
+    ) * 100
+
+    # Define stages based on the migration matrix
+    stages = list(migration_matrix_counts.columns[:-1])  # Exclude 'Total'
+
+    # Prepare the workbook
+    wb = Workbook()
+
+    # Sheet 1: Stage Migration Matrix Summary
+    ws_summary = wb.active
+    ws_summary.title = "Stage Migration Matrix Summary"
+    ws_summary.append(["From/To"] + stages)
+    for from_stage in migration_matrix_counts.index[:-1]:  # Exclude 'Total'
+        row_data = [from_stage]
+        for to_stage in stages:
+            count = migration_matrix_counts.loc[from_stage, to_stage] if to_stage in migration_matrix_counts.columns else 0
+            percentage = migration_matrix_percentages.loc[from_stage, to_stage] if to_stage in migration_matrix_percentages.columns else 0
+            row_data.append(f"{int(count)} ({percentage:.2f}%)")
+        ws_summary.append(row_data)
+
+    # Sheet 2: New Accounts
+    ws_new_accounts = wb.create_sheet(title="New Accounts")
+    ws_new_accounts.append(['Account Number', 'Stage', 'Account Start Date'])
+    for _, row in new_accounts.iterrows():
+        ws_new_accounts.append([
+            row['n_account_number'],
+            row['n_stage_descr'],
+            row.get('d_acct_start_date', '')
+        ])
+
+    # Sheet 3: Dropped Accounts
+    ws_dropped_accounts = wb.create_sheet(title="Dropped Accounts")
+    ws_dropped_accounts.append(['Account Number', 'Stage', 'Maturity Date'])
+    for _, row in dropped_accounts.iterrows():
+        ws_dropped_accounts.append([
+            row['n_account_number'],
+            row['n_stage_descr'],
+            row.get('d_maturity_date', '')
+        ])
+
+    # Sheet 4: Detailed Stage Migration
+    ws_stage_migration = wb.create_sheet(title="Detailed Stage Migration")
+    ws_stage_migration.append([
+        'Account Number',
+        'From Stage', 'To Stage',
+        'Credit Rating Code (From)', 'Credit Rating Code (To)',
+        'Delinquency Band Code (From)', 'Delinquency Band Code (To)',
+        'Delinquent Days (From)', 'Delinquent Days (To)'
+    ])
+    for _, row in merged_data.iterrows():
+        ws_stage_migration.append([
+            row['n_account_number'],
+            row.get('n_stage_descr_prev', ''), row.get('n_stage_descr_curr', ''),
+            row.get('n_credit_rating_code_prev', ''), row.get('n_credit_rating_code_curr', ''),
+            row.get('n_delq_band_code_prev', ''), row.get('n_delq_band_code_curr', ''),
+            row.get('n_delinquent_days_prev', ''), row.get('n_delinquent_days_curr', '')
+        ])
+
+    # Setup the response as an Excel file download
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="Stage_Migration_Report_{date_1}_to_{date_2}.xlsx"'
+
+    # Save the workbook to the response
+    wb.save(response)
+
+    return response

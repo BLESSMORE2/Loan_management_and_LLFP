@@ -17,7 +17,7 @@
                 Stage Migration Matrix (From {{ date_1|date:"d M Y" }} to {{ date_2|date:"d M Y" }})
             </h5>
             <div class="table-responsive">
-                <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                <table class="table table-bordered table-hover table-striped mt-1" style="width: 100%; font-size: 14px;">
                     <thead>
                         <tr style="background-color: #005082; color: white; text-align: center;">
                             <th>From/To</th>
@@ -51,7 +51,7 @@
             <!-- Number of Accounts and Percentages Table -->
             <h5 class="text-muted mt-5">Number of Accounts and Percentages per Stage</h5>
             <div class="table-responsive">
-                <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                <table class="table table-bordered table-hover table-striped mt-1" style="width: 100%; font-size: 14px;">
                     <thead>
                         <tr style="background-color: #005082; color: white; text-align: center;">
                             <th>Stage</th>
@@ -103,7 +103,7 @@
             <!-- New Accounts Table -->
             <h5 class="text-muted mt-5">New Accounts in {{ date_2|date:"d M Y" }}</h5>
             <div class="table-responsive">
-                <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                <table class="table table-bordered table-hover table-striped mt-1" style="width: 100%; font-size: 14px;">
                     <thead>
                         <tr style="background-color: #005082; color: white; text-align: center;">
                             <th>Stage</th>
@@ -121,18 +121,41 @@
                 </table>
             </div>
 
+            <!-- Dropped Accounts Table -->
+            <h5 class="text-muted mt-5">Accounts Dropped in {{ date_2|date:"d M Y" }}</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped mt-1" style="width: 100%; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #005082; color: white; text-align: center;">
+                            <th>Stage</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in dropped_accounts_summary %}
+                        <tr>
+                            <td>{{ account.stage }}</td>
+                            <td>{{ account.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+
 
             <!-- Download Button -->
-            <form method="POST" action="#">
-                {% csrf_token %}
-                <button id="download-button" class="btn btn-success btn-sm shadow-sm mt-3" type="submit">
-                    <i class="fas fa-download"></i> Download Report as Excel
+            <form method="GET" action="{% url 'export_stage_migration_report_to_excel' %}">
+                <button class="btn btn-success btn-sm shadow-sm mt-3" type="submit">
+                    <i class="fas fa-download"></i> Download Full Report as Excel
                 </button>
             </form>
+            
         </main>
     </div>
 </div>
 {% endblock %}
+
 
 
 <style>

@@ -172,6 +172,7 @@ urlpatterns = [
     path('vintage-analysis-sub-filter/', views.vintage_analysis_sub_filter_view, name='vintage_analysis_sub_filter_view'),
     path('stage-migration-matrix-main-filter/', stage_migration_matrix_main_filter_view, name='stage_migration_matrix_main_filter'),
     path('stage-migration-matrix-sub-filter/', views.stage_migration_matrix_sub_filter_view, name='stage_migration_matrix_sub_filter_view'),
+    path('export-stage-migration-report/', export_stage_migration_report_to_excel, name='export_stage_migration_report_to_excel'),
     
 
 
