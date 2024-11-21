@@ -145,18 +145,69 @@
 
 
             <!-- Download Button -->
-            <form method="GET" action="{% url 'export_stage_migration_report_to_excel' %}">
-                <button class="btn btn-success btn-sm shadow-sm mt-3" type="submit">
+            <form id="download-form" class="mb-5" method="GET" action="{% url 'export_stage_migration_report_to_excel' %}">
+                <button class="btn btn-success btn-sm shadow-sm mt-3" type="button" id="download-button">
                     <i class="fas fa-download"></i> Download Full Report as Excel
                 </button>
+                <div id="loading-spinner" class="ms-3 d-none">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">x</span>
+                    </div>
+                </div>
             </form>
+            
             
         </main>
     </div>
 </div>
-{% endblock %}
 
 
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const downloadButton = document.getElementById('download-button');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const downloadForm = document.getElementById('download-form');
+    
+        downloadButton.addEventListener('click', function (event) {
+            event.preventDefault(); // Prevent default button behavior
+            loadingSpinner.classList.remove('d-none'); // Show loading spinner
+    
+            // Use Fetch API to send GET request
+            fetch(downloadForm.action, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status} - ${response.statusText}`);
+                }
+                return response.blob(); // Get response as a Blob
+            })
+            .then(blob => {
+                // Create a URL for the Blob and trigger download
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `Stage_Migration_Report.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url); // Revoke URL after download
+            })
+            .catch(error => {
+                alert('Error while downloading the report. Please try again.');
+                console.error('Download error:', error);
+            })
+            .finally(() => {
+                loadingSpinner.classList.add('d-none'); // Hide loading spinner
+            });
+        });
+    });
+    </script>
+    
 
 <style>
     /* Sidebar styling */
@@ -199,3 +250,5 @@
         overflow-x: auto;
     }
 </style>
+
+{% endblock %}
