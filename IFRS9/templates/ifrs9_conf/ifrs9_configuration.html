@@ -1,108 +1,134 @@
 {% extends 'base.html' %}
-
 {% block content %}
-<div class="container py-4">
-    <h1 class="h3 text-primary text-center mb-4">IFRS9 Configuration</h1>
+<div class="container py-5">
+    <!-- Page Title -->
+    <h1 class="display-6 text-primary text-center mb-4">IFRS 9 Configuration</h1>
+
+    <!-- Flash Messages -->
     {% if messages %}
-    <div class="container mt-4">
+    <div class="mt-3">
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-info-circle me-2"></i>{{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endfor %}
     </div>
     {% endif %}
-    
+
     <!-- Back Button -->
     <div class="d-flex justify-content-start mb-4">
         <a href="{% url 'ifrs9_home' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Back 
+            <i class="fas fa-arrow-left"></i> Back
         </a>
     </div>
 
     <!-- Configuration Options -->
-    <div class="row justify-content-center">
+    <div class="row g-4">
         <!-- ECL Methodology -->
-        <div class="col-lg-3 col-md-6 mb-4">
+        <div class="col-lg-3 col-md-6">
             <div class="card border-0 shadow-lg h-100">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                    <div class="icon-circle bg-primary mb-3">
-                        <i class="fas fa-chart-line fa-3x text-white"></i>
+                <div class="card-body text-center d-flex flex-column justify-content-between">
+                    <div class="icon-circle bg-primary mx-auto mb-3">
+                        <i class="fas fa-chart-line fa-2x text-white"></i>
                     </div>
-                    <h5 class="card-title mt-2">ECL Methodology</h5>
-                    <p class="card-text">Configure Expected Credit Loss methodology settings for IFRS9 calculations.</p>
-                    <a href="{% url 'ecl_methodology' %}" class="btn btn-primary mt-3 w-100">Configure ECL Methodology</a>
+                    <h5 class="card-title">ECL Methodology</h5>
+                    <p class="card-text">Define Expected Credit Loss methodology settings for IFRS 9 calculations.</p>
+                    <a href="{% url 'ecl_methodology' %}" class="btn btn-primary w-100">Configure</a>
                 </div>
             </div>
         </div>
 
         <!-- Result Columns -->
-        <div class="col-lg-3 col-md-6 mb-4">
+        <div class="col-lg-3 col-md-6">
             <div class="card border-0 shadow-lg h-100">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                    <div class="icon-circle bg-success mb-3">
-                        <i class="fas fa-columns fa-3x text-white"></i>
+                <div class="card-body text-center d-flex flex-column justify-content-between">
+                    <div class="icon-circle bg-primary mx-auto mb-3">
+                        <i class="fas fa-columns fa-2x text-white"></i>
                     </div>
-                    <h5 class="card-title mt-2">Result Columns</h5>
-                    <p class="card-text">Configure the columns that will appear in the result reports.</p>
-                    <a href="{% url 'column_mapping' %}" class="btn btn-success mt-3 w-100">Configure Result Columns</a>
+                    <h5 class="card-title">Result Columns</h5>
+                    <p class="card-text">Set the columns to display in IFRS 9 result reports.</p>
+                    <a href="{% url 'column_mapping' %}" class="btn btn-primary w-100">Configure</a>
                 </div>
             </div>
         </div>
 
-        <!-- Configure Reporting Currency -->
-        <div class="col-lg-3 col-md-6 mb-4">
+        <!-- Reporting Currency -->
+        <div class="col-lg-3 col-md-6">
             <div class="card border-0 shadow-lg h-100">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                    <div class="icon-circle bg-primary mb-3">
-                        <i class="fas fa-dollar-sign fa-3x text-white"></i>
+                <div class="card-body text-center d-flex flex-column justify-content-between">
+                    <div class="icon-circle bg-primary mx-auto mb-3">
+                        <i class="fas fa-dollar-sign fa-2x text-white"></i>
                     </div>
-                    <h5 class="card-title mt-2">Reporting Currency</h5>
-                    <p class="card-text">Configure the default currency for IFRS9 reports.</p>
-                    <a href="{% url 'configure_reporting_currency' %}" class="btn text-white bg-primary mt-3 w-100">Configure Reporting Currency</a>
+                    <h5 class="card-title">Reporting Currency</h5>
+                    <p class="card-text">Define the default reporting currency for IFRS 9 calculations.</p>
+                    <a href="{% url 'configure_reporting_currency' %}" class="btn btn-primary w-100">Configure</a>
                 </div>
             </div>
         </div>
 
         <!-- Exchange Rates Configuration -->
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card border-0 shadow-lg h-100">
-            <div class="card-body text-center d-flex flex-column justify-content-center">
-                <div class="icon-circle bg-info mb-3">
-                <i class="fas fa-exchange-alt fa-3x text-white"></i>
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-lg h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-between">
+                    <div class="icon-circle bg-primary mx-auto mb-3">
+                        <i class="fas fa-exchange-alt fa-2x text-white"></i>
+                    </div>
+                    <h5 class="card-title">Exchange Rates</h5>
+                    <p class="card-text">Configure real-time exchange rates for currency conversions.</p>
+                    <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-primary w-100">Configure</a>
                 </div>
-                <h5 class="card-title mt-2">Exchange Rates Configuration</h5>
-                <p class="card-text">
-                Automatically fetch and configure real-time exchange rates from the Exchange Rate API for currency conversion in IFRS9 reports.
-                </p>
-                <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-info mt-3 w-100">Configure Exchange Rates</a>
             </div>
         </div>
     </div>
-
-    </div>
 </div>
 
-<!-- Custom Styling for Cards -->
+<!-- Styling for Enhancements -->
 <style>
     .icon-circle {
-        width: 80px;
-        height: 80px;
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+
     .card-title {
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 1.2rem;
+        color: #0056b3;
     }
+
     .card-text {
+        font-size: 0.9rem;
         color: #6c757d;
     }
+
     .btn {
-        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        padding: 0.6rem 1.2rem;
+    }
+
+    .btn-primary {
+        background-color: #0056b3;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #003f7f;
+    }
+
+    .btn-outline-secondary {
+        font-weight: 600;
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .btn-outline-secondary:hover {
+        color: #ffffff;
+        background-color: #6c757d;
     }
 </style>
-
 {% endblock %}

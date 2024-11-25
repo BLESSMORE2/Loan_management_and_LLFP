@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% load custom_filters %}
+{% load humanize custom_filters %}
+
 
 {% block content %}
 <div class="container-fluid">
@@ -84,85 +85,79 @@
         </nav>
 
         <!-- Main Content Area for Chart -->
-        <!-- Main Content Area for Chart -->
-<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-1 ml-5 border-bottom">
-        <div class="report-heading">
-            <h1 class="fw-bold">IFRS 9 Vintage Analysis Report</h1>
-        </div>
-        <!-- Display Selected Date Range -->
-        <div class="date-range-info bg-light p-3 rounded shadow-sm mb-3">
-            <h6 class="mb-0 text-primary">
-                <i class="fas fa-calendar-alt me-2"></i>Date Range:
-            </h6>
-            <p class="mb-0">
-                {% if start_date and end_date %}
-                    <span class="text-dark fw-bold">{{ start_date|date:"d M Y" }}</span>
-                    <span class="text-muted">to</span>
-                    <span class="text-dark fw-bold">{{ end_date|date:"d M Y" }}</span>
-                {% elif start_date %}
-                    <span class="text-dark fw-bold">{{ start_date|date:"d M Y" }}</span>
-                    <span class="text-muted">(Start Date Only)</span>
-                {% elif end_date %}
-                    <span class="text-dark fw-bold">{{ end_date|date:"d M Y" }}</span>
-                    <span class="text-muted">(End Date Only)</span>
-                {% else %}
-                    <span class="text-muted">Not Specified</span>
-                {% endif %}
-            </p>
-        </div>
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-1 ml-5 border-bottom">
+                <div class="report-heading">
+                    <h1 class="fw-bold">IFRS 9 Vintage Analysis Report</h1>
+                </div>
+                <!-- Display Selected Date Range -->
+                <div class="date-range-info bg-light p-3 rounded shadow-sm mb-3">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Date Range:
+                    </h6>
+                    <p class="mb-0">
+                        {% if start_date and end_date %}
+                            <span class="text-dark fw-bold">{{ start_date|date:"d M Y" }}</span>
+                            <span class="text-muted">to</span>
+                            <span class="text-dark fw-bold">{{ end_date|date:"d M Y" }}</span>
+                        {% elif start_date %}
+                            <span class="text-dark fw-bold">{{ start_date|date:"d M Y" }}</span>
+                            <span class="text-muted">(Start Date Only)</span>
+                        {% elif end_date %}
+                            <span class="text-dark fw-bold">{{ end_date|date:"d M Y" }}</span>
+                            <span class="text-muted">(End Date Only)</span>
+                        {% else %}
+                            <span class="text-muted">Not Specified</span>
+                        {% endif %}
+                    </p>
+                </div>
+
+            </div>
         
-    </div>
-
-    <!-- Chart Section -->
-    <div class="chart-boundary p-3">
-        <h5 class="chart-title text-center text-muted mb-3">
-            Distribution of <code>12-Month ECL</code> by <strong>{{ group_by_field|capfirst }}</strong>
-        </h5>
-        <div class="chart-container">
-            <canvas id="eclChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Table Section -->
-    <div class="table-section mt-4">
-        <h5 class="text-muted">Detailed Breakdown</h5>
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped">
-                <thead class="table-light">
-                    <tr>
-                        <th>{{ group_by_field|capfirst }}</th>
-                        <th class="text-end">Number of Accounts</th>
-                        <th class="text-end">Total ECL (12-Month)</th>
-                        <th class="text-end">% of ECL</th>
-                        <th class="text-end">% of Accounts</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in table_data %}
-                        <tr {% if row|get_item:group_by_field == 'Grand Total' %}class="table-info fw-bold"{% endif %}>
-                            <td>{{ row|get_item:group_by_field }}</td>
-                            <td class="text-end">{{ row.n_account_number|default:"-" }}</td>
-                            <td class="text-end">{{ row.n_12m_ecl_rcy|floatformat:2 }}</td>
-                            <td class="text-end">{{ row.percentage|floatformat:2 }}%</td>
-                            <td class="text-end">{{ row.percentage_accounts|floatformat:2 }}%</td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center">No data available for the selected filters.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    
-    
-    </div>
-</main>
-
+            <!-- Chart Section -->
+            <div class="chart-boundary p-3">
+                <h5 class="chart-title text-center text-muted mb-3">
+                    Distribution of <code>12-Month ECL</code> by <strong>{{ group_by_field|capfirst }}</strong>
+                </h5>
+                <div class="chart-container">
+                    <canvas id="eclChart"></canvas>
+                </div>
+            </div>
+        
+            <!-- Table Section -->
+            <div class="table-section mt-4">
+                <h5 class="text-muted">Detailed Breakdown</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ group_by_field|capfirst }}</th>
+                                <th class="text-end">Number of Accounts</th>
+                                <th class="text-end">Total ECL (12-Month)</th>
+                                <th class="text-end">% of ECL</th>
+                                <th class="text-end">% of Accounts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in table_data %}
+                                <tr {% if row|get_item:group_by_field == 'Grand Total' %}class="table-info fw-bold"{% endif %}>
+                                    <td>{{ row|get_item:group_by_field }}</td>
+                                    <td class="text-end">{{ row.n_account_number|intcomma|default:"-" }}</td>
+                                    <td class="text-end">{{ row.n_12m_ecl_rcy|floatformat:2|intcomma }}</td>
+                                    <td class="text-end">{{ row.percentage|floatformat:2 }}%</td>
+                                    <td class="text-end">{{ row.percentage_accounts|floatformat:2 }}%</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No data available for the selected filters.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
 

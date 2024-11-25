@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
-{% load custom_filters %}
+{% load humanize custom_filters %}
+
+
 {% block content %}
 <div class="container-fluid">
     <div class="row">
@@ -34,7 +36,7 @@
                                 <td>
                                     {% with row|get_item:to_stage as cell %}
                                         {% if cell %}
-                                            <span>{{ cell.count }}</span><br>
+                                            <span>{{ cell.count|intcomma }}</span><br>
                                             <span class="text-muted">({{ cell.percentage|floatformat:2 }}%)</span>
                                         {% else %}
                                             -
@@ -65,12 +67,12 @@
                         {% for stage_data in account_summary.date_1 %}
                         <tr>
                             <td>{{ stage_data.stage }}</td>
-                            <td>{{ stage_data.count }}</td>
+                            <td>{{ stage_data.count|intcomma }}</td>
                             <td>{{ stage_data.percentage|floatformat:2 }}%</td>
                             <td>
                                 {% with account_summary.date_2|get_item_for_stage:stage_data.stage as stage_2_data %}
                                     {% if stage_2_data %}
-                                        {{ stage_2_data.count }}
+                                        {{ stage_2_data.count|intcomma }}
                                     {% else %}
                                         0
                                     {% endif %}
@@ -91,9 +93,9 @@
                     <tfoot>
                         <tr style="background-color: #d1e7dd; font-weight: bold;">
                             <td>Total</td>
-                            <td>{{ account_summary.total_date_1.count }}</td>
+                            <td>{{ account_summary.total_date_1.count|intcomma }}</td>
                             <td>{{ account_summary.total_date_1.percentage|floatformat:2 }}%</td>
-                            <td>{{ account_summary.total_date_2.count }}</td>
+                            <td>{{ account_summary.total_date_2.count|intcomma }}</td>
                             <td>{{ account_summary.total_date_2.percentage|floatformat:2 }}%</td>
                         </tr>
                     </tfoot>
@@ -114,7 +116,7 @@
                         {% for account in new_accounts_summary %}
                         <tr>
                             <td>{{ account.stage }}</td>
-                            <td>{{ account.count }}</td>
+                            <td>{{ account.count|intcomma }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -135,7 +137,7 @@
                         {% for account in dropped_accounts_summary %}
                         <tr>
                             <td>{{ account.stage }}</td>
-                            <td>{{ account.count }}</td>
+                            <td>{{ account.count|intcomma }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

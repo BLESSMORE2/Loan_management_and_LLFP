@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load humanize %}
+
 
 {% block content %}
 <div class="container mt-1">
@@ -51,56 +53,56 @@
         </div>
     </div>
 
-    <!-- Waterfall Report Table for 12-Month ECL -->
-    {% if account_details %}
-    <div class="card shadow-sm mt-4">
-        <div class="card-header" style="background-color: #09427b; color: white; font-weight: bold;">
-            12-Month ECL Waterfall Reconciliation for Account {{ account_details.n_account_number }}
-        </div>
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-striped mt-4" style="width: 100%; text-align: center;">
-                <thead style="background-color: #073a6d; color: white;">
-                    <tr>
-                        <th>Description</th>
-                        <th>12-Month ECL Impact ($)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in waterfall_data_12m %}
-                    <tr>
-                        <td class="font-weight-bold">{{ entry.description }}</td>
-                        <td>{{ entry.impact|floatformat:2 }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Waterfall Report Table for Lifetime ECL -->
-    <div class="card shadow-sm mt-4">
-        <div class="card-header" style="background-color: #09427b; color: white; font-weight: bold;">
-            Lifetime ECL Waterfall Reconciliation for Account {{ account_details.n_account_number }}
-        </div>
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-striped mt-4" style="width: 100%; text-align: center;">
-                <thead style="background-color: #073a6d; color: white;">
-                    <tr>
-                        <th>Description</th>
-                        <th>Lifetime ECL Impact ($)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in waterfall_data_lifetime %}
-                    <tr>
-                        <td class="font-weight-bold">{{ entry.description }}</td>
-                        <td>{{ entry.impact|floatformat:2 }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+     <!-- Waterfall Report Table for 12-Month ECL -->
+     {% if account_details %}
+     <div class="card shadow-sm mt-4">
+         <div class="card-header" style="background-color: #09427b; color: white; font-weight: bold;">
+             12-Month ECL Waterfall Reconciliation for Account {{ account_details.n_account_number|intcomma }}
+         </div>
+         <div class="card-body table-responsive">
+             <table class="table table-bordered table-striped mt-4" style="width: 100%; text-align: center;">
+                 <thead style="background-color: #073a6d; color: white;">
+                     <tr>
+                         <th>Description</th>
+                         <th>12-Month ECL Impact ($)</th>
+                     </tr>
+                 </thead>
+                 <tbody>
+                     {% for entry in waterfall_data_12m %}
+                     <tr>
+                         <td class="font-weight-bold">{{ entry.description }}</td>
+                         <td>{{ entry.impact|floatformat:2|intcomma }}</td>
+                     </tr>
+                     {% endfor %}
+                 </tbody>
+             </table>
+         </div>
+     </div>
+ 
+     <!-- Waterfall Report Table for Lifetime ECL -->
+     <div class="card shadow-sm mt-4">
+         <div class="card-header" style="background-color: #09427b; color: white; font-weight: bold;">
+             Lifetime ECL Waterfall Reconciliation for Account {{ account_details.n_account_number|intcomma }}
+         </div>
+         <div class="card-body table-responsive">
+             <table class="table table-bordered table-striped mt-4" style="width: 100%; text-align: center;">
+                 <thead style="background-color: #073a6d; color: white;">
+                     <tr>
+                         <th>Description</th>
+                         <th>Lifetime ECL Impact ($)</th>
+                     </tr>
+                 </thead>
+                 <tbody>
+                     {% for entry in waterfall_data_lifetime %}
+                     <tr>
+                         <td class="font-weight-bold">{{ entry.description }}</td>
+                         <td>{{ entry.impact|floatformat:2|intcomma }}</td>
+                     </tr>
+                     {% endfor %}
+                 </tbody>
+             </table>
+         </div>
+     </div>
     {% else %}
     <p class="text-muted mt-4 text-center">No account selected or no data available for the selected account.</p>
     {% endif %}

@@ -37,3 +37,11 @@ def get_item_for_stage(summary_list, stage):
         if item.get('stage') == stage:
             return item  # Return the dictionary for the matching stage
     return None  # Return None if no match is found
+
+@register.filter
+def format_number(value):
+    try:
+        value = float(value)
+        return f"{value:,.2f}"  # Adds commas as thousand separators and keeps two decimal places
+    except (ValueError, TypeError):
+        return value  # Return original value if it's not a number

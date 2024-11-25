@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load custom_filters %}
+{% load humanize custom_filters %}
 
 {% block content %}
 <div class="container-fluid">
@@ -13,6 +13,7 @@
         <main class="col-md-9 col-lg-10 px-md-4" id="main-content">
             <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">ECL Reconciliation Report - Grouped by {{ group_by_field }}</h1>
 
+            <!-- Data Table with Green Header -->
             <!-- Data Table with Green Header -->
             <div class="table-responsive">
                 <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
@@ -47,19 +48,19 @@
                         {% for row in grouped_data %}
                         <tr>
                             <td>{{ row|get_item:group_by_field }}</td>
-                            <td>{{ row.n_exposure_at_default_ncy_higher|floatformat:2 }}</td>
-                            <td>{{ row.n_exposure_at_default_rcy_higher|floatformat:2 }}</td>
-                            <td>{{ row.n_12m_ecl_rcy_higher|floatformat:2 }}</td>
-                            <td>{{ row.n_lifetime_ecl_rcy_higher|floatformat:2 }}</td>
-                            <td>{{ row.n_exposure_at_default_ncy_lower|floatformat:2 }}</td>
-                            <td>{{ row.n_exposure_at_default_rcy_lower|floatformat:2 }}</td>
-                            <td>{{ row.n_12m_ecl_rcy_lower|floatformat:2 }}</td>
-                            <td>{{ row.n_lifetime_ecl_rcy_lower|floatformat:2 }}</td>
-                            <td>{{ row.difference_ead_rcy|floatformat:2 }}</td>
-                            <td>{{ row.difference_12m_ecl|floatformat:2 }}</td>
-                            <td>{{ row.difference_lifetime_ecl|floatformat:2 }}</td>
-                            <td>{{ row.n_accounts_in_higher }}</td>
-                            <td>{{ row.n_accounts_in_lower }}</td>
+                            <td style="text-align: right;">{{ row.n_exposure_at_default_ncy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_exposure_at_default_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_12m_ecl_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_lifetime_ecl_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_exposure_at_default_ncy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_exposure_at_default_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_12m_ecl_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_lifetime_ecl_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.difference_ead_rcy|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.difference_12m_ecl|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.difference_lifetime_ecl|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_accounts_in_higher|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_accounts_in_lower|intcomma }}</td>
                             <td>{{ row.status_ead_ncy }}</td>
                         </tr>
                         {% endfor %}
@@ -67,19 +68,19 @@
                     <tfoot>
                         <tr style="background-color: #d1e7dd; font-weight: bold;">
                             <td><strong>Grand Total</strong></td>
-                            <td>{{ grand_totals.n_exposure_at_default_ncy_higher|floatformat:2 }}</td>
-                            <td>{{ grand_totals.n_exposure_at_default_rcy_higher|floatformat:2 }}</td>
-                            <td>{{ grand_totals.n_12m_ecl_rcy_higher|floatformat:2 }}</td>
-                            <td>{{ grand_totals.n_lifetime_ecl_rcy_higher|floatformat:2 }}</td>
-                            <td>{{ grand_totals.n_exposure_at_default_ncy_lower|floatformat:2 }}</td>
-                            <td>{{ grand_totals.n_exposure_at_default_rcy_lower|floatformat:2 }}</td>
-                            <td>{{ grand_totals.n_12m_ecl_rcy_lower|floatformat:2 }}</td>
-                            <td>{{ grand_totals.n_lifetime_ecl_rcy_lower|floatformat:2 }}</td>
-                            <td>{{ grand_totals.difference_ead_rcy|floatformat:2 }}</td>
-                            <td>{{ grand_totals.difference_12m_ecl|floatformat:2 }}</td>
-                            <td>{{ grand_totals.difference_lifetime_ecl|floatformat:2 }}</td>
-                            <td>{{ grand_totals.n_accounts_in_higher }}</td>
-                            <td>{{ grand_totals.n_accounts_in_lower }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_ncy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_12m_ecl_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_lifetime_ecl_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_ncy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_12m_ecl_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_lifetime_ecl_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.difference_ead_rcy|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.difference_12m_ecl|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.difference_lifetime_ecl|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_accounts_in_higher|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_accounts_in_lower|intcomma }}</td>
                             <td></td>
                         </tr>
                     </tfoot>
