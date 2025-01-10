@@ -29,6 +29,7 @@
                 <th>Reporting Date</th>
                 <th>Rating Code</th>
                 <th>PD Percent</th>
+                <th>Created by</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -39,6 +40,7 @@
                 <td>{{ pd_term.fic_mis_date }}</td>
                 <td>{{ pd_term.v_credit_risk_basis_cd }}</td>
                 <td>{{ pd_term.n_pd_percent }}</td>
+                <td>{{ pd_term.created_by.email }}</td>
                 <td>
                     <a href="{% url 'rating_pd_edit' pd_term.id %}" class="btn btn-primary btn-sm">Edit</a>
                     <a href="{% url 'rating_pd_delete' pd_term.id %}" class="btn btn-danger btn-sm">Delete</a>

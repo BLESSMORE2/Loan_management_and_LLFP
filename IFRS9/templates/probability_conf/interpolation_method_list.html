@@ -28,6 +28,7 @@
                 <th>Interpolation Method</th>
                 <th>PD Model Projection Cap</th>
                 <th>Interpolation Level</th>
+                <th>Created by</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -37,6 +38,7 @@
                 <td>{{ method.get_pd_interpolation_method_display }}</td>
                 <td>{{ method.n_pd_model_proj_cap }}</td>
                 <td>{{ method.get_interpolation_level_display }}</td>
+                <td>{{ method.created_by.email }}</td>
                 <td>
                     <a href="{% url 'interpolation_method_edit' method.id %}" class="btn btn-primary btn-sm">Edit</a>
                     <a href="{% url 'interpolation_method_delete' method.id %}" class="btn btn-danger btn-sm">Delete</a>

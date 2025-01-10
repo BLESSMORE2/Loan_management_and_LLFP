@@ -20,6 +20,7 @@
                         <th>Function Name</th>
                         <th>Execution Order</th>
                         <th>Status</th>
+                        <th>Executed by</th>
                         <th>Execution Start Date</th>
                         <th>Execution End Date</th>
                         <th>Duration</th>
@@ -41,6 +42,7 @@
                                 <span class="badge badge-danger p-2">{{ status.status }}</span>
                             {% endif %}
                         </td>
+                        <td>{{ status.created_by.email }}</td>
                         <td>{{ status.execution_start_date|date:"M d, Y, g:i a" }}</td>
                         <td>
                             {% if status.execution_end_date %}

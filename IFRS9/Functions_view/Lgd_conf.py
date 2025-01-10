@@ -3,13 +3,10 @@ from django.contrib import messages
 from ..models import Ldn_LGD_Term_Structure,CollateralLGD
 from ..forms import LGDTermStructureForm,CollateralLGDForm
 from django.contrib.auth.decorators import login_required
-<<<<<<< HEAD
 from django.core.exceptions import ValidationError
 from Users.models import AuditTrail  # Import AuditTrail model
 from django.utils.timezone import now  # For timestamping
 
-=======
->>>>>>> parent of a8be897 (commit)
 
 
 @login_required
@@ -30,7 +27,6 @@ def lgd_term_structure_create(request):
     if request.method == 'POST':
         form = LGDTermStructureForm(request.POST)
         if form.is_valid():
-<<<<<<< HEAD
             # Save the form without committing to the database yet
             term_structure = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -48,9 +44,6 @@ def lgd_term_structure_create(request):
                     timestamp=now(),
                 )
 
-=======
-            form.save()
->>>>>>> parent of a8be897 (commit)
             messages.success(request, "LGD Term Structure added successfully!")
             return redirect('lgd_term_structure_list')
         else:
@@ -67,7 +60,6 @@ def lgd_term_structure_edit(request, term_id):
     if request.method == 'POST':
         form = LGDTermStructureForm(request.POST, instance=term_structure)
         if form.is_valid():
-<<<<<<< HEAD
             term_structure = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
             term_structure.created_by = request.user
@@ -84,9 +76,6 @@ def lgd_term_structure_edit(request, term_id):
                     timestamp=now(),
                 )
           
-=======
-            form.save()
->>>>>>> parent of a8be897 (commit)
             messages.success(request, "LGD Term Structure updated successfully!")
             return redirect('lgd_term_structure_list')
         else:
@@ -117,10 +106,18 @@ def lgd_term_structure_delete(request, term_id):
     return render(request, 'lgd_conf/lgd_term_structure_confirm_delete.html', {'term_structure': term_structure})
 
 
+
 @login_required
 def view_lgd_calculation(request):
-    # Ensure only one record exists, get the first or the only one
-    lgd_instance = get_object_or_404(CollateralLGD)
+    # Try to retrieve the single CollateralLGD instance
+    lgd_instance = CollateralLGD.objects.first()
+
+    # If no instance exists, create one with default values
+    if not lgd_instance:
+        try:
+            lgd_instance = CollateralLGD.objects.create(can_calculate_lgd=False)
+        except ValidationError as e:
+            return render(request, 'lgd_conf/view_lgd_calculation.html', {'error': str(e)})
 
     # Pass the instance to the template
     return render(request, 'lgd_conf/view_lgd_calculation.html', {'lgd_instance': lgd_instance})
@@ -128,7 +125,12 @@ def view_lgd_calculation(request):
 @login_required
 def edit_lgd_calculation(request):
     """Edit the LGD Calculation settings"""
-    lgd_instance = get_object_or_404(CollateralLGD)
+    # Retrieve the first instance of CollateralLGD, or show a 404 if none exists
+    lgd_instance = CollateralLGD.objects.first()
+
+    if not lgd_instance:
+        messages.error(request, "No LGD Calculation data available to edit.")
+        return redirect('view_lgd_calculation')  # Redirect to a safer page
 
     if request.method == 'POST':
         form = CollateralLGDForm(request.POST, instance=lgd_instance)
@@ -140,5 +142,5 @@ def edit_lgd_calculation(request):
             messages.error(request, "Error updating LGD Calculation settings.")
     else:
         form = CollateralLGDForm(instance=lgd_instance)
-    
+
     return render(request, 'lgd_conf/edit_lgd_calculation.html', {'form': form})

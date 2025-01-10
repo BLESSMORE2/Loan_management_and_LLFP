@@ -38,6 +38,7 @@
                     <th>Lower Value</th>
                     <th>Upper Value</th>
                     <th>Amortization Term Unit</th>
+                    <th>Created By</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -49,6 +50,7 @@
                     <td>{{ band.n_delq_lower_value }}</td>
                     <td>{{ band.n_delq_upper_value }}</td>
                     <td>{{ band.v_amrt_term_unit }}</td>
+                    <td>{{ band.created_by.email }}</td>
                     <td>
                         <a href="{% url 'dim_delinquency_band_edit' band.pk %}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i> Edit

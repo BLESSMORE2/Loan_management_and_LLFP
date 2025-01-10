@@ -28,6 +28,7 @@
                 <th>Credit Risk Basis Code</th>
                 <th>PD Percent</th>
                 <th>Reporting Date</th>
+                <th>Created by</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -38,6 +39,7 @@
                 <td>{{ term.v_credit_risk_basis_cd }}</td>
                 <td>{{ term.n_pd_percent }}</td>
                 <td>{{ term.fic_mis_date }}</td>
+                <td>{{ term.created_by.email }}</td>
                 <td>
                     <a href="{% url 'delinquent_pd_edit' term.id %}" class="btn btn-primary btn-sm">Edit</a>
                     <a href="{% url 'delinquent_pd_delete' term.id %}" class="btn btn-danger btn-sm">Delete</a>

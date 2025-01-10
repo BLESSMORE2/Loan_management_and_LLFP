@@ -34,6 +34,7 @@
                 <tr>
                     <th>Amortization Term Unit</th>
                     <th>Cooling Period (days)</th>
+                    <th>Created by</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -42,6 +43,7 @@
                 <tr>
                     <td>{{ period.get_v_amrt_term_unit_display }}</td>
                     <td>{{ period.n_cooling_period_days }}</td>
+                    <td>{{ period.created_by.email }}</td>
                     <td>
                         <a href="{% url 'cooling_period_definition_edit' period.pk %}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i> Edit

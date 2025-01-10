@@ -5,8 +5,6 @@ from django.contrib.auth.decorators import login_required
 from .models import *
 from .forms import *
 
-
-
 from .Functions_view.data import *
 from .Functions.cashflow import *
 from .Functions.calculate_cash_flows_ead import *
@@ -64,7 +62,7 @@ def dashboard_view(request):
     #update_stage_determination_ead_with_cashflow_pv(mis_date)
     #update_stage_determination_eir(mis_date)
     #update_lgd_for_stage_determination_term_structure(mis_date)
-    calculate_pd_for_accounts(mis_date)
+    #calculate_pd_for_accounts(mis_date)
     #insert_cash_flow_data(mis_date)
     update_financial_cash_flow(mis_date)
     update_cash_flow_with_pd_buckets(mis_date)

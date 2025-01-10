@@ -35,6 +35,7 @@
                 <tr>
                     <th>Rating Code</th>
                     <th>Description</th>
+                    <th>Created By</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -43,6 +44,7 @@
                 <tr>
                     <td>{{ code.v_rating_code }}</td>
                     <td>{{ code.v_rating_desc }}</td>
+                    <td>{{ code.created_by.email }}</td>
                     <td>
                         <a href="{% url 'credit_rating_code_band_edit' code.pk %}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i> Edit

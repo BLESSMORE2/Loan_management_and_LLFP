@@ -48,7 +48,6 @@ def segment_create(request):
     if request.method == "POST":
         form = FSIProductSegmentForm(request.POST)
         if form.is_valid():
-<<<<<<< HEAD
             # Save the form without committing to the database yet
             segment = form.save(commit=False)
             # Set the created_by field to the currently logged-in user
@@ -69,9 +68,6 @@ def segment_create(request):
                     timestamp=now(),
                 )
             
-=======
-            form.save()
->>>>>>> parent of a8be897 (commit)
             messages.success(request, "Segment added successfully!")
             return redirect('segment_list')
         else:
@@ -109,7 +105,6 @@ def segment_edit(request, segment_id):
         form = FSIProductSegmentForm(request.POST, instance=segment)
         if form.is_valid():
             try:
-<<<<<<< HEAD
                 # Save the form without committing to the database yet
                 segment = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -129,9 +124,6 @@ def segment_edit(request, segment_id):
                     ),
                     timestamp=now(),
                 )
-=======
-                form.save()
->>>>>>> parent of a8be897 (commit)
                 messages.success(request, "Segment updated successfully!")
                 return redirect('segment_list')
             except IntegrityError as e:
@@ -189,7 +181,6 @@ def pd_term_structure_create(request):
         form = PDTermStructureForm(request.POST)
         if form.is_valid():
             try:
-<<<<<<< HEAD
                 # Save the form without committing to the database yet
                 term_structure = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -210,9 +201,6 @@ def pd_term_structure_create(request):
                 )
 
                 
-=======
-                form.save()
->>>>>>> parent of a8be897 (commit)
                 messages.success(request, "PD Term Structure added successfully!")
                 return redirect('pd_term_structure_list')
             except IntegrityError as e:
@@ -237,7 +225,6 @@ def pd_term_structure_edit(request, term_id):
         form = PDTermStructureForm(request.POST, instance=term_structure)
         if form.is_valid():
             try:
-<<<<<<< HEAD
                 # Save the form without committing to the database yet
                 term_structure = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -257,9 +244,6 @@ def pd_term_structure_edit(request, term_id):
                     timestamp=now(),
                 )
 
-=======
-                form.save()
->>>>>>> parent of a8be897 (commit)
                 messages.success(request, "PD Term Structure updated successfully!")
                 return redirect('pd_term_structure_list')
             except IntegrityError as e:
@@ -320,7 +304,6 @@ def delinquent_pd_create(request):
         form = PDTermStructureDtlForm(request.POST)
         if form.is_valid():
             try:
-<<<<<<< HEAD
                 # Save the form without committing to the database yet
                 delinquent_pd = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -341,9 +324,6 @@ def delinquent_pd_create(request):
                     timestamp=now(),
                 )
 
-=======
-                form.save()
->>>>>>> parent of a8be897 (commit)
                 messages.success(request, "Delinquent PD Term added successfully!")
                 return redirect('delinquent_pd_list')
             except Exception as e:
@@ -366,7 +346,6 @@ def delinquent_pd_edit(request, term_id):
         form = PDTermStructureDtlForm(request.POST, instance=pd_term_detail)
         if form.is_valid():
             try:
-<<<<<<< HEAD
                 # Save the form without committing to the database yet
                 delinquent_pd = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -389,9 +368,6 @@ def delinquent_pd_edit(request, term_id):
                 )
 
 
-=======
-                form.save()
->>>>>>> parent of a8be897 (commit)
                 messages.success(request, "Delinquent PD Term updated successfully!")
                 return redirect('delinquent_pd_list')
             except Exception as e:
@@ -450,7 +426,6 @@ def rating_pd_create(request):
         form = PDTermStructureDtlRatingForm(request.POST)
         if form.is_valid():
             try:
-<<<<<<< HEAD
                 # Save the form without committing to the database yet
                 rating = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -471,9 +446,6 @@ def rating_pd_create(request):
                     timestamp=now(),
                 )
 
-=======
-                form.save()
->>>>>>> parent of a8be897 (commit)
                 messages.success(request, "Rating Based PD Term added successfully!")
                 return redirect('rating_pd_list')
             except Exception as e:
@@ -492,7 +464,6 @@ def rating_pd_edit(request, term_id):
         form = PDTermStructureDtlRatingForm(request.POST, instance=pd_term_detail)
         if form.is_valid():
             try:
-<<<<<<< HEAD
                 # Save the form without committing to the database yet
                 rating = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -514,9 +485,6 @@ def rating_pd_edit(request, term_id):
                 )
 
                 
-=======
-                form.save()
->>>>>>> parent of a8be897 (commit)
                 messages.success(request, "Rating Based PD Term updated successfully!")
                 return redirect('rating_pd_list')
             except Exception as e:
@@ -566,7 +534,6 @@ def interpolation_method_create(request):
         form = InterpolationMethodForm(request.POST)
         if form.is_valid():
             try:
-<<<<<<< HEAD
                 # Save the form without committing to the database yet
                 interpolation = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -589,9 +556,6 @@ def interpolation_method_create(request):
                     timestamp=now(),
                 )
 
-=======
-                form.save()
->>>>>>> parent of a8be897 (commit)
                 messages.success(request, "Interpolation Method added successfully!")
                 return redirect('interpolation_method_list')
             except Exception as e:
@@ -613,7 +577,6 @@ def interpolation_method_edit(request, method_id):
         form = InterpolationMethodForm(request.POST, instance=interpolation_method)
         if form.is_valid():
             try:
-<<<<<<< HEAD
                 # Save the form without committing to the database yet
                 interpolation = form.save(commit=False)
                 # Set the created_by field to the currently logged-in user
@@ -636,9 +599,6 @@ def interpolation_method_edit(request, method_id):
                     timestamp=now(),
                 )
                 
-=======
-                form.save()
->>>>>>> parent of a8be897 (commit)
                 messages.success(request, "Interpolation Method updated successfully!")
                 return redirect('interpolation_method_list')
             except Exception as e:

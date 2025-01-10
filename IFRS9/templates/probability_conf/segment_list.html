@@ -39,6 +39,7 @@
                     <th>Segment</th>
                     <th>Product Type</th>
                     <th>Description</th>
+                    <th>Created by</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -48,6 +49,7 @@
                         <td>{{ segment.v_prod_segment }}</td>
                         <td>{{ segment.v_prod_type }}</td>
                         <td>{{ segment.v_prod_desc }}</td>
+                        <td>{{ segment.created_by.email }}</td>
                         <td>
                             <a href="{% url 'segment_edit' segment.segment_id %}" class="btn btn-primary btn-sm">Edit</a>
                             <a href="{% url 'segment_delete' segment.segment_id %}" class="btn btn-danger btn-sm">Delete</a>

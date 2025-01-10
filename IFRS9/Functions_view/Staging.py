@@ -71,7 +71,6 @@ class CreditRatingStageCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
             # Set the created_by field to the currently logged-in user
             instance = form.save(commit=False)
             instance.created_by = self.request.user
@@ -87,11 +86,8 @@ class CreditRatingStageCreateView(LoginRequiredMixin, CreateView):
                 timestamp=now(),
             )
             
-=======
-            response = super().form_valid(form)
->>>>>>> parent of a8be897 (commit)
             messages.success(self.request, "Credit rating successfully added!")
-            return response
+            return super().form_valid(form)
         except IntegrityError as e:
             # Handle unique constraint violations or other database integrity issues
             messages.error(self.request, f"Integrity error: {e}")
@@ -115,7 +111,6 @@ class CreditRatingStageUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
             # Set the updated_by field to the currently logged-in user
             instance = form.save(commit=False)
             instance.created_by = self.request.user
@@ -130,11 +125,8 @@ class CreditRatingStageUpdateView(LoginRequiredMixin, UpdateView):
                 timestamp=now(),
             )
 
-=======
-            response = super().form_valid(form)
->>>>>>> parent of a8be897 (commit)
             messages.success(self.request, "Credit rating successfully updated!")
-            return response
+            return super().form_valid(form)
         except IntegrityError as e:
             # Handle unique constraint violations or other database integrity issues
             messages.error(self.request, f"Integrity error: {e}")
@@ -191,7 +183,6 @@ class DPDStageMappingCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
             # Set the updated_by field to the currently logged-in user
             instance = form.save(commit=False)
             instance.created_by = self.request.user
@@ -211,11 +202,8 @@ class DPDStageMappingCreateView(LoginRequiredMixin, CreateView):
                 timestamp=now(),
             )
 
-=======
-            response = super().form_valid(form)
->>>>>>> parent of a8be897 (commit)
             messages.success(self.request, "DPD Stage Mapping successfully added!")
-            return response
+            return super().form_valid(form)
         except IntegrityError as e:
             # Handle unique constraint violations or other database integrity issues
             messages.error(self.request, f"Integrity error: {e}")
@@ -238,7 +226,6 @@ class DPDStageMappingUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
             # Set the updated_by field to the currently logged-in user
             instance = form.save(commit=False)
             instance.created_by = self.request.user
@@ -257,11 +244,9 @@ class DPDStageMappingUpdateView(LoginRequiredMixin, UpdateView):
                 ),
                 timestamp=now(),
             )
-=======
-            response = super().form_valid(form)
->>>>>>> parent of a8be897 (commit)
             messages.success(self.request, "DPD Stage Mapping successfully updated!")
-            return response
+            return super().form_valid(form)
+        
         except IntegrityError as e:
             # Handle unique constraint violations or other database integrity issues
             messages.error(self.request, f"Integrity error: {e}")
@@ -321,7 +306,6 @@ class CoolingPeriodDefinitionCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
             # Set the updated_by field to the currently logged-in user
             instance = form.save(commit=False)
             instance.created_by = self.request.user
@@ -340,11 +324,9 @@ class CoolingPeriodDefinitionCreateView(LoginRequiredMixin, CreateView):
                 timestamp=now(),
             )
 
-=======
-            response = super().form_valid(form)
->>>>>>> parent of a8be897 (commit)
             messages.success(self.request, "Cooling period definition successfully added!")
-            return response
+            return super().form_valid(form)
+        
         except IntegrityError as e:
             # Handle unique constraint violations or other database integrity issues
             messages.error(self.request, f"Integrity error: {e}")
@@ -367,7 +349,6 @@ class CoolingPeriodDefinitionUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
             # Set the updated_by field to the currently logged-in user
             instance = form.save(commit=False)
             instance.created_by = self.request.user
@@ -385,11 +366,9 @@ class CoolingPeriodDefinitionUpdateView(LoginRequiredMixin, UpdateView):
                 timestamp=now(),
             )
 
-=======
-            response = super().form_valid(form)
->>>>>>> parent of a8be897 (commit)
             messages.success(self.request, "Cooling period definition successfully updated!")
-            return response
+            return super().form_valid(form)
+        
         except IntegrityError as e:
             # Handle unique constraint violations or other database integrity issues
             messages.error(self.request, f"Integrity error: {e}")
@@ -445,7 +424,6 @@ class DimDelinquencyBandCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
 
             # Set the updated_by field to the currently logged-in user
             instance = form.save(commit=False)
@@ -467,11 +445,9 @@ class DimDelinquencyBandCreateView(LoginRequiredMixin, CreateView):
                 timestamp=now(),
             )
 
-=======
-            response = super().form_valid(form)
->>>>>>> parent of a8be897 (commit)
             messages.success(self.request, "Delinquency band successfully added!")
-            return response
+            return super().form_valid(form)
+        
         except IntegrityError as e:
             # Handle unique constraint violations or other database integrity issues
             messages.error(self.request, f"Integrity error: {e}")
@@ -494,7 +470,6 @@ class DimDelinquencyBandUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
 
             # Set the updated_by field to the currently logged-in user
             instance = form.save(commit=False)
@@ -516,11 +491,9 @@ class DimDelinquencyBandUpdateView(LoginRequiredMixin, UpdateView):
                 timestamp=now(),
             )
 
-=======
-            response = super().form_valid(form)
->>>>>>> parent of a8be897 (commit)
             messages.success(self.request, "Delinquency band successfully updated!")
-            return response
+            return super().form_valid(form)
+        
         except IntegrityError as e:
             # Handle unique constraint violations or other database integrity issues
             messages.error(self.request, f"Integrity error: {e}")
@@ -577,7 +550,6 @@ class CreditRatingCodeBandCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
             # Set the updated_by field to the currently logged-in user
             instance = form.save(commit=False)
             instance.created_by = self.request.user
@@ -596,11 +568,9 @@ class CreditRatingCodeBandCreateView(LoginRequiredMixin, CreateView):
                 timestamp=now(),
             )
 
-=======
-            response = super().form_valid(form)
->>>>>>> parent of a8be897 (commit)
             messages.success(self.request, "Credit rating code successfully added!")
-            return response
+            return super().form_valid(form)
+        
         except IntegrityError as e:
             # Handle unique constraint violations or other database integrity issues
             messages.error(self.request, f"Integrity error: {e}")
@@ -623,7 +593,6 @@ class CreditRatingCodeBandUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-<<<<<<< HEAD
             # Set the updated_by field to the currently logged-in user
             instance = form.save(commit=False)
             instance.created_by = self.request.user
@@ -644,11 +613,6 @@ class CreditRatingCodeBandUpdateView(LoginRequiredMixin, UpdateView):
             messages.success(self.request, "redit rating code successfully updated!")
             return super().form_valid(form)
         
-=======
-            response = super().form_valid(form)
-            messages.success(self.request, "Credit rating code successfully updated!")
-            return response
->>>>>>> parent of a8be897 (commit)
         except IntegrityError as e:
             # Handle database integrity errors, like duplicate entries
             messages.error(self.request, f"Integrity error: {e}")

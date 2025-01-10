@@ -31,6 +31,7 @@
                 <th>Term Structure Description</th>
                 <th>Frequency Unit</th>
                 <th>Structure Type</th>
+                <th>Created by</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -41,6 +42,7 @@
                 <td>{{ structure.v_pd_term_structure_desc }}</td>
                 <td>{{ structure.get_v_pd_term_frequency_unit_display }}</td>
                 <td>{{ structure.get_v_pd_term_structure_type_display }}</td>
+                <td>{{ structure.created_by.email }}</td>
                 <td>
                     <a href="{% url 'pd_term_structure_edit' structure.id %}" class="btn btn-primary btn-sm">Edit</a>
                     <a href="{% url 'pd_term_structure_delete' structure.id %}" class="btn btn-danger btn-sm">Delete</a>

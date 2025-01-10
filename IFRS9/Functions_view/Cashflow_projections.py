@@ -44,7 +44,6 @@ class InterestMethodCreateView(LoginRequiredMixin,CreateView):
     success_url = reverse_lazy('interest_method_list')
 
     def form_valid(self, form):
-<<<<<<< HEAD
         # Set the created_by field to the currently logged-in user
         instance = form.save(commit=False)
         instance.created_by = self.request.user
@@ -58,8 +57,6 @@ class InterestMethodCreateView(LoginRequiredMixin,CreateView):
                 change_description=f"Created Interest Method: {instance.v_interest_method}",
                 timestamp=now(),
             )  
-=======
->>>>>>> parent of a8be897 (commit)
         messages.success(self.request, "Interest method added successfully!")
         return super().form_valid(form)
 
@@ -75,7 +72,6 @@ class InterestMethodUpdateView(LoginRequiredMixin,UpdateView):
     success_url = reverse_lazy('interest_method_list')
 
     def form_valid(self, form):
-<<<<<<< HEAD
         # Set the created_by field to the currently logged-in user
         instance = form.save(commit=False)
         previous_method = self.get_object().v_interest_method 
@@ -92,8 +88,6 @@ class InterestMethodUpdateView(LoginRequiredMixin,UpdateView):
                 ),
                 timestamp=now(),
             )    
-=======
->>>>>>> parent of a8be897 (commit)
         messages.success(self.request, "Interest method updated successfully!")
         return super().form_valid(form)
 

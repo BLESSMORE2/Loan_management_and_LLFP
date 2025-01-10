@@ -28,6 +28,7 @@
                 <th>LGD Term Structure Name</th>
                 <th>LGD Percent</th>
                 <th>Reporting Date</th>
+                <th>Created By</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -37,6 +38,7 @@
                 <td>{{ structure.v_lgd_term_structure_name.v_prod_segment }}</td>
                 <td>{{ structure.n_lgd_percent }}</td>
                 <td>{{ structure.fic_mis_date }}</td>
+                <td>{{ structure.created_by.email }}</td>
                 <td>
                     <a href="{% url 'lgd_term_structure_edit' structure.v_lgd_term_structure_id %}" class="btn btn-primary btn-sm">Edit</a>
                     <a href="{% url 'lgd_term_structure_delete' structure.v_lgd_term_structure_id %}" class="btn btn-danger btn-sm">Delete</a>

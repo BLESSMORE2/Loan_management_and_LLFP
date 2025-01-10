@@ -30,6 +30,7 @@
             <tr>
                 <th>Interest Method</th>
                 <th>Description</th>
+                <th>Created By</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -38,6 +39,7 @@
             <tr>
                 <td>{{ method.v_interest_method }}</td>
                 <td>{{ method.description }}</td>
+                <td>{{ method.created_by.email }}</td>
                 <td>
                     <a href="{% url 'interest_method_edit' method.pk %}" class="btn btn-warning btn-sm">Edit</a>
                     <a href="{% url 'interest_method_delete' method.pk %}" class="btn btn-danger btn-sm">Delete</a>

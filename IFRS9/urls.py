@@ -7,9 +7,9 @@ from .views import *
 
 
 urlpatterns = [
-    path('', dashboard_view, name='dashboard'),
+    path('dashboard/', dashboard_view, name='dashboard'),
     path('app-list/', views.app_list_view, name='app_list'),
-    path('ifrs9-home-list/', views.ifrs9_home_view, name='ifrs9_home'),
+    path('', views.ifrs9_home_view, name='ifrs9_home'),
     path('data_management/', views.data_management, name='data_management'),
     path('upload/', FileUploadView.as_view(), name='file_upload'),
     path('select_columns/', ColumnSelectionView.as_view(), name='select_columns'),
@@ -146,6 +146,12 @@ urlpatterns = [
     path('get-updated-status-table/', views.get_updated_status_table, name='get_updated_status_table'),
     path('running-processes/', running_processes_view, name='running_processes'),
     path('cancel-process/<str:process_run_id>/', cancel_running_process, name='cancel_running_process'),
+    path('data-quality-check/', views.data_quality_check, name='data_quality_check'),
+    path('check-missing-customers/', views.check_missing_customers, name='check_missing_customers'),
+    path('check-missing-products/', views.check_missing_products, name='check_missing_products'),
+    path('check-cashflow-data/', views.check_cashflow_data, name='check_cashflow_data'),
+    # path('check-missing-fields/', views.check_missing_fields, name='check_missing_fields'),
+
 
 
     path('reports-home/', views.reporting_home, name='reporting_home'),

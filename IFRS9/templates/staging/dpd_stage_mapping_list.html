@@ -37,6 +37,7 @@
                     <th>Stage 1 Threshold (days)</th>
                     <th>Stage 2 Threshold (days)</th>
                     <th>Stage 3 Threshold (days)</th>
+                    <th>Created By</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -47,6 +48,7 @@
                     <td>{{ mapping.stage_1_threshold }}</td>
                     <td>{{ mapping.stage_2_threshold }}</td>
                     <td>{{ mapping.stage_3_threshold }}</td>
+                    <td>{{ mapping.created_by.email }}</td>
                     <td>
                         <a href="{% url 'dpd_stage_mapping_edit' mapping.pk %}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i> Edit

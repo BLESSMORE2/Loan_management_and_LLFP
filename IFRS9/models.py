@@ -1,11 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-<<<<<<< HEAD
 from django.conf import settings
-=======
-# Create your models here.
->>>>>>> parent of a8be897 (commit)
 
 class Ldn_Financial_Instrument(models.Model):
     fic_mis_date = models.DateField(null=True)
@@ -90,11 +86,8 @@ class FSI_Product_Segment(models.Model):
     v_prod_segment = models.CharField(max_length=255)
     v_prod_type = models.CharField(max_length=255)
     v_prod_desc = models.CharField(max_length=255, null=True, blank=True)
-<<<<<<< HEAD
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     
-=======
->>>>>>> parent of a8be897 (commit)
 
     def __str__(self):
         return f"{self.v_prod_segment} - {self.v_prod_type} - {self.v_prod_desc}"
@@ -122,6 +115,7 @@ class Ldn_PD_Term_Structure(models.Model):
     v_pd_term_frequency_unit = models.CharField(max_length=1, choices=[('M', 'Monthly'), ('Q', 'Quarterly'), ('H', 'Half Yearly'), ('Y', 'Yearly'), ('D', 'Daily')])
     v_pd_term_structure_type = models.CharField(max_length=1, choices=[('R', 'Rating'), ('D', 'DPD')])
     fic_mis_date = models.DateField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         # Automatically populate v_pd_term_structure_id and v_pd_term_structure_desc
@@ -144,6 +138,7 @@ class Ldn_PD_Term_Structure_Dtl(models.Model):
     fic_mis_date = models.DateField()
     v_credit_risk_basis_cd = models.CharField(max_length=100)
     n_pd_percent = models.DecimalField(max_digits=5, decimal_places=4)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'Ldn_pd_term_structure_dtl'
@@ -195,6 +190,7 @@ class FSI_LLFP_APP_PREFERENCES(models.Model):
     # New column to determine interpolation level
     INTERPOLATION_LEVEL_CHOICES = [('ACCOUNT', 'Account Level'),('TERM_STRUCTURE', 'PD Term Structure Level')]
     interpolation_level = models.CharField( max_length=20,choices=INTERPOLATION_LEVEL_CHOICES,default='TERM_STRUCTURE' )
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     class Meta:
         db_table = 'FSI_LLFP_APP_PREFERENCES'
    
@@ -205,6 +201,7 @@ class Ldn_LGD_Term_Structure(models.Model):
     v_lgd_term_structure_desc = models.CharField(max_length=50,blank=True,null=True)  # Auto-filled from v_prod_desc in FSI_Product_Segment
     n_lgd_percent = models.DecimalField(max_digits=5, decimal_places=4)
     fic_mis_date = models.DateField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         # Automatically populate v_lgd_term_structure_id and v_lgd_term_structure_desc
@@ -277,6 +274,7 @@ class DimExchangeRateConf(models.Model):
     EXCHANGE_RATE_API_KEY = models.CharField(max_length=255)
     use_on_exchange_rates = models.BooleanField(default=False)
     use_latest_exchange_rates = models.BooleanField(default=False)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     class Meta:
         db_table = 'dim_exchange_rate_conf'
 
@@ -301,6 +299,7 @@ class Fsi_Interest_Method(models.Model):
     
     v_interest_method = models.CharField( max_length=50, choices=INTEREST_METHOD_CHOICES,unique=True)
     description = models.TextField(blank=True)  # Optional description for documentation
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     class Meta:
         db_table = 'Fsi_Interest_Method'
 
@@ -510,6 +509,7 @@ STAGE_CHOICES = [
 # Choices for Payment Frequency
 PAYMENT_FREQUENCY_CHOICES = [
     ('D', 'Daily'),
+    ('M', 'Monthly'),
     ('Q', 'Quarterly'),
     ('H', 'Half-Yearly'),
     ('Y', 'Yearly')
@@ -519,6 +519,7 @@ PAYMENT_FREQUENCY_CHOICES = [
 class FSI_CreditRating_Stage(models.Model):
     credit_rating = models.CharField(max_length=50, unique=True)  # e.g., "AAA SNP"
     stage = models.CharField(max_length=10, choices=STAGE_CHOICES)  # Use choices for stages
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     class Meta:
         db_table = "FSI_CreditRating_Stage"  # Updated table name
 # Days Past Due to Stage Mapping
@@ -527,6 +528,7 @@ class FSI_DPD_Stage_Mapping(models.Model):
     stage_1_threshold = models.IntegerField()  # DPD days for Stage 1
     stage_2_threshold = models.IntegerField()  # DPD days for Stage 2
     stage_3_threshold = models.IntegerField()  # DPD days for Stage 3
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     class Meta:
         db_table = "FSI_DPD_Stage_Mapping"  # Updated table name
 
@@ -542,6 +544,7 @@ AMRT_CHOICES = [
 class CoolingPeriodDefinition(models.Model):
     v_amrt_term_unit = models.CharField(max_length=1,choices=AMRT_CHOICES)  # M (Monthly), Q (Quarterly), H (Half-Yearly), Y (Yearly)
     n_cooling_period_days = models.IntegerField()  # Number of days for cooling period
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'FSI_Cooling_Period_Definition'
@@ -553,6 +556,7 @@ class Dim_Delinquency_Band(models.Model):
     n_delq_lower_value = models.PositiveIntegerField()  # Number(5,0) for N_DELQ_LOWER_VALUE
     n_delq_upper_value = models.PositiveIntegerField()  # Number(5,0) for N_DELQ_UPPER_VALUE
     v_amrt_term_unit = models.CharField(max_length=1, null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'dim_delinquency_band'  # Custom table name
@@ -564,6 +568,7 @@ class Credit_Rating_Code_Band(models.Model):
     date = models.DateField(default=timezone.now)
     v_rating_code = models.CharField(max_length=10, primary_key=True)  # Primary Key for Credit Rating Code
     v_rating_desc = models.CharField(max_length=100)  # Description for the rating code
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'dim_credit_rating_code_band'  # Custom table name
@@ -679,6 +684,7 @@ class ECLMethod(models.Model):
     uses_discounting = models.BooleanField(default=True)  # Default to 'yes' for discounting (EIR)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if ECLMethod.objects.exists() and not self.pk:
@@ -695,6 +701,7 @@ class ReportColumnConfig(models.Model):
     report_name = models.CharField(max_length=20,default='default_report')
     selected_columns = models.JSONField()  # Store the selected columns as a list in JSON format
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'dim_report_column_map'
@@ -717,6 +724,7 @@ class Function(models.Model):
 class Process(models.Model):
     process_name = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'dim_process'
@@ -728,6 +736,7 @@ class RunProcess(models.Model):
     process = models.ForeignKey(Process, on_delete=models.CASCADE, related_name='run_processes')
     function = models.ForeignKey(Function, on_delete=models.CASCADE)
     order = models.PositiveIntegerField()  # Order in which the function will be executed
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         ordering = ['order']  # Ensures the functions are executed in the specified order
@@ -745,7 +754,7 @@ class FunctionExecutionStatus(models.Model):
     execution_order = models.PositiveIntegerField(null=True)
     reporting_date = models.DateField(null=True)
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Ongoing', 'Ongoing'), ('Success', 'Success'), ('Failed', 'Failed')], default='Pending')
-    
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)  # Link to the User model
     # Track process execution instances
     process_run_id = models.CharField(max_length=50)  # Combined process_id, execution_date, and run_count
     run_count = models.PositiveIntegerField()  # Tracks how many times this process has been executed on a particular date
