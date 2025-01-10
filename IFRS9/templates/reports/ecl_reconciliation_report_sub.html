@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Include Sidebar Template -->
+        <div id="sidebar-container" class="col-md-3 col-lg-2 d-md-block sidebar">
+            {% include 'reports/report_sidebar.html' %}
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 col-lg-10 px-md-4" id="main-content">
+            <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">ECL Reconciliation Report - Grouped by {{ group_by_field }}</h1>
+
+            <!-- Data Table with Green Header -->
+            <!-- Data Table with Green Header -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #71aeee; color: black; text-align: center;">
+                            <th colspan="1"></th>
+                            <th colspan="4">Reporting date 1 ({{ request.session.fic_mis_date1 }}) - Run Key 1 ({{ request.session.run_key1 }})</th>
+                            <th colspan="4">Reporting date 2 ({{ request.session.fic_mis_date2 }}) - Run Key 2 ({{ request.session.run_key2 }})</th>
+                            <th colspan="3">Differences</th>
+                            <th colspan="2">Total Accounts</th>
+                            <th>Status</th>
+                        </tr>
+                        <tr style="background-color: #005082; color: white; text-align: center;">
+                            <th>{{ group_by_field }}</th>
+                            <th>EAD Orig Currency</th>
+                            <th>EAD Reporting Currency</th>
+                            <th>12 Month ECL</th>
+                            <th>Lifetime ECL</th>
+                            <th>EAD Orig Currency</th>
+                            <th>EAD Reporting Currency</th>
+                            <th>12 Month ECL</th>
+                            <th>Lifetime ECL</th>
+                            <th>EAD Reporting Currency</th>
+                            <th>12 Month ECL</th>
+                            <th>Lifetime ECL</th>
+                            <th>({{ request.session.fic_mis_date1 }}) Key ({{ request.session.run_key1 }})</th>
+                            <th>({{ request.session.fic_mis_date2 }}) Key({{ request.session.run_key2 }})</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in grouped_data %}
+                        <tr>
+                            <td>{{ row|get_item:group_by_field }}</td>
+                            <td style="text-align: right;">{{ row.n_exposure_at_default_ncy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_exposure_at_default_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_12m_ecl_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_lifetime_ecl_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_exposure_at_default_ncy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_exposure_at_default_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_12m_ecl_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_lifetime_ecl_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.difference_ead_rcy|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.difference_12m_ecl|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.difference_lifetime_ecl|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_accounts_in_higher|intcomma }}</td>
+                            <td style="text-align: right;">{{ row.n_accounts_in_lower|intcomma }}</td>
+                            <td>{{ row.status_ead_ncy }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #d1e7dd; font-weight: bold;">
+                            <td><strong>Grand Total</strong></td>
+                            <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_ncy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_12m_ecl_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_lifetime_ecl_rcy_higher|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_ncy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_12m_ecl_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_lifetime_ecl_rcy_lower|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.difference_ead_rcy|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.difference_12m_ecl|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.difference_lifetime_ecl|floatformat:2|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_accounts_in_higher|intcomma }}</td>
+                            <td style="text-align: right;">{{ grand_totals.n_accounts_in_lower|intcomma }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Second Table for Percentages -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #71aeee; color: black; text-align: center;">
+                            <th colspan="1"></th>
+                            <th colspan="2">Reporting date 1 ({{ request.session.fic_mis_date1 }}) - Run Key 1 ({{ request.session.run_key1 }})</th>
+                            <th colspan="2">Reporting date 2 ({{ request.session.fic_mis_date2 }}) - Run Key 2 ({{ request.session.run_key2 }})</th>
+                            <th colspan="2">Total Accounts</th>
+                            <th colspan="3">Differences</th>
+                        </tr>
+                        <tr style="background-color: #005082; color: white; text-align: center;">
+                            <th>{{ group_by_field }}</th>
+                            <th>% of 12 Month ECL</th>
+                            <th>% of Lifetime ECL</th>
+                            <th>% of 12 Month ECL</th>
+                            <th>% of Lifetime ECL</th>
+                            <th>% of Total Accounts (Date 1)</th>
+                            <th>% of Total Accounts (Date 2)</th>
+                            <th>% of EAD Reporting Currency</th>
+                            <th>% of 12 Month ECL</th>
+                            <th>% of Lifetime ECL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in grouped_data_percentages %}
+                        <tr>
+                            <td>{{ row|get_item:group_by_field }}</td>
+                            <td style="text-align: right;">{{ row.percent_12m_ecl_higher|floatformat:2 }}%</td>
+                            <td style="text-align: right;">{{ row.percent_lifetime_ecl_higher|floatformat:2 }}%</td>
+                            <td style="text-align: right;">{{ row.percent_12m_ecl_lower|floatformat:2 }}%</td>
+                            <td style="text-align: right;">{{ row.percent_lifetime_ecl_lower|floatformat:2 }}%</td>
+                            <td style="text-align: right;">{{ row.percent_total_accounts_higher|floatformat:2 }}%</td>
+                            <td style="text-align: right;">{{ row.percent_total_accounts_lower|floatformat:2 }}%</td>
+                            <td style="text-align: right;">{{ row.percent_difference_ead_rcy|floatformat:2 }}%</td>
+                            <td style="text-align: right;">{{ row.percent_difference_12m_ecl|floatformat:2 }}%</td>
+                            <td style="text-align: right;">{{ row.percent_difference_lifetime_ecl|floatformat:2 }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+
+            <form method="POST" action="{% url 'export_ecl_reconciliation_to_excel' %}">
+                {% csrf_token %}
+                <button id="download-button" class="btn btn-success btn-sm shadow-sm"  type="submit">
+                    <i class="fas fa-download"></i> Download Report as Excel
+                </button>
+            </form>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+<style>
+    /* Adjust sidebar and main content for screen sizes */
+    #sidebar-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 250px;
+        height: 100vh;
+        background-color: #003366;
+        color: #ffffff;
+        overflow-y: auto;
+        padding-top: 20px;
+    }
+
+    #main-content {
+        margin-left: 250px;
+        padding-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        #sidebar-container {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+        #main-content {
+            margin-left: 0;
+            padding-top: 20px;
+        }
+    }
+
+    /* Style table headers */
+    .table thead th {
+        background-color: #005082;
+        color: white;
+        text-align: center;
+    }
+    
+    .table tfoot tr {
+        background-color: #d1e7dd;
+        font-weight: bold;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+</style>

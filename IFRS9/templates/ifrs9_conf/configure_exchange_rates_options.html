@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center mb-4">Configure Exchange Rates</h1>
+    <!-- Back Button -->
+    <a href="{% url 'ifrs9_configuration' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+
+    <br>
+    <div class="row justify-content-center">
+        <!-- Supported Currencies Card -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="icon-circle bg-primary mb-3 mx-auto">
+                        <i class="fas fa-list-alt fa-3x text-white"></i>
+                    </div>
+                    <h5 class="card-title mt-2">Supported Currencies</h5>
+                    <p class="card-text">View the list of currencies supported for exchange rate configuration.</p>
+                    <a href="{% url 'supported_currencies' %}" class="btn btn-primary mt-3 w-100">View Supported Currencies</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enable/Disable Exchange Rates Card -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="icon-circle bg-info mb-3 mx-auto">
+                        <i class="fas fa-toggle-on fa-3x text-white"></i>
+                    </div>
+                    <h5 class="card-title mt-2">Enable/Disable Process</h5>
+                    <p class="card-text">Toggle the process for automatically fetching exchange rates from the API.</p>
+                    <a href="{% url 'configure_exchange_rate_process' %}" class="btn btn-info mt-3 w-100">Enable/Disable Process</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Exchange Rate Card -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="icon-circle bg-primary mb-3 mx-auto">
+                        <i class="fas fa-search-dollar fa-3x text-white"></i>
+                    </div>
+                    <h5 class="card-title mt-2">View Exchange Rate</h5>
+                    <p class="card-text">Submit a currency code to retrieve the current exchange rate.</p>
+                    <a href="{% url 'view_exchange_rate' %}" class="btn btn-primary mt-3 w-100">Check Exchange Rate</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .card-title {
+        font-weight: bold;
+    }
+    .card-text {
+        color: #6c757d;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+    }
+    .card {
+        height: 100%;
+    }
+</style>
+
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar inclusion -->
+        <div class="col-md-3 col-lg-2 d-none d-md-block" id="sidebar-wrapper">
+            {% include 'reports/report_sidebar.html' %}
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 col-lg-10 col-12 px-md-4" id="main-content">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="text-2xl font-bold mb-8 text-gray-800">PD Analysis Report - Grouped by {{ group_by_field }}</h1>
+            </div>
+
+            {% if error_message %}
+                <div class="alert alert-danger text-center">{{ error_message }}</div>
+            {% endif %}
+
+            <!-- Data Table -->
+            <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                <thead>
+                    <tr style="background-color: #71aeee; color: black; text-align: center;">
+                        <th>{{ group_by_field }}</th>
+                        <th>12 Month PD Min</th>
+                        <th>12 Month PD Max</th>
+                        <th>Lifetime PD Min</th>
+                        <th>Lifetime PD Max</th>
+                        <th>LGD Min</th>
+                        <th>LGD Max</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in grouped_data %}
+                    <tr>
+                        <td>{{ row|get_item:group_by_field }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"12 Month PD Min"|floatformat:4 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"12 Month PD Max"|floatformat:4 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"Lifetime PD Min"|floatformat:4 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"Lifetime PD Max"|floatformat:4 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"LGD Min"|floatformat:2 }}</td>
+                        <td style="text-align: right;">{{ row|get_item:"LGD Max"|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Download Button -->
+            <form method="POST" action="{% url 'export_pd_report_to_excel' %}">
+                {% csrf_token %}
+                <button id="download-button" class="btn btn-success btn-sm shadow-sm"  type="submit">
+                    <i class="fas fa-download"></i> Download Report as Excel
+                </button>
+            </form>
+        </main>
+    </div>
+</div>
+
+<style>
+    /* Sidebar Styling */
+    #sidebar-wrapper {
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        width: 250px;
+        background-color: #003366;
+        color: #ffffff;
+        overflow-y: auto;
+        z-index: 1000;
+    }
+
+    /* Adjust main content to offset from the sidebar */
+    #main-content {
+        margin-left: 250px; /* Space for sidebar on larger screens */
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 767px) {
+        /* Hide the sidebar and expand main content to full width */
+        #sidebar-wrapper {
+            display: none;
+        }
+
+        #main-content {
+            margin-left: 0;
+        }
+
+        /* Add a button to toggle the sidebar on small screens */
+        .sidebar-toggle-btn {
+            display: block;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1100;
+            background-color: #003366;
+            color: #ffffff;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+    }
+
+    /* Main content styling */
+    .table {
+        margin-top: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+</style>
+
+<!-- Sidebar Toggle Script for Small Screens -->
+<script>
+    // Function to toggle sidebar on small screens
+    function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar-wrapper");
+        if (sidebar.style.display === "none" || sidebar.style.display === "") {
+            sidebar.style.display = "block";
+        } else {
+            sidebar.style.display = "none";
+        }
+    }
+</script>
+
+<!-- Sidebar Toggle Button for Small Screens -->
+<button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰ Menu</button>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center mb-4">Configure Reporting Currency</h1>
+    
+    <!-- Back Button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'ifrs9_configuration' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <!-- Configuration Options -->
+    <div class="row justify-content-center">
+        <!-- Define Currency Codes -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="icon-circle bg-info mb-3">
+                        <i class="fas fa-coins fa-3x text-white"></i>
+                    </div>
+                    <h5 class="card-title mt-2">Define Currency Codes</h5>
+                    <p class="card-text">Add or edit currency codes used in the system for reporting purposes.</p>
+                    <a href="{% url 'define_reporting_currency_view' %}" class="btn btn-info mt-3 w-100">Define Currency Codes</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Define Reporting Currency -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="icon-circle bg-secondary mb-3">
+                        <i class="fas fa-globe fa-3x text-white"></i>
+                    </div>
+                    <h5 class="card-title mt-2">Set Reporting Currency</h5>
+                    <p class="card-text">Set the default currency for all IFRS9 reports.</p>
+                    <a href="{% url 'reporting_currency_list' %}" class="btn btn-secondary mt-3 w-100">Define Reporting Currency</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styling for Cards -->
+<style>
+    .icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .card-title {
+        font-weight: bold;
+    }
+    .card-text {
+        color: #6c757d;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+    }
+</style>
+
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+ <!-- Messages Block -->
+ {% if messages %}
+ <div class="container mt-4">
+     {% for message in messages %}
+     <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+         {{ message }}
+         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+     </div>
+     {% endfor %}
+ </div>
+ {% endif %}
+
+<div class="container-fluid py-4">
+
+    <!-- Back button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'configure_stages' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Stage Configuration
+        </a>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-primary">Staging Using Delinquent Days</h1>
+        <a href="{% url 'dpd_stage_mapping_add' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Add
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>Payment Frequency</th>
+                    <th>Stage 1 Threshold (days)</th>
+                    <th>Stage 2 Threshold (days)</th>
+                    <th>Stage 3 Threshold (days)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mapping in dpd_mappings %}
+                <tr>
+                    <td>{{ mapping.get_payment_frequency_display }}</td>
+                    <td>{{ mapping.stage_1_threshold }}</td>
+                    <td>{{ mapping.stage_2_threshold }}</td>
+                    <td>{{ mapping.stage_3_threshold }}</td>
+                    <td>
+                        <a href="{% url 'dpd_stage_mapping_edit' mapping.pk %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'dpd_stage_mapping_delete' mapping.pk %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">No data found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between">
+        <p class="text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</p>
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">&laquo; First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">&lsaquo; Previous</a>
+                </li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">Next &rsaquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">Last &raquo;</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endblock %}

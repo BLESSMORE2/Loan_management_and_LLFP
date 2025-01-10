@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Include Sidebar Template -->
+        {% include 'reports/report_sidebar.html' %}
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="margin-left: 250px;">
+            <h1 class="text-2xl font-bold mb-8 text-gray-800 text-center">ECL Summary Report - Grouped by {{ group_by_field }}</h1>
+
+            <!-- First Table: Absolute Numbers -->
+            <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                <thead>
+                    <tr style="background-color: #71aeee; color: black; text-align: center;">
+                        <th>{{ group_by_field }}</th>
+                        <th>EAD Orig Currency</th>
+                        <th>EAD Reporting Currency</th>
+                        <th>12 Month Reporting ECL</th>
+                        <th>Lifetime Reporting ECL</th>
+                        <th>Number of Accounts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in grouped_data %}
+                    <tr>
+                        <td>{{ row|get_item:group_by_field }}</td>
+                        <td style="text-align: right;">{{ row.n_exposure_at_default_ncy|format_number }}</td>
+                        <td style="text-align: right;">{{ row.n_exposure_at_default_rcy|format_number }}</td>
+                        <td style="text-align: right;">{{ row.n_12m_ecl_rcy|format_number }}</td>
+                        <td style="text-align: right;">{{ row.n_lifetime_ecl_rcy|format_number }}</td>
+                        <td style="text-align: right;">{{ row.n_account_number|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr style="background-color: #d1e7dd; font-weight: bold;">
+                        <td><strong>Grand Total</strong></td>
+                        <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_ncy|format_number }}</td>
+                        <td style="text-align: right;">{{ grand_totals.n_exposure_at_default_rcy|format_number }}</td>
+                        <td style="text-align: right;">{{ grand_totals.n_12m_ecl_rcy|format_number }}</td>
+                        <td style="text-align: right;">{{ grand_totals.n_lifetime_ecl_rcy|format_number }}</td>
+                        <td style="text-align: right;">{{ grand_totals.n_account_number|intcomma }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <!-- Second Table: Percentages -->
+            <table class="table table-bordered table-hover table-striped mt-4" style="width: 100%; font-size: 14px;">
+                <thead>
+                    <tr style="background-color: #71aeee; color: black; text-align: center;">
+                        <th>{{ group_by_field }}</th>
+                        <th>% of 12 Month Reporting ECL</th>
+                        <th>% of Lifetime Reporting ECL</th>
+                        <th>% of Number of Accounts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in grouped_data_percentages %}
+                    <tr>
+                        <td>{{ row|get_item:group_by_field }}</td>
+                        <td style="text-align: right;">{{ row.percent_12m_ecl_rcy|floatformat:2 }}%</td>
+                        <td style="text-align: right;">{{ row.percent_lifetime_ecl_rcy|floatformat:2 }}%</td>
+                        <td style="text-align: right;">{{ row.percent_accounts|floatformat:2 }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <form method="POST" action="{% url 'export_ecl_report_to_excel' %}">
+                {% csrf_token %}
+                <button id="download-button" class="btn btn-success btn-sm shadow-sm"  type="submit">
+                    <i class="fas fa-download"></i> Download Report as Excel
+                </button>
+            </form>
+        </main>
+    </div>
+</div>
+{% endblock %}

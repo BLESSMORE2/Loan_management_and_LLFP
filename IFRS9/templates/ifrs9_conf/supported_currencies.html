@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center mb-4">Supported Currencies from Exchange Rate API</h1>
+     <!-- Back Button -->
+     <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    
+    <br>
+    <!-- Introduction and Overview -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Currency Overview</h5>
+            <p class="card-text">
+                Below is a list of all the currencies that our system supports for currency conversion, powered by the <strong>Exchange Rate API</strong>. These currencies are listed with their official ISO 4217 three-letter currency code, their name, and the country they belong to. This ensures accurate exchange rates across our financial operations.
+            </p>
+            <p class="card-text">
+                Be aware that some older currency codes may be deprecated and replaced over time due to economic changes. To learn more about ISO 4217 currency codes, please visit 
+                <a href="https://en.wikipedia.org/wiki/ISO_4217" target="_blank">ISO 4217 on Wikipedia</a>.
+            </p>
+        </div>
+    </div>
+
+    <!-- Unsupported Currencies -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Unsupported Currencies</h5>
+            <p class="card-text">
+                The following currency is not supported due to sanctions and restrictions on international trade:
+            </p>
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Currency Code</th>
+                        <th>Currency Name</th>
+                        <th>Country</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>KPW</td>
+                        <td>North Korean Won</td>
+                        <td>North Korea</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Currencies with High Volatility -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Currencies with High Volatility</h5>
+            <p class="card-text">
+                The following currencies are known for their volatility, and we rely on official central bank rates via the <strong>Exchange Rate API</strong>:
+            </p>
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Currency Code</th>
+                        <th>Currency Name</th>
+                        <th>Country</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>ARS</td><td>Argentine Peso</td><td>Argentina</td></tr>
+                    <tr><td>2</td><td>LYD</td><td>Libyan Dinar</td><td>Libya</td></tr>
+                    <tr><td>3</td><td>SSP</td><td>South Sudanese Pound</td><td>South Sudan</td></tr>
+                    <tr><td>4</td><td>SYP</td><td>Syrian Pound</td><td>Syria</td></tr>
+                    <tr><td>5</td><td>VES</td><td>Venezuelan Bolívar Soberano</td><td>Venezuela</td></tr>
+                    <tr><td>6</td><td>YER</td><td>Yemeni Rial</td><td>Yemen</td></tr>
+                    <tr><td>7</td><td>ZWL</td><td>Zimbabwean Dollar</td><td>Zimbabwe</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Full List of Supported Currencies -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">List of Supported Currencies</h5>
+            <p class="card-text">
+                These currencies are supported through the Exchange Rate API, covering over 99% of globally recognized currencies.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Currency Code</th>
+                            <th>Currency Name</th>
+                            <th>Country</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>AED</td><td>UAE Dirham</td><td>United Arab Emirates</td></tr>
+                        <tr><td>2</td><td>AFN</td><td>Afghan Afghani</td><td>Afghanistan</td></tr>
+                        <tr><td>3</td><td>ALL</td><td>Albanian Lek</td><td>Albania</td></tr>
+                        <tr><td>4</td><td>AMD</td><td>Armenian Dram</td><td>Armenia</td></tr>
+                        <tr><td>5</td><td>ANG</td><td>Netherlands Antillian Guilder</td><td>Netherlands Antilles</td></tr>
+                        <tr><td>6</td><td>AOA</td><td>Angolan Kwanza</td><td>Angola</td></tr>
+                        <tr><td>7</td><td>ARS</td><td>Argentine Peso</td><td>Argentina</td></tr>
+                        <tr><td>8</td><td>AUD</td><td>Australian Dollar</td><td>Australia</td></tr>
+                        <tr><td>9</td><td>AWG</td><td>Aruban Florin</td><td>Aruba</td></tr>
+                        <tr><td>10</td><td>AZN</td><td>Azerbaijani Manat</td><td>Azerbaijan</td></tr>
+                        <tr><td>11</td><td>BAM</td><td>Bosnia and Herzegovina Mark</td><td>Bosnia and Herzegovina</td></tr>
+                        <tr><td>12</td><td>BBD</td><td>Barbados Dollar</td><td>Barbados</td></tr>
+                        <tr><td>13</td><td>BDT</td><td>Bangladeshi Taka</td><td>Bangladesh</td></tr>
+                        <tr><td>14</td><td>BGN</td><td>Bulgarian Lev</td><td>Bulgaria</td></tr>
+                        <tr><td>15</td><td>BHD</td><td>Bahraini Dinar</td><td>Bahrain</td></tr>
+                        <tr><td>16</td><td>BIF</td><td>Burundian Franc</td><td>Burundi</td></tr>
+                        <tr><td>17</td><td>BMD</td><td>Bermudian Dollar</td><td>Bermuda</td></tr>
+                        <tr><td>18</td><td>BND</td><td>Brunei Dollar</td><td>Brunei</td></tr>
+                        <tr><td>19</td><td>BOB</td><td>Bolivian Boliviano</td><td>Bolivia</td></tr>
+                        <tr><td>20</td><td>BRL</td><td>Brazilian Real</td><td>Brazil</td></tr>
+                        <tr><td>21</td><td>BSD</td><td>Bahamian Dollar</td><td>Bahamas</td></tr>
+                        <tr><td>22</td><td>BTN</td><td>Bhutanese Ngultrum</td><td>Bhutan</td></tr>
+                        <tr><td>23</td><td>BWP</td><td>Botswana Pula</td><td>Botswana</td></tr>
+                        <tr><td>24</td><td>BYN</td><td>Belarusian Ruble</td><td>Belarus</td></tr>
+                        <tr><td>25</td><td>BZD</td><td>Belize Dollar</td><td>Belize</td></tr>
+                        <tr><td>26</td><td>CAD</td><td>Canadian Dollar</td><td>Canada</td></tr>
+                        <tr><td>27</td><td>CDF</td><td>Congolese Franc</td><td>Democratic Republic of the Congo</td></tr>
+                        <tr><td>28</td><td>CHF</td><td>Swiss Franc</td><td>Switzerland</td></tr>
+                        <tr><td>29</td><td>CLP</td><td>Chilean Peso</td><td>Chile</td></tr>
+                        <tr><td>30</td><td>CNY</td><td>Chinese Renminbi</td><td>China</td></tr>
+                        <tr><td>31</td><td>COP</td><td>Colombian Peso</td><td>Colombia</td></tr>
+                        <tr><td>32</td><td>CRC</td><td>Costa Rican Colon</td><td>Costa Rica</td></tr>
+                        <tr><td>33</td><td>CUP</td><td>Cuban Peso</td><td>Cuba</td></tr>
+                        <tr><td>34</td><td>CVE</td><td>Cape Verdean Escudo</td><td>Cape Verde</td></tr>
+                        <tr><td>35</td><td>CZK</td><td>Czech Koruna</td><td>Czech Republic</td></tr>
+                        <tr><td>36</td><td>DJF</td><td>Djiboutian Franc</td><td>Djibouti</td></tr>
+                        <tr><td>37</td><td>DKK</td><td>Danish Krone</td><td>Denmark</td></tr>
+                        <tr><td>38</td><td>DOP</td><td>Dominican Peso</td><td>Dominican Republic</td></tr>
+                        <tr><td>39</td><td>DZD</td><td>Algerian Dinar</td><td>Algeria</td></tr>
+                        <tr><td>40</td><td>EGP</td><td>Egyptian Pound</td><td>Egypt</td></tr>
+                        <tr><td>41</td><td>ERN</td><td>Eritrean Nakfa</td><td>Eritrea</td></tr>
+                        <tr><td>42</td><td>ETB</td><td>Ethiopian Birr</td><td>Ethiopia</td></tr>
+                        <tr><td>43</td><td>EUR</td><td>Euro</td><td>European Union</td></tr>
+                        <tr><td>44</td><td>FJD</td><td>Fiji Dollar</td><td>Fiji</td></tr>
+                        <tr><td>45</td><td>FKP</td><td>Falkland Islands Pound</td><td>Falkland Islands</td></tr>
+                        <tr><td>46</td><td>FOK</td><td>Faroese Króna</td><td>Faroe Islands</td></tr>
+                        <tr><td>47</td><td>GBP</td><td>Pound Sterling</td><td>United Kingdom</td></tr>
+                        <tr><td>48</td><td>GEL</td><td>Georgian Lari</td><td>Georgia</td></tr>
+                        <tr><td>49</td><td>GGP</td><td>Guernsey Pound</td><td>Guernsey</td></tr>
+                        <tr><td>50</td><td>GHS</td><td>Ghanaian Cedi</td><td>Ghana</td></tr>
+                        <tr><td>51</td><td>GIP</td><td>Gibraltar Pound</td><td>Gibraltar</td></tr>
+                        <tr><td>52</td><td>GMD</td><td>Gambian Dalasi</td><td>The Gambia</td></tr>
+                        <tr><td>53</td><td>GNF</td><td>Guinean Franc</td><td>Guinea</td></tr>
+                        <tr><td>54</td><td>GTQ</td><td>Guatemalan Quetzal</td><td>Guatemala</td></tr>
+                        <tr><td>55</td><td>GYD</td><td>Guyanese Dollar</td><td>Guyana</td></tr>
+                        <tr><td>56</td><td>HKD</td><td>Hong Kong Dollar</td><td>Hong Kong</td></tr>
+                        <tr><td>57</td><td>HNL</td><td>Honduran Lempira</td><td>Honduras</td></tr>
+                        <tr><td>58</td><td>HRK</td><td>Croatian Kuna</td><td>Croatia</td></tr>
+                        <tr><td>59</td><td>HTG</td><td>Haitian Gourde</td><td>Haiti</td></tr>
+                        <tr><td>60</td><td>HUF</td><td>Hungarian Forint</td><td>Hungary</td></tr>
+                        <tr><td>61</td><td>IDR</td><td>Indonesian Rupiah</td><td>Indonesia</td></tr>
+                        <tr><td>62</td><td>ILS</td><td>Israeli New Shekel</td><td>Israel</td></tr>
+                        <tr><td>63</td><td>INR</td><td>Indian Rupee</td><td>India</td></tr>
+                        <tr><td>64</td><td>IQD</td><td>Iraqi Dinar</td><td>Iraq</td></tr>
+                        <tr><td>65</td><td>IRR</td><td>Iranian Rial</td><td>Iran</td></tr>
+                        <tr><td>66</td><td>ISK</td><td>Icelandic Króna</td><td>Iceland</td></tr>
+                        <tr><td>67</td><td>JEP</td><td>Jersey Pound</td><td>Jersey</td></tr>
+                        <tr><td>68</td><td>JMD</td><td>Jamaican Dollar</td><td>Jamaica</td></tr>
+                        <tr><td>69</td><td>JOD</td><td>Jordanian Dinar</td><td>Jordan</td></tr>
+                        <tr><td>70</td><td>JPY</td><td>Japanese Yen</td><td>Japan</td></tr>
+                        <tr><td>71</td><td>KES</td><td>Kenyan Shilling</td><td>Kenya</td></tr>
+                        <tr><td>72</td><td>KGS</td><td>Kyrgyzstani Som</td><td>Kyrgyzstan</td></tr>
+                        <tr><td>73</td><td>KHR</td><td>Cambodian Riel</td><td>Cambodia</td></tr>
+                        <tr><td>74</td><td>KID</td><td>Kiribati Dollar</td><td>Kiribati</td></tr>
+                        <tr><td>75</td><td>KMF</td><td>Comorian Franc</td><td>Comoros</td></tr>
+                        <tr><td>76</td><td>KRW</td><td>South Korean Won</td><td>South Korea</td></tr>
+                        <tr><td>77</td><td>KWD</td><td>Kuwaiti Dinar</td><td>Kuwait</td></tr>
+                        <tr><td>78</td><td>KYD</td><td>Cayman Islands Dollar</td><td>Cayman Islands</td></tr>
+                        <tr><td>79</td><td>KZT</td><td>Kazakhstani Tenge</td><td>Kazakhstan</td></tr>
+                        <tr><td>80</td><td>LAK</td><td>Lao Kip</td><td>Laos</td></tr>
+                        <tr><td>81</td><td>LBP</td><td>Lebanese Pound</td><td>Lebanon</td></tr>
+                        <tr><td>82</td><td>LKR</td><td>Sri Lanka Rupee</td><td>Sri Lanka</td></tr>
+                        <tr><td>83</td><td>LRD</td><td>Liberian Dollar</td><td>Liberia</td></tr>
+                        <tr><td>84</td><td>LSL</td><td>Lesotho Loti</td><td>Lesotho</td></tr>
+                        <tr><td>85</td><td>LYD</td><td>Libyan Dinar</td><td>Libya</td></tr>
+                        <tr><td>86</td><td>MAD</td><td>Moroccan Dirham</td><td>Morocco</td></tr>
+                        <tr><td>87</td><td>MDL</td><td>Moldovan Leu</td><td>Moldova</td></tr>
+                        <tr><td>88</td><td>MGA</td><td>Malagasy Ariary</td><td>Madagascar</td></tr>
+                        <tr><td>89</td><td>MKD</td><td>Macedonian Denar</td><td>North Macedonia</td></tr>
+                        <tr><td>90</td><td>MMK</td><td>Burmese Kyat</td><td>Myanmar</td></tr>
+                        <tr><td>91</td><td>MNT</td><td>Mongolian Tögrög</td><td>Mongolia</td></tr>
+                        <tr><td>92</td><td>MOP</td><td>Macanese Pataca</td><td>Macau</td></tr>
+                        <tr><td>93</td><td>MRU</td><td>Mauritanian Ouguiya</td><td>Mauritania</td></tr>
+                        <tr><td>94</td><td>MUR</td><td>Mauritian Rupee</td><td>Mauritius</td></tr>
+                        <tr><td>95</td><td>MVR</td><td>Maldivian Rufiyaa</td><td>Maldives</td></tr>
+                        <tr><td>96</td><td>MWK</td><td>Malawian Kwacha</td><td>Malawi</td></tr>
+                        <tr><td>97</td><td>MXN</td><td>Mexican Peso</td><td>Mexico</td></tr>
+                        <tr><td>98</td><td>MYR</td><td>Malaysian Ringgit</td><td>Malaysia</td></tr>
+                        <tr><td>99</td><td>MZN</td><td>Mozambican Metical</td><td>Mozambique</td></tr>
+                        <tr><td>100</td><td>NAD</td><td>Namibian Dollar</td><td>Namibia</td></tr>
+                        <tr><td>101</td><td>NGN</td><td>Nigerian Naira</td><td>Nigeria</td></tr>
+                        <tr><td>102</td><td>NIO</td><td>Nicaraguan Córdoba</td><td>Nicaragua</td></tr>
+                        <tr><td>103</td><td>NOK</td><td>Norwegian Krone</td><td>Norway</td></tr>
+                        <tr><td>104</td><td>NPR</td><td>Nepalese Rupee</td><td>Nepal</td></tr>
+                        <tr><td>105</td><td>NZD</td><td>New Zealand Dollar</td><td>New Zealand</td></tr>
+                        <tr><td>106</td><td>OMR</td><td>Omani Rial</td><td>Oman</td></tr>
+                        <tr><td>107</td><td>PAB</td><td>Panamanian Balboa</td><td>Panama</td></tr>
+                        <tr><td>108</td><td>PEN</td><td>Peruvian Sol</td><td>Peru</td></tr>
+                        <tr><td>109</td><td>PGK</td><td>Papua New Guinean Kina</td><td>Papua New Guinea</td></tr>
+                        <tr><td>110</td><td>PHP</td><td>Philippine Peso</td><td>Philippines</td></tr>
+                        <tr><td>111</td><td>PKR</td><td>Pakistani Rupee</td><td>Pakistan</td></tr>
+                        <tr><td>112</td><td>PLN</td><td>Polish Złoty</td><td>Poland</td></tr>
+                        <tr><td>113</td><td>PYG</td><td>Paraguayan Guaraní</td><td>Paraguay</td></tr>
+                        <tr><td>114</td><td>QAR</td><td>Qatari Riyal</td><td>Qatar</td></tr>
+                        <tr><td>115</td><td>RON</td><td>Romanian Leu</td><td>Romania</td></tr>
+                        <tr><td>116</td><td>RSD</td><td>Serbian Dinar</td><td>Serbia</td></tr>
+                        <tr><td>117</td><td>RUB</td><td>Russian Ruble</td><td>Russia</td></tr>
+                        <tr><td>118</td><td>RWF</td><td>Rwandan Franc</td><td>Rwanda</td></tr>
+                        <tr><td>119</td><td>SAR</td><td>Saudi Riyal</td><td>Saudi Arabia</td></tr>
+                        <tr><td>120</td><td>SBD</td><td>Solomon Islands Dollar</td><td>Solomon Islands</td></tr>
+                        <tr><td>121</td><td>SCR</td><td>Seychellois Rupee</td><td>Seychelles</td></tr>
+                        <tr><td>122</td><td>SDG</td><td>Sudanese Pound</td><td>Sudan</td></tr>
+                        <tr><td>123</td><td>SEK</td><td>Swedish Krona</td><td>Sweden</td></tr>
+                        <tr><td>124</td><td>SGD</td><td>Singapore Dollar</td><td>Singapore</td></tr>
+                        <tr><td>125</td><td>SHP</td><td>Saint Helena Pound</td><td>Saint Helena</td></tr>
+                        <tr><td>126</td><td>SLE</td><td>Sierra Leonean Leone</td><td>Sierra Leone</td></tr>
+                        <tr><td>127</td><td>SOS</td><td>Somali Shilling</td><td>Somalia</td></tr>
+                        <tr><td>128</td><td>SRD</td><td>Surinamese Dollar</td><td>Suriname</td></tr>
+                        <tr><td>129</td><td>SSP</td><td>South Sudanese Pound</td><td>South Sudan</td></tr>
+                        <tr><td>130</td><td>STN</td><td>São Tomé and Príncipe Dobra</td><td>São Tomé and Príncipe</td></tr>
+                        <tr><td>131</td><td>SYP</td><td>Syrian Pound</td><td>Syria</td></tr>
+                        <tr><td>132</td><td>SZL</td><td>Eswatini Lilangeni</td><td>Eswatini</td></tr>
+                        <tr><td>133</td><td>THB</td><td>Thai Baht</td><td>Thailand</td></tr>
+                        <tr><td>134</td><td>TJS</td><td>Tajikistani Somoni</td><td>Tajikistan</td></tr>
+                        <tr><td>135</td><td>TMT</td><td>Turkmenistan Manat</td><td>Turkmenistan</td></tr>
+                        <tr><td>136</td><td>TND</td><td>Tunisian Dinar</td><td>Tunisia</td></tr>
+                        <tr><td>137</td><td>TOP</td><td>Tongan Paʻanga</td><td>Tonga</td></tr>
+                        <tr><td>138</td><td>TRY</td><td>Turkish Lira</td><td>Turkey</td></tr>
+                        <tr><td>139</td><td>TTD</td><td>Trinidad and Tobago Dollar</td><td>Trinidad and Tobago</td></tr>
+                        <tr><td>140</td><td>TVD</td><td>Tuvaluan Dollar</td><td>Tuvalu</td></tr>
+                        <tr><td>141</td><td>TWD</td><td>New Taiwan Dollar</td><td>Taiwan</td></tr>
+                        <tr><td>142</td><td>TZS</td><td>Tanzanian Shilling</td><td>Tanzania</td></tr>
+                        <tr><td>143</td><td>UAH</td><td>Ukrainian Hryvnia</td><td>Ukraine</td></tr>
+                        <tr><td>144</td><td>UGX</td><td>Ugandan Shilling</td><td>Uganda</td></tr>
+                        <tr><td>145</td><td>USD</td><td>United States Dollar</td><td>United States</td></tr>
+                        <tr><td>146</td><td>UYU</td><td>Uruguayan Peso</td><td>Uruguay</td></tr>
+                        <tr><td>147</td><td>UZS</td><td>Uzbekistani So'm</td><td>Uzbekistan</td></tr>
+                        <tr><td>148</td><td>VES</td><td>Venezuelan Bolívar Soberano</td><td>Venezuela</td></tr>
+                        <tr><td>149</td><td>VND</td><td>Vietnamese Đồng</td><td>Vietnam</td></tr>
+                        <tr><td>150</td><td>VUV</td><td>Vanuatu Vatu</td><td>Vanuatu</td></tr>
+                        <tr><td>151</td><td>WST</td><td>Samoan Tālā</td><td>Samoa</td></tr>
+                        <tr><td>152</td><td>XAF</td><td>Central African CFA Franc</td><td>CEMAC</td></tr>
+                        <tr><td>153</td><td>XCD</td><td>East Caribbean Dollar</td><td>Organisation of Eastern Caribbean States</td></tr>
+                        <tr><td>154</td><td>XDR</td><td>Special Drawing Rights</td><td>International Monetary Fund</td></tr>
+                        <tr><td>155</td><td>XOF</td><td>West African CFA Franc</td><td>CFA</td></tr>
+                        <tr><td>156</td><td>XPF</td><td>CFP Franc</td><td>Collectivités d'Outre-Mer</td></tr>
+                        <tr><td>157</td><td>YER</td><td>Yemeni Rial</td><td>Yemen</td></tr>
+                        <tr><td>158</td><td>ZAR</td><td>South African Rand</td><td>South Africa</td></tr>
+                        <tr><td>159</td><td>ZMW</td><td>Zambian Kwacha</td><td>Zambia</td></tr>
+                        <tr><td>160</td><td>ZWL</td><td>Zimbabwean Dollar</td><td>Zimbabwe</td></tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styling -->
+<style>
+    .table th, .table td {
+        vertical-align: middle;
+    }
+    .card-title {
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

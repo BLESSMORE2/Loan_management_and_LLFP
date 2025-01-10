@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Error Messages -->
+    {% if messages %}
+    <div class="alert alert-danger alert-dismissible fade show shadow" role="alert">
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    
+    <!-- Back Button -->
+    <a href="{% url 'reporting_home' %}" class="btn btn-outline-light text-primary border-primary mb-3">
+        <i class="fas fa-arrow-left"></i> Back to Reports
+    </a>
+
+    <div class="row">
+        <!-- Sidebar Filter -->
+        <div class="col-lg-3 col-md-4 mb-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="filter-form">
+                        <!-- Reporting Date -->
+                        <div class="form-group mb-3">
+                            <label for="fic_mis_date" class="form-label text-primary">Reporting Date:</label>
+                            <select id="fic_mis_date" name="fic_mis_date" class="form-select form-select-sm">
+                                <option value="">-- Select Date --</option>
+                                {% for date in fic_mis_dates %}
+                                    <option value="{{ date|date:'Y-m-d' }}" {% if fic_mis_date == date|date:'Y-m-d' %}selected{% endif %}>
+                                        {{ date|date:'Y-m-d' }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Run Key -->
+                        <div class="form-group mb-3">
+                            <label for="n_run_key" class="form-label text-primary">Run Key:</label>
+                            <select id="n_run_key" name="n_run_key" class="form-select form-select-sm">
+                                <option value="">-- Select Run Key --</option>
+                                <!-- Dynamically updated options -->
+                            </select>
+                        </div>
+
+                        <!-- Apply Filters Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-sm shadow-sm">Apply Filters</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9 col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title text-center mb-0">Report</h2>
+                </div>
+                <div class="card-body">
+                    {% if report_data %}
+                    <!-- Download Button -->
+                    <div class="d-flex justify-content-start mb-3">
+                        <button id="download-button" class="btn btn-success btn-sm shadow-sm">
+                            <i class="fas fa-download"></i> Download Report
+                        </button>
+                        <div id="loading-spinner" class="ms-3 d-none">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Report Table -->
+                    <div class="table-responsive" style="max-height: 550px; overflow-y: auto;">
+                        <table class="table table-bordered table-hover table-sm align-middle">
+                            <thead style="background-color: #003366; color: white;">
+                                <tr>
+                                    {% for column in selected_columns %}
+                                        <th class="text-center">{{ column|capfirst }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in report_data %}
+                                <tr>
+                                    {% for column in selected_columns %}
+                                    <td class="text-center">{{ row|get_item:column }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Navigation -->
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item {% if not report_data.has_previous %}disabled{% endif %}">
+                                <a class="page-link text-primary" href="?page=1&{{ request.GET.urlencode }}">First</a>
+                            </li>
+                            <li class="page-item {% if not report_data.has_previous %}disabled{% endif %}">
+                                {% if report_data.has_previous %}
+                                    <a class="page-link text-primary" href="?page={{ report_data.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a>
+                                {% else %}
+                                    <span class="page-link">Previous</span>
+                                {% endif %}
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    Page {{ report_data.number }} of {{ report_data.paginator.num_pages }}
+                                </span>
+                            </li>
+                            <li class="page-item {% if not report_data.has_next %}disabled{% endif %}">
+                                {% if report_data.has_next %}
+                                    <a class="page-link text-primary" href="?page={{ report_data.next_page_number }}&{{ request.GET.urlencode }}">Next</a>
+                                {% else %}
+                                    <span class="page-link">Next</span>
+                                {% endif %}
+                            </li>
+                            <li class="page-item {% if not report_data.has_next %}disabled{% endif %}">
+                                <a class="page-link text-primary" href="?page={{ report_data.paginator.num_pages }}&{{ request.GET.urlencode }}">Last</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    {% else %}
+                    <!-- No Data Message -->
+                    <div class="alert alert-info text-center" role="alert">
+                        No data available for this report.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for dynamically loading Run Key and Download Progress -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to handle dynamic filter changes
+    function updateDropdown(field, value) {
+        fetch(`/report/?field=${field}&value=${encodeURIComponent(value)}`, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status} - ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (field === 'fic_mis_date') {
+                const runKeyDropdown = document.getElementById('n_run_key');
+                runKeyDropdown.innerHTML = ''; // Clear current options
+                let defaultOption = document.createElement('option');
+                defaultOption.textContent = '-- Select Run Key --';
+                runKeyDropdown.appendChild(defaultOption);
+
+                data.n_run_keys.forEach(function(runKey) {
+                    let option = document.createElement('option');
+                    option.value = runKey;
+                    option.textContent = runKey;
+                    runKeyDropdown.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error in updating dropdown:', error);
+        });
+    }
+
+    // Event listener for the Reporting Date dropdown
+    document.getElementById('fic_mis_date').addEventListener('change', function() {
+        let fic_mis_date = this.value;
+        updateDropdown('fic_mis_date', fic_mis_date);
+    });
+
+    // Handle the download button click
+    const downloadButton = document.getElementById('download-button');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    downloadButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        loadingSpinner.classList.remove('d-none'); // Show the spinner
+        fetch("{% url 'download_report' %}", {
+            method: 'GET',
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status} - ${response.statusText}`);
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'ecl_full_report.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            alert('Error while downloading the report. Please try again.');
+        })
+        .finally(() => {
+            loadingSpinner.classList.add('d-none'); // Hide the spinner
+        });
+    });
+});
+</script>
+{% endblock %}

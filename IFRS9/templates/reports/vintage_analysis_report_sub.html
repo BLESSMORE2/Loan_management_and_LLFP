@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar for Group By and Filters -->
+        <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+            <div class="position-sticky pt-3 sidebar-content">
+                <ul class="nav flex-column">
+                    <!-- Back Button -->
+                    <li class="nav-item mb-4">
+                        <a href="{% url 'ecl_graphs_main_filter_view' %}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </li>
+                    <!-- Back Button -->
+                    <li class="nav-item mb-1">
+                        <a href="{% url 'vintage_analysis_main_filter_view' %}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </li>
+
+                    <!-- Chart Options Section -->
+                    <div class="sidebar-section">
+                        <h5 class="sidebar-heading text-white">CHART OPTIONS</h5>
+                        <div class="mb-1">
+                            <label for="chartType" class="form-label text-white">Select Chart Type</label>
+                            <select id="chartType" class="form-select">
+                                <option value="pie">Pie Chart</option>
+                                <option value="bar">Stacked Bar Chart</option>
+                                <option value="line">Line Chart</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Group By Section -->
+                    <div class="sidebar-section mt-1">
+                        <h5 class="sidebar-heading text-white">GROUP BY</h5>
+                        <form method="GET" action="" id="filterForm">
+                            <div class="mb-1">
+                                <label for="group_by_field" class="form-label text-white">Group By</label>
+                                <select id="group_by_field" name="group_by_field" class="form-select">
+                                    <option value="v_ccy_code" {% if group_by_field == 'v_ccy_code' %}selected{% endif %}>Currency Code</option>
+                                    <option value="n_prod_segment" {% if group_by_field == 'n_prod_segment' %}selected{% endif %}>Product Segment</option>
+                                    <option value="n_prod_type" {% if group_by_field == 'n_prod_type' %}selected{% endif %}>Product Type</option>
+                                    <option value="n_party_type" {% if group_by_field == 'n_party_type' %}selected{% endif %}>Customer Type</option>
+                                    <option value="n_delq_band_code" {% if group_by_field == 'n_delq_band_code' %}selected{% endif %}>Delinquency Band</option>
+                                    <option value="n_stage_descr" {% if group_by_field == 'n_stage_descr' %}selected{% endif %}>Stage Description</option>
+                                    <option value="n_loan_type" {% if group_by_field == 'n_loan_type' %}selected{% endif %}>Loan Type</option>
+                                </select>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success">Apply Group By</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Filter Section -->
+                    <div class="sidebar-section mt-2">
+                        <h5 class="sidebar-heading text-white">FILTERS</h5>
+                        <form method="GET" action="" id="filterForm">
+                            <!-- Date Range Filter -->
+                            <div class="mb-3">
+                                <label for="start_date" class="form-label text-white">Start Date (From)</label>
+                                <input type="date" id="start_date" name="start_date" class="form-control"
+                                       value="{{ start_date }}">
+                            </div>
+                        
+                            <div class="mb-3">
+                                <label for="end_date" class="form-label text-white">Start Date (To)</label>
+                                <input type="date" id="end_date" name="end_date" class="form-control"
+                                       value="{{ end_date }}">
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-primary">Apply Filter</button>
+                                <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filter</button>
+                            </div>
+                        </form>
+                    </div>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content Area for Chart -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-1 ml-5 border-bottom">
+                <div class="report-heading">
+                    <h1 class="fw-bold">IFRS 9 Vintage Analysis Report</h1>
+                </div>
+                <!-- Display Selected Date Range -->
+                <div class="date-range-info bg-light p-3 rounded shadow-sm mb-3">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Date Range:
+                    </h6>
+                    <p class="mb-0">
+                        {% if start_date and end_date %}
+                            <span class="text-dark fw-bold">{{ start_date|date:"d M Y" }}</span>
+                            <span class="text-muted">to</span>
+                            <span class="text-dark fw-bold">{{ end_date|date:"d M Y" }}</span>
+                        {% elif start_date %}
+                            <span class="text-dark fw-bold">{{ start_date|date:"d M Y" }}</span>
+                            <span class="text-muted">(Start Date Only)</span>
+                        {% elif end_date %}
+                            <span class="text-dark fw-bold">{{ end_date|date:"d M Y" }}</span>
+                            <span class="text-muted">(End Date Only)</span>
+                        {% else %}
+                            <span class="text-muted">Not Specified</span>
+                        {% endif %}
+                    </p>
+                </div>
+
+            </div>
+        
+            <!-- Chart Section -->
+            <div class="chart-boundary p-3">
+                <h5 class="chart-title text-center text-muted mb-3">
+                    Distribution of <code>12-Month ECL</code> by <strong>{{ group_by_field|capfirst }}</strong>
+                </h5>
+                <div class="chart-container">
+                    <canvas id="eclChart"></canvas>
+                </div>
+            </div>
+        
+            <!-- Table Section -->
+            <div class="table-section mt-4">
+                <h5 class="text-muted">Detailed Breakdown</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ group_by_field|capfirst }}</th>
+                                <th class="text-end">Number of Accounts</th>
+                                <th class="text-end">Total ECL (12-Month)</th>
+                                <th class="text-end">% of ECL</th>
+                                <th class="text-end">% of Accounts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in table_data %}
+                                <tr {% if row|get_item:group_by_field == 'Grand Total' %}class="table-info fw-bold"{% endif %}>
+                                    <td>{{ row|get_item:group_by_field }}</td>
+                                    <td class="text-end">{{ row.n_account_number|intcomma|default:"-" }}</td>
+                                    <td class="text-end">{{ row.n_12m_ecl_rcy|floatformat:2|intcomma }}</td>
+                                    <td class="text-end">{{ row.percentage|floatformat:2 }}%</td>
+                                    <td class="text-end">{{ row.percentage_accounts|floatformat:2 }}%</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No data available for the selected filters.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+
+<!-- Include Chart.js and Chart.js Data Labels Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<script>
+    const chartData = {{ chart_data|safe }};
+    const labels = chartData.map(item => item['{{ group_by_field }}']);
+    const percentages = chartData.map(item => item['percentage']);
+
+    const ctx = document.getElementById('eclChart').getContext('2d');
+    let chart;
+
+    function renderChart(type = 'pie') {
+        if (chart) {
+            chart.destroy();
+        }
+
+        chart = new Chart(ctx, {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: percentages,
+                    backgroundColor: ['#8e5ea2', '#3cba9f', '#e8c3b9', '#f3ae8a', '#c45850'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: (tooltipItem) => `${tooltipItem.label}: ${tooltipItem.raw}%`
+                        }
+                    },
+                    datalabels: {
+                        color: '#000',
+                        font: { weight: 'bold', size: 12 },
+                        formatter: (value, context) => `${context.chart.data.labels[context.dataIndex]}: ${value.toFixed(2)}%`,
+                        anchor: 'end',
+                        align: 'start',
+                        offset: 10,
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    document.getElementById('chartType').addEventListener('change', function() {
+        renderChart(this.value);
+    });
+
+    renderChart(); // Initial render with default 'pie' type
+
+    function clearFilters() {
+        document.getElementById("start_date").value = "";
+        document.getElementById("end_date").value = "";
+        document.getElementById("filterForm").submit();
+    }
+</script>
+
+<style>
+    #sidebar {
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-color: #003366;
+        color: #ffffff;
+        width: 250px;
+    }
+
+    .sidebar-content {
+        max-height: calc(100vh - 20px);
+        overflow-y: auto;
+    }
+
+    .sidebar-section {
+        padding: 15px;
+        border-bottom: 1px solid #1a4f7a;
+    }
+
+    .form-label {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .form-select {
+        width: 100%;
+    }
+
+    .chart-boundary {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background-color: #f9f9f9;
+        padding: 20px;
+        margin: auto;
+    }
+
+    .chart-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .report-heading {
+        background-color: #f0f4f8;
+        border-bottom: 2px solid #d1e7ff;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .report-heading h1 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+
+    main {
+        margin-left: 250px;
+    }
+
+    .chart-container {
+        position: relative;
+        width: 100%;
+        height: 400px;
+    }
+</style>
+{% endblock %}

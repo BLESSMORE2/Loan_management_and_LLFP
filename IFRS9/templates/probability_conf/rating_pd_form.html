@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">{{ form.instance.pk|yesno:"Edit Rating PD Term,Add Rating PD Term" }}</h1>
+
+    <!-- Success and Error Messages -->
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <table class="table table-borderless">
+            <tr>
+                <td><label for="{{ form.v_pd_term_structure_id.id_for_label }}">Term Structure ID</label></td>
+                <td>{{ form.v_pd_term_structure_id }}</td>
+            </tr>
+            <tr>
+                <td><label for="{{ form.fic_mis_date.id_for_label }}">Reporting Date</label></td>
+                <td>{{ form.fic_mis_date }}</td>
+            </tr>
+            <tr>
+                <td><label for="{{ form.v_credit_risk_basis_cd.id_for_label }}">Rating Code</label></td>
+                <td>{{ form.v_credit_risk_basis_cd }}</td>
+            </tr>
+            <tr>
+                <td><label for="{{ form.n_pd_percent.id_for_label }}">PD Percent</label></td>
+                <td>{{ form.n_pd_percent }}</td>
+            </tr>
+        </table>
+
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{% url 'rating_pd_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

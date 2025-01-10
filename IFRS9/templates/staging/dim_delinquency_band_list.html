@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Messages Block -->
+{% if messages %}
+<div class="container mt-4">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container-fluid py-4">
+
+   <!-- Back button -->
+   <div class="d-flex justify-content-start mb-4">
+       <a href="{% url 'configure_stages' %}" class="btn btn-outline-secondary">
+           <i class="fas fa-arrow-left"></i> Back to Stage Configuration
+       </a>
+   </div>
+   
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-primary">Delinquency Bands</h1>
+        <a href="{% url 'dim_delinquency_band_add' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Add Delinquency Band
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>Band Code</th>
+                    <th>Description</th>
+                    <th>Lower Value</th>
+                    <th>Upper Value</th>
+                    <th>Amortization Term Unit</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for band in delinquency_bands %}
+                <tr>
+                    <td>{{ band.n_delq_band_code }}</td>
+                    <td>{{ band.v_delq_band_desc }}</td>
+                    <td>{{ band.n_delq_lower_value }}</td>
+                    <td>{{ band.n_delq_upper_value }}</td>
+                    <td>{{ band.v_amrt_term_unit }}</td>
+                    <td>
+                        <a href="{% url 'dim_delinquency_band_edit' band.pk %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'dim_delinquency_band_delete' band.pk %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No data found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Section -->
+    <div class="d-flex justify-content-between">
+        <p class="text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</p>
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">&laquo; First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">&lsaquo; Previous</a>
+                </li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">Next &rsaquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">Last &raquo;</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endblock %}

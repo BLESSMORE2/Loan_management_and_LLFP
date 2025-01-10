@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center mb-4">
+        {% if form.instance.pk %}Edit{% else %}Add{% endif %} Exchange Rate Configuration
+    </h1>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+        <div class="container mt-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Form Card -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- Table for Form Fields -->
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <td class="text-end align-middle"><strong>Exchange Rate API Key:</strong></td>
+                            <td>{{ form.EXCHANGE_RATE_API_KEY }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end align-middle"><strong>Use on Exchange Rates:</strong></td>
+                            <td>{{ form.use_on_exchange_rates }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end align-middle"><strong>Use Latest Exchange Rates:</strong></td>
+                            <td>{{ form.use_latest_exchange_rates }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'configure_exchange_rate_process' %}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}Update{% else %}Create{% endif %} Configuration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+</div>
+
+<!-- Custom Styling -->
+<style>
+    .table td {
+        vertical-align: middle;
+    }
+    .btn {
+        padding: 0.5rem 1rem;
+    }
+    .btn-sm {
+        padding: 0.4rem 0.8rem;
+    }
+    .table-borderless td {
+        padding: 0.75rem;
+    }
+    .d-flex.justify-content-between {
+        justify-content: space-between;
+    }
+</style>
+
+{% endblock %}

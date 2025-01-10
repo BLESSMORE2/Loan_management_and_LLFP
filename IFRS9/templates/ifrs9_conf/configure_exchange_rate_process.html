@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center mb-4">Exchange Rate Configuration</h1>
+
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+     <!-- Back Button -->
+     <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    
+    <br>
+
+    <!-- Display Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>API Key</th>
+                    <th>Use on Exchange Rates</th>
+                    <th>Use Latest Exchange Rates</th>
+                    <th>Created By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for conf in exchange_conf_list %}
+                <tr>
+                    <td>{{ conf.EXCHANGE_RATE_API_KEY }}</td>
+                    <td>{{ conf.use_on_exchange_rates|yesno:"Yes,No" }}</td>
+                    <td>{{ conf.use_latest_exchange_rates|yesno:"Yes,No" }}</td>
+                    <td>{{ conf.created_by.email }}</td>
+                    <td>
+                        <a href="{% url 'edit_exchange_rate_conf' conf.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'delete_exchange_rate_conf' conf.id %}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center">No configurations found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add New Configuration Button -->
+    <a href="{% url 'add_exchange_rate_conf' %}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Add New Configuration
+    </a>
+    
+</div>
+{% endblock %}

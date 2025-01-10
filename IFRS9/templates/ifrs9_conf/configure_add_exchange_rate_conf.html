@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">Add Exchange Rate Configuration</h1>
+
+    {% if messages %}
+        <div class="container mt-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+     <!-- Form Table -->
+     <div class="card mt-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <table class="table borderless">
+                    <tr>
+                        <td class="align-middle"><label for="id_exchange_rate_api_key" class="form-label">API Key</label></td>
+                        <td>{{ form.EXCHANGE_RATE_API_KEY }}</td>
+                    </tr>
+                    <tr>
+                        <td class="align-middle"><label for="id_use_on_exchange_rates" class="form-label">Use on Exchange Rates</label></td>
+                        <td>{{ form.use_on_exchange_rates }}</td>
+                    </tr>
+                    <tr>
+                        <td class="align-middle"><label for="id_use_latest_exchange_rates" class="form-label">Use Latest Exchange Rates</label></td>
+                        <td>{{ form.use_latest_exchange_rates }}</td>
+                    </tr>
+                </table>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-success me-2">Save</button>
+                    <a href="{% url 'configure_exchange_rate_process' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

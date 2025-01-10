@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mt-1">
+    <!-- Back Button -->
+    <div class="row mb-1">
+        <div class="col-12">
+            <a href="{% url 'list_reports' %}" class="btn btn-secondary mt-3">Back</a>
+        </div>
+    </div>
+    <div class="text-center mb-2">
+        <h1 class="display-5 font-weight-bold" style="color: #4a4a4a;">ECL Account Level Reconciliation Report</h1>
+        <p class="lead" style="color: #7a7a7a;">Search and view account-level reconciliation details between reporting periods.</p>
+    </div>
+    
+    <!-- Search Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header" style="background-color: #1783ee; color: white; font-weight: bold;">
+            Search or Select Account
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{% url 'ecl_account_reconciliation_sub_filter' %}">
+                <div class="form-group row">
+                    <div class="col-md-8">
+                        <label for="n_account_number" class="form-label font-weight-bold">Account Number</label>
+                        <input 
+                            type="text" 
+                            id="accountSearch" 
+                            name="n_account_number" 
+                            class="form-control" 
+                            placeholder="Start typing account number..." 
+                            list="accountOptionsList" 
+                            autocomplete="off"
+                            value="{% if selected_account %}{{ selected_account }}{% endif %}">
+                        
+                        <!-- Dynamic account options for search -->
+                        <datalist id="accountOptionsList" class="account-dropdown">
+                            {% for account in account_options %}
+                                <option value="{{ account }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100" style="background-color: #1a73e8;">Search</button>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" id="clearSearch" class="btn btn-secondary w-100">Clear</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reconciliation Table (Single Account) -->
+    <!-- Reconciliation Table (Single Account) -->
+    {% if account_details %}
+    <div class="card shadow-sm mt-4">
+        <div class="card-header" style="background-color: #09427b; color: white; font-weight: bold;">
+            Reconciliation Details for Account {{ account_details.n_account_number|intcomma }}
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped mt-4" style="width: 100%; text-align: center;">
+                <thead style="background-color: #073a6d; color: white;">
+                    <tr>
+                        <th></th>
+                        <th>Reporting Date ({{ account_details.date_prev }}) - Run Key ({{ account_details.n_run_key_prev|intcomma }})</th>
+                        <th>Reporting Date ({{ account_details.date_curr }}) - Run Key ({{ account_details.n_run_key_curr|intcomma }})</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Account ID</td>
+                        <td>{{ account_details.n_account_number|intcomma }}</td>
+                        <td>{{ account_details.n_account_number|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Product Segment</td>
+                        <td>{{ account_details.prod_segment_prev }}</td>
+                        <td>{{ account_details.prod_segment_curr }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Currency Code</td>
+                        <td>{{ account_details.v_ccy_code_prev }}</td>
+                        <td>{{ account_details.v_ccy_code_curr }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Balance Outstanding</td>
+                        <td>{{ account_details.balance_outstanding_prev|floatformat:2|intcomma }}</td>
+                        <td>{{ account_details.balance_outstanding_curr|floatformat:2|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Exposure at Default</td>
+                        <td>{{ account_details.exposure_at_default_prev|floatformat:2|intcomma }}</td>
+                        <td>{{ account_details.exposure_at_default_curr|floatformat:2|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">IFRS Stage Identified</td>
+                        <td>{{ account_details.ifrs_stage_prev }}</td>
+                        <td>{{ account_details.ifrs_stage_curr }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Delinquency Band Code</td>
+                        <td>{{ account_details.delq_band_code_prev }}</td>
+                        <td>{{ account_details.delq_band_code_curr }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Maturity Date</td>
+                        <td>{{ account_details.maturity_date_prev }}</td>
+                        <td>{{ account_details.maturity_date_curr }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">12 Month PD</td>
+                        <td>{{ account_details.twelve_month_pd_prev|floatformat:2 }}%</td>
+                        <td>{{ account_details.twelve_month_pd_curr|floatformat:2 }}%</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Lifetime PD</td>
+                        <td>{{ account_details.lifetime_pd_prev|floatformat:2 }}%</td>
+                        <td>{{ account_details.lifetime_pd_curr|floatformat:2 }}%</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">LGD</td>
+                        <td>{{ account_details.lgd_prev|floatformat:2 }}%</td>
+                        <td>{{ account_details.lgd_curr|floatformat:2 }}%</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">12 Month Reporting ECL</td>
+                        <td>{{ account_details.twelve_month_ecl_prev|floatformat:2|intcomma }}</td>
+                        <td>{{ account_details.twelve_month_ecl_curr|floatformat:2|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold" style="background-color: #f5f5f5;">Lifetime Reporting ECL</td>
+                        <td>{{ account_details.lifetime_ecl_prev|floatformat:2|intcomma }}</td>
+                        <td>{{ account_details.lifetime_ecl_curr|floatformat:2|intcomma }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-muted mt-4 text-center">No account selected or no data available for the selected account.</p>
+    {% endif %}
+    <form  class="mt-2 mb-2" method="GET" action="{% url 'export_full_ecl_report_to_excel' %}">
+        <button id="download-button" class="btn btn-success btn-sm shadow-sm"  type="submit">
+            <i class="fas fa-download"></i> Download Full Report as Excel
+        </button>
+    </form>
+    
+</div>
+
+<script>
+    // Handle clearing the search input
+    document.getElementById('clearSearch').addEventListener('click', function() {
+        document.getElementById('accountSearch').value = '';
+        window.location.href = '{% url "ecl_account_reconciliation_sub_filter" %}';
+    });
+</script>
+
+<style>
+    /* Limit dropdown height and make it scrollable */
+    #accountOptionsList {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    /* Reduce size of dropdown input options */
+    input[list]::-webkit-calendar-picker-indicator {
+        width: 25px;
+        height: 25px;
+        background-color: #f5f5f5;
+        border-radius: 50%;
+    }
+
+    /* Beautify buttons */
+    .btn {
+        border-radius: 25px;
+    }
+
+    /* Dropdown styles */
+    input[list] {
+        width: 100%;
+        height: 40px;
+        padding: 5px 10px;
+        font-size: 14px;
+    }
+
+    /* Table design */
+    th, td {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    table {
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #073a6d;
+        color: white;
+        padding: 10px;
+    }
+
+    td {
+        padding: 8px;
+    }
+</style>
+{% endblock %}

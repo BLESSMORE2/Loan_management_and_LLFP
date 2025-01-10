@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">{{ form.instance.pk|yesno:"Edit PD Term Structure,Add PD Term Structure" }}</h1>
+
+    <!-- Success and Error Messages -->
+    {% if messages %}
+        <div class="container mt-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- General Form Errors -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <!-- Form Section in Table -->
+    <form method="post">
+        {% csrf_token %}
+        <table class="table table-bordered">
+            <tr>
+                <td><label for="v_pd_term_structure_name" class="form-label">Term Structure Name</label></td>
+                <td>
+                    {{ form.v_pd_term_structure_name }}
+                    {% if form.v_pd_term_structure_name.errors %}
+                        <div class="text-danger">{{ form.v_pd_term_structure_name.errors.as_text }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="v_pd_term_frequency_unit" class="form-label">Term Frequency Unit</label></td>
+                <td>
+                    {{ form.v_pd_term_frequency_unit }}
+                    {% if form.v_pd_term_frequency_unit.errors %}
+                        <div class="text-danger">{{ form.v_pd_term_frequency_unit.errors.as_text }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="v_pd_term_structure_type" class="form-label">Term Structure Type</label></td>
+                <td>
+                    {{ form.v_pd_term_structure_type }}
+                    {% if form.v_pd_term_structure_type.errors %}
+                        <div class="text-danger">{{ form.v_pd_term_structure_type.errors.as_text }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="fic_mis_date" class="form-label">Fic Mis Date</label></td>
+                <td>
+                    {{ form.fic_mis_date }}
+                    {% if form.fic_mis_date.errors %}
+                        <div class="text-danger">{{ form.fic_mis_date.errors.as_text }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-success">Save</button>
+            <a href="{% url 'pd_term_structure_list' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-label {
+        font-weight: bold;
+    }
+    .btn-success, .btn-outline-secondary {
+        padding: 0.5rem 1.5rem;
+    }
+    .table {
+        width: 50%;  /* Adjust table width as needed */
+    }
+</style>
+{% endblock %}

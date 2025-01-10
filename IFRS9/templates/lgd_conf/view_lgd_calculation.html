@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Success and Error Messages -->
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Back Button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'lgd_configuration' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back 
+        </a>
+    </div>
+
+    <h1 class="h3 text-primary">View Collateral Based LGD Calculation</h1>
+
+    <!-- Display the LGD Calculation Details in a Table -->
+    <table class="table table-bordered table-striped mt-4">
+        <tbody>
+            <tr>
+                <th scope="row">Can we calculate LGD using Collateral?</th>
+                <td>
+                    {% if lgd_instance.can_calculate_lgd %}
+                        Yes
+                    {% else %}
+                        No
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">Created At</th>
+                <td>{{ lgd_instance.created_at|date:"F j, Y, g:i a" }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Last Updated</th>
+                <td>{{ lgd_instance.updated_at|date:"F j, Y, g:i a" }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Edit Button -->
+    <div class="text-center mt-4">
+        <a href="{% url 'edit_lgd_calculation' %}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+    </div>
+</div>
+
+<style>
+    .table th {
+        width: 50%;
+        font-weight: bold;
+        background-color: #f8f9fa;
+    }
+    .btn {
+        padding: 0.5rem 1.5rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">Confirm Delete Rating PD Term</h1>
+
+    <p>Are you sure you want to delete the Rating PD Term for <strong>{{ pd_term_detail.v_pd_term_structure_id }}</strong>?</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'rating_pd_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

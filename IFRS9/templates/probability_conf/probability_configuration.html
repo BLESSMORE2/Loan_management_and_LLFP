@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'credit_risk_models' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back 
+        </a>
+    </div>
+
+    <h1 class="h3 text-primary">Probability Configuration</h1>
+
+    <div class="row">
+        <!-- PD Modelling -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-bar fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">PD Modelling</h5>
+                    <p class="card-text">Set up PD models for probability of default.</p>
+                    <a href="" class="btn btn-primary">Configure PD Modelling</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Define Segments -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-layer-group fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Define Segments</h5>
+                    <p class="card-text">Define segments for probability modelling.</p>
+                    <a href="{% url 'segment_list' %}" class="btn btn-success">Define Segments</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Define PD Term Structure -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-sitemap fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Define PD Term Structure</h5>
+                    <p class="card-text">Configure PD term structure values.</p>
+                    <a href="{% url 'pd_term_structure_list' %}" class="btn btn-primary">Define PD Term Structure</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delinquent Based PD Term Values -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-circle fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Delinquent Based PD Term Values</h5>
+                    <p class="card-text">Set up PD term values based on delinquency.</p>
+                    <a href="{% url 'delinquent_pd_list' %}" class="btn btn-primary">Configure Delinquent PD</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating Based PD Term Values -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Rating Based PD Term Values</h5>
+                    <p class="card-text">Set up PD term values based on ratings.</p>
+                    <a href="{% url 'rating_pd_list' %}" class="btn btn-success">Configure Rating PD</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interpolation Method Configuration -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-cogs fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Interpolation Method</h5>
+                    <p class="card-text">Configure interpolation methods for probability calculations.</p>
+                    <a href="{% url 'interpolation_method_list' %}" class="btn btn-primary">Configure Interpolation Method</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Optional CSS -->
+<style>
+    .card-title {
+        font-weight: bold;
+    }
+    .btn {
+        padding: 0.5rem 1.5rem;
+    }
+</style>
+
+{% endblock %}

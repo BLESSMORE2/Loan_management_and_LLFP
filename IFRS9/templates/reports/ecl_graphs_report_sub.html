@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar for Group By and Filters -->
+        <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+            <div class="position-sticky pt-3 sidebar-content">
+                <ul class="nav flex-column">
+                    <!-- Back Button -->
+                    <li class="nav-item mb-4">
+                        <a href="{% url 'ecl_graphs_main_filter_view' %}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </li>
+                    <!-- Back Button -->
+                    <li class="nav-item mb-1">
+                        <a href="{% url 'ecl_graphs_main_filter_view' %}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </li>
+
+                    <!-- Chart Options Section -->
+                    <div class="sidebar-section">
+                        <h5 class="sidebar-heading text-white">CHART OPTIONS</h5>
+                        <div class="mb-1">
+                            <label for="chartType" class="form-label text-white">Select Chart Type</label>
+                            <select id="chartType" class="form-select">
+                                <option value="pie">Pie Chart</option>
+                                <option value="bar">Stacked Bar Chart</option>
+                                <option value="line">Line Chart</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Group By Section -->
+                    <div class="sidebar-section mt-1">
+                        <h5 class="sidebar-heading text-white">GROUP BY</h5>
+                        <form method="GET" action="" id="filterForm">
+                            <div class="mb-1">
+                                <label for="group_by_field" class="form-label text-white">Group By</label>
+                                <select id="group_by_field" name="group_by_field" class="form-select">
+                                    <option value="v_ccy_code" {% if group_by_field == 'v_ccy_code' %}selected{% endif %}>Currency Code</option>
+                                    <option value="n_prod_segment" {% if group_by_field == 'n_prod_segment' %}selected{% endif %}>Product Segment</option>
+                                    <option value="n_prod_type" {% if group_by_field == 'n_prod_type' %}selected{% endif %}>Product Type</option>
+                                    <option value="n_party_type" {% if group_by_field == 'n_party_type' %}selected{% endif %}>Customer Type</option>
+                                    <option value="n_delq_band_code" {% if group_by_field == 'n_delq_band_code' %}selected{% endif %}>Delinquency Band</option>
+                                    <option value="n_stage_descr" {% if group_by_field == 'n_stage_descr' %}selected{% endif %}>Stage Description</option>
+                                    <option value="n_loan_type" {% if group_by_field == 'n_loan_type' %}selected{% endif %}>Loan Type</option>
+                                </select>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success">Apply Group By</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Filter Section -->
+                    <div class="sidebar-section mt-2">
+                        <h5 class="sidebar-heading text-white">FILTERS</h5>
+                        <form method="GET" action="" id="filterForm">
+                            <div class="mb-1">
+                                <label for="n_prod_segment" class="form-label text-white">Product Segment</label>
+                                <select id="n_prod_segment" name="n_prod_segment" class="form-select">
+                                    <option value="">-- Select --</option>
+                                    {% for segment in distinct_prod_segments %}
+                                        <option value="{{ segment }}" {% if request.GET.n_prod_segment == segment %}selected{% endif %}>{{ segment }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-1">
+                                <label for="n_prod_type" class="form-label text-white">Product Type</label>
+                                <select id="n_prod_type" name="n_prod_type" class="form-select">
+                                    <option value="">-- Select --</option>
+                                    {% for prod_type in distinct_prod_types %}
+                                        <option value="{{ prod_type }}" {% if request.GET.n_prod_type == prod_type %}selected{% endif %}>{{ prod_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-1">
+                                <label for="n_stage_descr" class="form-label text-white">Stage Description</label>
+                                <select id="n_stage_descr" name="n_stage_descr" class="form-select">
+                                    <option value="">-- Select --</option>
+                                    {% for stage_descr in distinct_stage_descrs %}
+                                        <option value="{{ stage_descr }}" {% if request.GET.n_stage_descr == stage_descr %}selected{% endif %}>{{ stage_descr }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-1">
+                                <label for="n_loan_type" class="form-label text-white">Loan Type</label>
+                                <select id="n_loan_type" name="n_loan_type" class="form-select">
+                                    <option value="">-- Select --</option>
+                                    {% for loan_type in distinct_loan_types %}
+                                        <option value="{{ loan_type }}" {% if request.GET.n_loan_type == loan_type %}selected{% endif %}>{{ loan_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-primary">Apply Filter</button>
+                                <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filter</button>
+                            </div>
+                        </form>
+                    </div>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content Area for Chart -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-1 ml-5 border-bottom">
+                <div class="report-heading">
+                    <h1>ECL Summary Report - Grouped by {{ group_by_field }}</h1>
+                </div>
+            </div>
+
+            <!-- Chart Section with Title and Boundary -->
+            <div class="chart-boundary p-3">
+                <h5 class="chart-title text-center text-muted mb-3">Percentages based on <code>12 Month ECL</code></h5>
+                <div class="chart-container">
+                    <canvas id="eclChart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Include Chart.js and Chart.js Data Labels Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<script>
+    const chartData = {{ chart_data|safe }};
+    const labels = chartData.map(item => item['{{ group_by_field }}']);
+    const percentages = chartData.map(item => item['percentage']);
+
+    const ctx = document.getElementById('eclChart').getContext('2d');
+    let chart;
+
+    function renderChart(type = 'pie') {
+        if (chart) {
+            chart.destroy();
+        }
+
+        chart = new Chart(ctx, {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: percentages,
+                    backgroundColor: ['#8e5ea2', '#3cba9f', '#e8c3b9', '#f3ae8a', '#c45850'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: (tooltipItem) => `${tooltipItem.label}: ${tooltipItem.raw}%`
+                        }
+                    },
+                    datalabels: {
+                        color: '#000',
+                        font: { weight: 'bold', size: 12 },
+                        formatter: (value, context) => `${context.chart.data.labels[context.dataIndex]}: ${value.toFixed(2)}%`,
+                        anchor: 'end',
+                        align: 'start',
+                        offset: 10,
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    document.getElementById('chartType').addEventListener('change', function() {
+        renderChart(this.value);
+    });
+
+    renderChart(); // Initial render with default 'pie' type
+
+    function clearFilters() {
+        document.getElementById("n_prod_segment").value = "";
+        document.getElementById("n_prod_type").value = "";
+        document.getElementById("n_stage_descr").value = "";
+        document.getElementById("n_loan_type").value = "";
+        document.getElementById("filterForm").submit();
+    }
+</script>
+
+<style>
+    #sidebar {
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-color: #003366;
+        color: #ffffff;
+        width: 250px;
+    }
+
+    .sidebar-content {
+        max-height: calc(100vh - 20px);
+        overflow-y: auto;
+    }
+
+    .sidebar-section {
+        padding: 15px;
+        border-bottom: 1px solid #1a4f7a;
+    }
+
+    .form-label {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .form-select {
+        width: 100%;
+    }
+
+    .chart-boundary {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background-color: #f9f9f9;
+        padding: 20px;
+        margin: auto;
+    }
+
+    .chart-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .report-heading {
+        background-color: #f0f4f8;
+        border-bottom: 2px solid #d1e7ff;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .report-heading h1 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+
+    main {
+        margin-left: 250px;
+    }
+
+    .chart-container {
+        position: relative;
+        width: 100%;
+        height: 400px;
+    }
+</style>
+{% endblock %}

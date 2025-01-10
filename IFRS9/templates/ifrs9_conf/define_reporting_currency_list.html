@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center mb-4">Define Reporting Currency</h1>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <a href="{% url 'configure_reporting_currency' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+
+    <!-- Add New Currency Button -->
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'define_reporting_currency_create' %}" class="btn btn-outline-success">
+            <i class="fas fa-plus"></i> Add New Currency
+        </a>
+    </div>
+
+    <!-- Reporting Currency Section -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5 class="card-title text-center mb-4">List of Defined Reporting Currencies</h5>
+
+            {% if page_obj %}
+                <!-- Reporting Currencies Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center">Code</th>
+                                <th class="text-center">Description</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for currency in page_obj %}
+                            <tr>
+                                <td class="text-center">{{ currency.code }}</td>
+                                <td class="text-center">{{ currency.description }}</td>
+                                <td class="text-center">
+                                    <a href="{% url 'define_reporting_currency_edit' currency.id %}" class="btn btn-outline-primary btn-sm mx-1">Edit</a>
+                                    <a href="{% url 'define_reporting_currency_delete' currency.id %}" class="btn btn-outline-danger btn-sm mx-1">Delete</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">No reporting currencies defined yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Controls -->
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+
+                        <!-- First Page -->
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1" aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span> First
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span> First
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        <!-- Previous Page -->
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span> Previous
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span> Previous
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        <!-- Next Page -->
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                    Next <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" aria-label="Next">
+                                    Next <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        <!-- Last Page -->
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                                    Last <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" aria-label="Last">
+                                    Last <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+
+            {% else %}
+                <div class="text-center">
+                    <p class="text-muted">No reporting currencies have been defined yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .table th, .table td {
+        vertical-align: middle;
+    }
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">ECL Methodology Options</h1>
+
+    <!-- Back Button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'ifrs9_configuration' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back 
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- ECL Methodology Documentation Option -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-book fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">ECL Methodology Documentation</h5>
+                    <p class="card-text">View documentation for ECL methodology.</p>
+                    <a href="{% url 'ecl_methodology_documentation' %}" class="btn btn-info">View Documentation</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Choose ECL Methodology Option -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-cogs fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Choose ECL Methodology</h5>
+                    <p class="card-text">Configure the ECL methodology for calculations.</p>
+                    <a href="{% url 'ecl_methodology_list' %}" class="btn btn-primary">Configure Methodology</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-title {
+        font-weight: bold;
+    }
+    .btn {
+        padding: 0.5rem 1.5rem;
+    }
+</style>
+
+{% endblock %}

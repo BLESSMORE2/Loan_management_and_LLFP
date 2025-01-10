@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Include Sidebar -->
+        {% include 'reports/sidebar.html' %}
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-3" style="margin-left: 260px;">  <!-- Adjusted to prevent overlap -->
+            <h1 class="text-3xl font-semibold mb-8 text-center text-primary">ECL Reconciliation Report</h1>
+
+            
+
+            <!-- Main Filter Section -->
+            <form method="POST" action="{% url 'ecl_reconciliation_main_filter' %}">
+                {% csrf_token %}
+                <div class="row mb-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+
+                    <!-- First row: Reporting Date 1 and Run Key 1 -->
+                    <div class="col-md-6">
+                        <label for="fic_mis_date1" class="form-label">Reporting Date 1</label>
+                        <select id="fic_mis_date1" name="fic_mis_date1" class="form-control {% if errors.fic_mis_date1 %}is-invalid{% endif %}">
+                            <option value="">-- Select Date 1 --</option>
+                            {% for date in fic_mis_dates %}
+                            <option value="{{ date|date:"Y-m-d" }}" {% if request.POST.fic_mis_date1 == date|date:"Y-m-d" %}selected{% endif %}>
+                                {{ date|date:"Y-m-d" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.fic_mis_date1 %}
+                        <div class="invalid-feedback">
+                            {{ errors.fic_mis_date1 }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="run_key1" class="form-label">Run Key 1</label>
+                        <select id="run_key1" name="run_key1" class="form-control {% if errors.run_key1 %}is-invalid{% endif %}">
+                            <option value="">-- Select Run Key --</option>
+                        </select>
+                        {% if errors.run_key1 %}
+                        <div class="invalid-feedback">
+                            {{ errors.run_key1 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Second row: Reporting Date 2 and Run Key 2 -->
+                <div class="row mb-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                    <div class="col-md-6">
+                        <label for="fic_mis_date2" class="form-label">Reporting Date 2</label>
+                        <select id="fic_mis_date2" name="fic_mis_date2" class="form-control {% if errors.fic_mis_date2 %}is-invalid{% endif %}">
+                            <option value="">-- Select Date 2 --</option>
+                            {% for date in fic_mis_dates %}
+                            <option value="{{ date|date:"Y-m-d" }}" {% if request.POST.fic_mis_date2 == date|date:"Y-m-d" %}selected{% endif %}>
+                                {{ date|date:"Y-m-d" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.fic_mis_date2 %}
+                        <div class="invalid-feedback">
+                            {{ errors.fic_mis_date2 }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="run_key2" class="form-label">Run Key 2</label>
+                        <select id="run_key2" name="run_key2" class="form-control {% if errors.run_key2 %}is-invalid{% endif %}">
+                            <option value="">-- Select Run Key --</option>
+                        </select>
+                        {% if errors.run_key2 %}
+                        <div class="invalid-feedback">
+                            {{ errors.run_key2 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Apply Filter Button -->
+                <div class="row">
+                    <div class="col-md-12 text-right">
+                        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">Apply Filter</button>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateDropdown(field, value, runKeyFieldId) {
+        fetch(`/ecl-reconciliation-main-filter/?field=${field}&value=${encodeURIComponent(value)}`, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`Error: ${response.status} - ${response.statusText}`);
+            return response.json();
+        })
+        .then(data => {
+            const runKeyDropdown = document.getElementById(runKeyFieldId);
+            runKeyDropdown.innerHTML = '<option value="">-- Select Run Key --</option>';
+            data.n_run_keys.forEach(function(runKey) {
+                let option = document.createElement('option');
+                option.value = runKey;
+                option.textContent = runKey;
+                runKeyDropdown.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error updating dropdown:', error));
+    }
+
+    document.getElementById('fic_mis_date1').addEventListener('change', function() {
+        let selectedDate = this.value;
+        updateDropdown('fic_mis_date', selectedDate, 'run_key1');
+    });
+
+    document.getElementById('fic_mis_date2').addEventListener('change', function() {
+        let selectedDate = this.value;
+        updateDropdown('fic_mis_date', selectedDate, 'run_key2');
+    });
+});
+</script>
+{% endblock %}

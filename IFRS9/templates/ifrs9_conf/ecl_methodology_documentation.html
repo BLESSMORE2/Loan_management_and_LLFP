@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">ECL Methodology Documentation</h1>
+
+    <!-- Back Button -->
+    <div class="d-flex justify-content-start mb-4">
+        <a href="{% url 'ecl_methodology' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back 
+        </a>
+    </div>
+
+    <div class="mb-5">
+        <h3>1. Forward Exposure Methodology</h3>
+        <p><strong>Overview:</strong>This method calculates Expected Credit Loss (ECL) by estimating the lender’s potential losses using Exposure at Default (EAD) at each point in time. For each date, the EAD is used to calculate the probability of default (PD) and the expected loss if the borrower defaults (LGD). These risks are aggregated for each time period, and the total ECL is determined by discounting these values using the Effective Interest Rate (EIR). The method calculates both 12-month ECL (covering the next 12 months) and Lifetime ECL (covering the entire life of the loan).</p>
+    </div>
+
+    <div class="mb-5">
+        <h3>2. Cash Flow Calculations Methodology</h3>
+        <p><strong>Overview:</strong> In this approach, projected cash flows at each point in time are adjusted to account for the borrower’s probability of default (cumulative PD) and the potential loss in case of default (LGD). The 12-month ECL represents the expected loss for the full loan term, but the PD applied is only the cumulative PD up to 12 months. The Lifetime ECL considers the full term of the loan, using cumulative PD until maturity. All losses are discounted to their present value using the Effective Interest Rate (EIR) to reflect the time value of money.</p>
+    </div>
+
+    <div class="mb-5">
+        <h3>3. Simple EAD Methodology</h3>
+        <p><strong>Overview:</strong> This method simplifies the calculation by focusing on the loan’s current balance (Exposure at Default, or EAD). The probability of default (PD) and potential loss (LGD) are applied directly to the loan’s balance. For 12-month ECL, the 12-month PD is used to calculate the expected loss for the next 12 months. For Lifetime ECL, the lifetime PD is used to estimate the loss over the full term of the loan. All values are discounted using the Effective Interest Rate (EIR) to reflect the time value of money. This approach is quick and effective, especially when detailed cash flow projections aren’t available.</p>
+    </div>
+
+    <div>
+        <h3>Effective Interest Rate (EIR) in All Methods</h3>
+        <p>In all methods, the Effective Interest Rate (EIR) is used to discount future losses to their present value. The Forward Exposure Methodology uses exposure at default for each point in time, while the Cash Flow Calculations Methodology uses projected cash flows for each point in time. For the Simple EAD Methodology, 12-month ECL uses 12-month PD, and lifetime ECL uses lifetime PD.</p>
+    </div>
+</div>
+
+<style>
+    h3 {
+        color: #007bff;
+    }
+    .container p {
+        font-size: 1rem;
+    }
+    .btn {
+        padding: 0.5rem 1.5rem;
+    }
+</style>
+
+{% endblock %}

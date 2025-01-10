@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">{{ view.title }}</h1>
+        <a href="{% url 'dim_delinquency_band_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_n_delq_band_code" class="form-label">Band Code</label>
+                        {{ form.n_delq_band_code }}  <!-- Render form field -->
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_v_delq_band_desc" class="form-label">Description</label>
+                        {{ form.v_delq_band_desc }}  <!-- Render form field -->
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_n_delq_lower_value" class="form-label">Lower Value</label>
+                        {{ form.n_delq_lower_value }}  <!-- Render form field -->
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_n_delq_upper_value" class="form-label">Upper Value</label>
+                        {{ form.n_delq_upper_value }}  <!-- Render form field -->
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_v_amrt_term_unit" class="form-label">Amortization Term Unit</label>
+                        {{ form.v_amrt_term_unit }}  <!-- Render form field -->
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success me-2">Save</button>
+                    <a href="{% url 'dim_delinquency_band_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

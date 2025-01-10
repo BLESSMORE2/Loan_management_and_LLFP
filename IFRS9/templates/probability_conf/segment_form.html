@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center">{{ form.instance.pk|yesno:"Edit Segment,Add Segment" }}</h1>
+
+    {% if messages %}
+        <div class="container mt-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="card p-4 shadow-sm">
+        <form method="post">
+            {% csrf_token %}
+            <table class="table borderless">
+                <tr>
+                    <td class="align-middle form-label"><label for="v_prod_segment">Product Segment</label></td>
+                    <td>{{ form.v_prod_segment }}</td>
+                </tr>
+                {% if form.v_prod_segment.errors %}
+                    <tr><td colspan="2" class="text-danger">{{ form.v_prod_segment.errors }}</td></tr>
+                {% endif %}
+                
+                <tr>
+                    <td class="align-middle form-label"><label for="v_prod_type">Product Type</label></td>
+                    <td>{{ form.v_prod_type }}</td>
+                </tr>
+                {% if form.v_prod_type.errors %}
+                    <tr><td colspan="2" class="text-danger">{{ form.v_prod_type.errors }}</td></tr>
+                {% endif %}
+                
+                <tr>
+                    <td class="align-middle form-label"><label for="v_prod_desc">Product Description</label></td>
+                    <td>{{ form.v_prod_desc }}</td>
+                </tr>
+                {% if form.v_prod_desc.errors %}
+                    <tr><td colspan="2" class="text-danger">{{ form.v_prod_desc.errors }}</td></tr>
+                {% endif %}
+            </table>
+
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-success me-2">Save</button>
+                <a href="{% url 'segment_list' %}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Fetch Product Types based on selected Product Segment
+        $('#id_v_prod_segment').change(function() {
+            var segment = $(this).val();
+            $.ajax({
+                url: "{% url 'get_product_types' %}",
+                data: { 'segment': segment },
+                success: function(data) {
+                    var typeSelect = $('#id_v_prod_type');
+                    typeSelect.empty();
+                    typeSelect.append('<option value="">---</option>');
+                    $.each(data, function(index, item) {
+                        typeSelect.append('<option value="' + item.value + '">' + item.display + '</option>');
+                    });
+                    $('#id_v_prod_desc').val(''); // Clear Product Description when segment changes
+                }
+            });
+        });
+
+        // Fetch Product Description based on selected Product Type
+        $('#id_v_prod_type').change(function() {
+            var productType = $(this).val();
+            if (productType) {
+                $.ajax({
+                    url: "{% url 'get_product_description' %}",
+                    data: { 'product_type': productType },
+                    success: function(data) {
+                        $('#id_v_prod_desc').val(data.description);
+                    },
+                    error: function() {
+                        $('#id_v_prod_desc').val('');  // Clear on error
+                    }
+                });
+            } else {
+                $('#id_v_prod_desc').val('');  // Clear if no product type is selected
+            }
+        });
+    });
+</script>
+
+<style>
+    /* Table styling to align form fields */
+    .table.borderless tr, .table.borderless td {
+        border: none;
+    }
+    .table td {
+        padding: 0.5rem;
+    }
+
+    /* Form and button styling */
+    .form-label {
+        font-weight: bold;
+        width: 180px;
+    }
+    .btn {
+        padding: 0.5rem 1.5rem;
+    }
+    .card {
+        background: #f9f9f9;
+        border-radius: 10px;
+    }
+    .form-card {
+        padding: 2rem;
+    }
+</style>
+{% endblock %}

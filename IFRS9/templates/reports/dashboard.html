@@ -1,0 +1,207 @@
+<div class="container mt-5">
+    
+
+    <!-- Dashboard Grid Layout -->
+    <div class="dashboard-grid">
+        <!-- ECL Summary Card -->
+        <div class="report-card card shadow-sm" id="eclCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">12-Month and Lifetime ECL Summary</h5>
+                <span id="eclDate" class="text-muted small"></span>
+            </div>
+            <div class="card-body">
+                <canvas id="eclSummaryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- LGD Distribution Card -->
+        <div class="report-card card shadow-sm" id="lgdCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">LGD Distribution by Product</h5>
+                <span id="lgdDate" class="text-muted small"></span>
+            </div>
+            <div class="card-body">
+                <canvas id="lgdSummaryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- PD Distribution by Rating Band Card -->
+        <div class="report-card card shadow-sm" id="pdCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">PD Distribution by Rating Band</h5>
+                <span id="pdDate" class="text-muted small"></span>
+            </div>
+            <div class="card-body">
+                <canvas id="pdSummaryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Accounts by Stage Card -->
+        <div class="report-card card shadow-sm" id="accountsStageCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Accounts by IFRS 9 Stage</h5>
+                <span id="accountsDate" class="text-muted small"></span>
+            </div>
+            <div class="card-body">
+                <canvas id="accountsStageSummaryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- External CSS and JS Libraries -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<script>
+    // Generate random data within a specified range
+    function getRandomValue(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Generate random data for PD scatter plot with more distributed values
+    function generatePDRandomData() {
+        return {
+            "AAA": Array.from({ length: 15 }, () => ({ x: getRandomValue(0, 100), y: getRandomValue(10, 90) })),
+            "BB": Array.from({ length: 15 }, () => ({ x: getRandomValue(0, 100), y: getRandomValue(10, 90) })),
+            "CCC": Array.from({ length: 15 }, () => ({ x: getRandomValue(0, 100), y: getRandomValue(10, 90) }))
+        };
+    }
+
+    // Initialize dynamic data generation for the other charts
+    function generateData() {
+        return {
+            date: new Date().toISOString().split("T")[0],
+            ecl: [getRandomValue(10000, 20000), getRandomValue(30000, 40000)],
+            lgd: { "Product A": getRandomValue(20, 50), "Product B": getRandomValue(20, 50), "Product C": getRandomValue(20, 50) },
+            accounts: [getRandomValue(50, 120), getRandomValue(80, 160), getRandomValue(100, 200)]
+        };
+    }
+
+    let currentRun = generateData();
+    const pdDistributionData = generatePDRandomData();
+
+    const chartOptions = {
+        responsive: true,
+        animation: { duration: 1500, easing: 'easeInOutElastic' },
+        plugins: {
+            legend: { position: 'bottom' },
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                formatter: Math.round,
+                color: '#000',
+                font: { weight: 'bold' }
+            }
+        }
+    };
+
+    // ECL Summary Chart
+    const eclSummaryChart = new Chart(document.getElementById('eclSummaryChart'), {
+        type: 'bar',
+        data: { labels: ["12-Month ECL", "Lifetime ECL"], datasets: [{ data: currentRun.ecl, backgroundColor: ["#007bff", "#ffc107"] }] },
+        options: chartOptions,
+        plugins: [ChartDataLabels]
+    });
+
+    // LGD Summary Chart
+    const lgdSummaryChart = new Chart(document.getElementById('lgdSummaryChart'), {
+        type: 'doughnut',
+        data: { labels: ["Product A", "Product B", "Product C"], datasets: [{ data: Object.values(currentRun.lgd), backgroundColor: ["#28a745", "#17a2b8", "#dc3545"] }] },
+        options: { ...chartOptions, animation: { animateScale: true, duration: 1500 } },
+        plugins: [ChartDataLabels]
+    });
+
+    // PD Summary Chart with distributed scatter plot values
+    const pdSummaryChart = new Chart(document.getElementById('pdSummaryChart'), {
+        type: 'scatter',
+        data: {
+            datasets: [
+                { label: "AAA", data: pdDistributionData["AAA"], backgroundColor: "#17a2b8", pointRadius: 5 },
+                { label: "BB", data: pdDistributionData["BB"], backgroundColor: "#ffc107", pointRadius: 5 },
+                { label: "CCC", data: pdDistributionData["CCC"], backgroundColor: "#dc3545", pointRadius: 5 }
+            ]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 1500, easing: 'easeInOutElastic' },
+            scales: {
+                x: { type: 'linear', position: 'bottom', min: 0, max: 100, title: { display: true, text: 'Rating Score' } },
+                y: { min: 0, max: 100, title: { display: true, text: 'Probability of Default (%)' } }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: { label: (context) => `(${context.raw.x}, ${context.raw.y})` }
+                }
+            }
+        }
+    });
+
+    // Accounts by Stage Chart
+    const accountsStageSummaryChart = new Chart(document.getElementById('accountsStageSummaryChart'), {
+        type: 'bar',
+        data: { labels: ["Stage 1", "Stage 2", "Stage 3"], datasets: [{ label: "Accounts by Stage", data: currentRun.accounts, backgroundColor: ["#007bff", "#ffc107", "#28a745"] }] },
+        options: chartOptions,
+        plugins: [ChartDataLabels]
+    });
+
+    // Infinite update interval to simulate real-time changing data
+    setInterval(() => {
+        currentRun = generateData(); // Generate new random data for other charts
+        const newPDData = generatePDRandomData(); // Generate new random data for PD scatter plot
+
+        // Update ECL, LGD, and Accounts by Stage charts
+        eclSummaryChart.data.datasets[0].data = currentRun.ecl;
+        lgdSummaryChart.data.datasets[0].data = Object.values(currentRun.lgd);
+        accountsStageSummaryChart.data.datasets[0].data = currentRun.accounts;
+
+        // Update PD scatter plot data
+        pdSummaryChart.data.datasets[0].data = newPDData["AAA"];
+        pdSummaryChart.data.datasets[1].data = newPDData["BB"];
+        pdSummaryChart.data.datasets[2].data = newPDData["CCC"];
+
+        // Update date display with current date
+        const formattedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('eclDate').textContent = formattedDate;
+        document.getElementById('lgdDate').textContent = formattedDate;
+        document.getElementById('pdDate').textContent = formattedDate;
+        document.getElementById('accountsDate').textContent = formattedDate;
+
+        // Refresh the charts to display new data
+        eclSummaryChart.update();
+        lgdSummaryChart.update();
+        pdSummaryChart.update();
+        accountsStageSummaryChart.update();
+    }, 3000); // Update every 3 seconds
+</script>
+
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        grid-auto-rows: 1fr;
+    }
+
+    .report-card {
+        height: 350px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .report-card:hover {
+        transform: translateY(-5px) scale(1.03);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-title {
+        font-weight: 600;
+    }
+
+    .text-muted {
+        font-size: 0.85rem;
+    }
+</style>

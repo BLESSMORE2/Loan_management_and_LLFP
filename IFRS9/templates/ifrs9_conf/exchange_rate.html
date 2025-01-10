@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary text-center mb-4">View Exchange Rate</h1>
+    <!-- Back Button -->
+    <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+
+    <!-- Card for entering currency codes and base currency -->
+    <div class="card shadow-lg mt-4">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="baseCurrency" class="form-label">Base Currency</label>
+                    <select name="base_currency" id="baseCurrency" class="form-control">
+                        {% for currency in currencies %}
+                        <option value="{{ currency.code }}" {% if currency.code == base_currency %}selected{% endif %}>
+                            {{ currency.code }} - {{ currency.description }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group mt-3">
+                    <label for="targetCurrency" class="form-label">Target Currency Code</label>
+                    <input type="text" name="currency_code" id="targetCurrency" class="form-control" placeholder="Enter currency code (e.g.,ZWL, EUR, JPY)" required>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary me-3">Check Exchange Rate</button>
+                    <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+
+            <!-- Display the exchange rate result if available -->
+            {% if exchange_rate %}
+            <div class="mt-4">
+                <h5>Exchange Rate Result</h5>
+                <p><strong>{{ exchange_rate.base_currency }}</strong> to <strong>{{ exchange_rate.currency_code }}</strong> is: <strong>{{ exchange_rate.rate }}</strong></p>
+            </div>
+            {% endif %}
+
+            <!-- Display error message if any -->
+            {% if error %}
+            <div class="alert alert-danger mt-4">{{ error }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .form-group label {
+        font-weight: bold;
+    }
+</style>
+
+{% endblock %}
