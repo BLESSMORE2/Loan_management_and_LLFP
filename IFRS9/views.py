@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 from .models import *
 from .forms import *
 
+
+
 from .Functions_view.data import *
 from .Functions.cashflow import *
 from .Functions.calculate_cash_flows_ead import *
