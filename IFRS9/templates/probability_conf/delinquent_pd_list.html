@@ -19,8 +19,12 @@
         <i class="fas fa-arrow-left"></i> Back 
     </a>
 
+    <!-- Add Button -->
+    {% if perms.IFRS9.add_ldn_pd_term_structure_dtl %}
     <a href="{% url 'delinquent_pd_create' %}" class="btn btn-success mb-4">Add Delinquent PD Term</a>
+    {% endif %}
 
+    <!-- Table for Delinquent PD Terms -->
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -41,13 +45,17 @@
                 <td>{{ term.fic_mis_date }}</td>
                 <td>{{ term.created_by.email }}</td>
                 <td>
+                    {% if perms.IFRS9.change_ldn_pd_term_structure_dtl %}
                     <a href="{% url 'delinquent_pd_edit' term.id %}" class="btn btn-primary btn-sm">Edit</a>
+                    {% endif %}
+                    {% if perms.IFRS9.delete_ldn_pd_term_structure_dtl %}
                     <a href="{% url 'delinquent_pd_delete' term.id %}" class="btn btn-danger btn-sm">Delete</a>
+                    {% endif %}
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5" class="text-center">No Delinquent PD Terms found.</td>
+                <td colspan="6" class="text-center">No Delinquent PD Terms found.</td>
             </tr>
             {% endfor %}
         </tbody>

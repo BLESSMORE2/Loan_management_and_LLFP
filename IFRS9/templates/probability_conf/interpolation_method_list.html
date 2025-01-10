@@ -14,14 +14,18 @@
     </div>
     {% endif %}
 
-     <!-- Back Button -->
-     <a href="{% url 'probability_configuration' %}" class="btn btn-outline-secondary mb-3">
+    <!-- Back Button -->
+    <a href="{% url 'probability_configuration' %}" class="btn btn-outline-secondary mb-3">
         <i class="fas fa-arrow-left"></i> Back 
     </a>
     
     <br>
 
+    <!-- Add Interpolation Method Button -->
+    {% if perms.IFRS9.add_fsi_llfp_app_preferences %}
     <a href="{% url 'interpolation_method_create' %}" class="btn btn-success mb-4">Add Interpolation Method</a>
+    {% endif %}
+
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -40,8 +44,12 @@
                 <td>{{ method.get_interpolation_level_display }}</td>
                 <td>{{ method.created_by.email }}</td>
                 <td>
+                    {% if perms.IFRS9.change_fsi_llfp_app_preferences %}
                     <a href="{% url 'interpolation_method_edit' method.id %}" class="btn btn-primary btn-sm">Edit</a>
+                    {% endif %}
+                    {% if perms.IFRS9.delete_fsi_llfp_app_preferences %}
                     <a href="{% url 'interpolation_method_delete' method.id %}" class="btn btn-danger btn-sm">Delete</a>
+                    {% endif %}
                 </td>
             </tr>
             {% empty %}

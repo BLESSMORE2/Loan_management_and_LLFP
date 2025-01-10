@@ -21,12 +21,14 @@
         <i class="fas fa-arrow-left"></i> Back 
     </a>
 
-    <!-- Add New Currency Button -->
+    <!-- Add New Currency Button (Requires Add Permission) -->
+    {% if perms.IFRS9.add_currencycode %}
     <div class="d-flex justify-content-end mb-3">
         <a href="{% url 'define_reporting_currency_create' %}" class="btn btn-outline-success">
             <i class="fas fa-plus"></i> Add New Currency
         </a>
     </div>
+    {% endif %}
 
     <!-- Reporting Currency Section -->
     <div class="card shadow-sm mt-4">
@@ -50,8 +52,15 @@
                                 <td class="text-center">{{ currency.code }}</td>
                                 <td class="text-center">{{ currency.description }}</td>
                                 <td class="text-center">
+                                    <!-- Edit Button (Requires Change Permission) -->
+                                    {% if perms.IFRS9.change_currencycode %}
                                     <a href="{% url 'define_reporting_currency_edit' currency.id %}" class="btn btn-outline-primary btn-sm mx-1">Edit</a>
+                                    {% endif %}
+
+                                    <!-- Delete Button (Requires Delete Permission) -->
+                                    {% if perms.IFRS9.delete_currencycode %}
                                     <a href="{% url 'define_reporting_currency_delete' currency.id %}" class="btn btn-outline-danger btn-sm mx-1">Delete</a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}

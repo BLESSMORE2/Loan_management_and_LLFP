@@ -48,11 +48,13 @@
         </tbody>
     </table>
 
-    <!-- Edit Button -->
+    <!-- Edit Button with Permission Check -->
     <div class="text-center mt-4">
+        {% if perms.IFRS9.change_collaterallgd %}
         <a href="{% url 'edit_lgd_calculation' %}" class="btn btn-primary">
             <i class="fas fa-edit"></i> Edit
         </a>
+        {% endif %}
     </div>
 </div>
 

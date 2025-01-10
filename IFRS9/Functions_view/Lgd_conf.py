@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from ..models import Ldn_LGD_Term_Structure,CollateralLGD
 from ..forms import LGDTermStructureForm,CollateralLGDForm
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import ValidationError
 from Users.models import AuditTrail  # Import AuditTrail model
 from django.utils.timezone import now  # For timestamping
@@ -23,6 +23,7 @@ def lgd_term_structure_list(request):
 
 # Create a new LGD Term Structure
 @login_required
+@permission_required('IFRS9.add_ldn_lgd_term_structure', raise_exception=True)
 def lgd_term_structure_create(request):
     if request.method == 'POST':
         form = LGDTermStructureForm(request.POST)
@@ -55,6 +56,7 @@ def lgd_term_structure_create(request):
 
 # Edit LGD Term Structure
 @login_required
+@permission_required('IFRS9.change_ldn_lgd_term_structure', raise_exception=True)
 def lgd_term_structure_edit(request, term_id):
     term_structure = get_object_or_404(Ldn_LGD_Term_Structure, pk=term_id)
     if request.method == 'POST':
@@ -87,6 +89,7 @@ def lgd_term_structure_edit(request, term_id):
 
 # Delete LGD Term Structure
 @login_required
+@permission_required('IFRS9.delete_ldn_lgd_term_structure', raise_exception=True)
 def lgd_term_structure_delete(request, term_id):
     term_structure = get_object_or_404(Ldn_LGD_Term_Structure, pk=term_id)
     if request.method == 'POST':
@@ -123,6 +126,8 @@ def view_lgd_calculation(request):
     return render(request, 'lgd_conf/view_lgd_calculation.html', {'lgd_instance': lgd_instance})
 
 @login_required
+
+@permission_required('IFRS9.change_collaterallgd', raise_exception=True)
 def edit_lgd_calculation(request):
     """Edit the LGD Calculation settings"""
     # Retrieve the first instance of CollateralLGD, or show a 404 if none exists

@@ -15,7 +15,9 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db import transaction
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.decorators import login_required, permission_required
+
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.db import IntegrityError
@@ -63,11 +65,12 @@ class CreditRatingStageListView(LoginRequiredMixin,ListView):
 
 
 # Create View for adding a new credit rating
-class CreditRatingStageCreateView(LoginRequiredMixin, CreateView):
+class CreditRatingStageCreateView(LoginRequiredMixin,PermissionRequiredMixin, CreateView):
     model = FSI_CreditRating_Stage
     form_class = CreditRatingStageForm
     template_name = 'staging/creditrating_stage_form.html'
     success_url = reverse_lazy('creditrating_stage_list')
+    permission_required = 'IFRS9.add_credit_rating_stage'
 
     def form_valid(self, form):
         try:
@@ -103,11 +106,12 @@ class CreditRatingStageCreateView(LoginRequiredMixin, CreateView):
         return super().form_invalid(form)
 
 # Update View for editing a credit rating
-class CreditRatingStageUpdateView(LoginRequiredMixin, UpdateView):
+class CreditRatingStageUpdateView(LoginRequiredMixin,PermissionRequiredMixin, UpdateView):
     model = FSI_CreditRating_Stage
     form_class = CreditRatingStageForm
     template_name = 'staging/creditrating_stage_form.html'
     success_url = reverse_lazy('creditrating_stage_list')
+    permission_required = 'IFRS9.change_credit_rating_stage'
 
     def form_valid(self, form):
         try:
@@ -143,10 +147,11 @@ class CreditRatingStageUpdateView(LoginRequiredMixin, UpdateView):
 
 # Delete View for deleting a credit rating
 # Delete View for deleting a credit rating
-class CreditRatingStageDeleteView(LoginRequiredMixin, DeleteView):
+class CreditRatingStageDeleteView(LoginRequiredMixin,PermissionRequiredMixin, DeleteView):
     model = FSI_CreditRating_Stage
     template_name = 'staging/creditrating_stage_confirm_delete.html'
     success_url = reverse_lazy('creditrating_stage_list')
+    permission_required = 'IFRS9.delete_credit_rating_stage'
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -175,11 +180,12 @@ class DPDStageMappingListView(LoginRequiredMixin,ListView):
     context_object_name = 'dpd_mappings'
     paginate_by = 10
 
-class DPDStageMappingCreateView(LoginRequiredMixin, CreateView):
+class DPDStageMappingCreateView(LoginRequiredMixin,PermissionRequiredMixin, CreateView):
     model = FSI_DPD_Stage_Mapping
     fields = ['payment_frequency', 'stage_1_threshold', 'stage_2_threshold', 'stage_3_threshold']
     template_name = 'staging/dpd_stage_mapping_form.html'
     success_url = reverse_lazy('dpd_stage_mapping_list')
+    permission_required = 'IFRS9.add_dpd_stage_mapping'
 
     def form_valid(self, form):
         try:
@@ -218,11 +224,12 @@ class DPDStageMappingCreateView(LoginRequiredMixin, CreateView):
         messages.error(self.request, "There were errors in the form. Please correct them below.")
         return super().form_invalid(form)
 
-class DPDStageMappingUpdateView(LoginRequiredMixin, UpdateView):
+class DPDStageMappingUpdateView(LoginRequiredMixin,PermissionRequiredMixin, UpdateView):
     model = FSI_DPD_Stage_Mapping
     fields = ['payment_frequency', 'stage_1_threshold', 'stage_2_threshold', 'stage_3_threshold']
     template_name = 'staging/dpd_stage_mapping_form.html'
     success_url = reverse_lazy('dpd_stage_mapping_list')
+    permission_required = 'IFRS9.change_dpd_stage_mapping'
 
     def form_valid(self, form):
         try:
@@ -261,10 +268,11 @@ class DPDStageMappingUpdateView(LoginRequiredMixin, UpdateView):
         messages.error(self.request, "There were errors in the form. Please correct them below.")
         return super().form_invalid(form)
 
-class DPDStageMappingDeleteView(LoginRequiredMixin, DeleteView):
+class DPDStageMappingDeleteView(LoginRequiredMixin,PermissionRequiredMixin, DeleteView):
     model = FSI_DPD_Stage_Mapping
     template_name = 'staging/dpd_stage_mapping_confirm_delete.html'
     success_url = reverse_lazy('dpd_stage_mapping_list')
+    permission_required = 'IFRS9.delete_dpd_stage_mapping'
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -298,11 +306,12 @@ class CoolingPeriodDefinitionListView(LoginRequiredMixin,ListView):
     context_object_name = 'cooling_periods'
     paginate_by = 10
 
-class CoolingPeriodDefinitionCreateView(LoginRequiredMixin, CreateView):
+class CoolingPeriodDefinitionCreateView(LoginRequiredMixin,PermissionRequiredMixin, CreateView):
     model = CoolingPeriodDefinition
     form_class = CoolingPeriodDefinitionForm
     template_name = 'staging/cooling_period_definition_form.html'
     success_url = reverse_lazy('cooling_period_definitions')
+    permission_required = 'IFRS9.add_coolingperioddefinition'
 
     def form_valid(self, form):
         try:
@@ -341,11 +350,12 @@ class CoolingPeriodDefinitionCreateView(LoginRequiredMixin, CreateView):
         messages.error(self.request, "There were errors in the form. Please correct them below.")
         return super().form_invalid(form)
 
-class CoolingPeriodDefinitionUpdateView(LoginRequiredMixin, UpdateView):
+class CoolingPeriodDefinitionUpdateView(LoginRequiredMixin, PermissionRequiredMixin,UpdateView):
     model = CoolingPeriodDefinition
     form_class = CoolingPeriodDefinitionForm
     template_name = 'staging/cooling_period_definition_form.html'
     success_url = reverse_lazy('cooling_period_definitions')
+    permission_required = 'IFRS9.change_coolingperioddefinition'
 
     def form_valid(self, form):
         try:
@@ -383,10 +393,11 @@ class CoolingPeriodDefinitionUpdateView(LoginRequiredMixin, UpdateView):
         messages.error(self.request, "There were errors in the form. Please correct them below.")
         return super().form_invalid(form)
 
-class CoolingPeriodDefinitionDeleteView(LoginRequiredMixin, DeleteView):
+class CoolingPeriodDefinitionDeleteView(LoginRequiredMixin, PermissionRequiredMixin,DeleteView):
     model = CoolingPeriodDefinition
     template_name = 'staging/cooling_period_definition_confirm_delete.html'
     success_url = reverse_lazy('cooling_period_definitions')
+    permission_required = 'IFRS9.delete_coolingperioddefinition'
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -416,11 +427,12 @@ class DimDelinquencyBandListView(LoginRequiredMixin,ListView):
     context_object_name = 'delinquency_bands'
     paginate_by = 10
 
-class DimDelinquencyBandCreateView(LoginRequiredMixin, CreateView):
+class DimDelinquencyBandCreateView(LoginRequiredMixin,PermissionRequiredMixin, CreateView):
     model = Dim_Delinquency_Band
     form_class = DimDelinquencyBandForm
     template_name = 'staging/dim_delinquency_band_form.html'
     success_url = reverse_lazy('dim_delinquency_band_list')
+    permission_required = 'IFRS9.add_dimdelinquencyband'
 
     def form_valid(self, form):
         try:
@@ -462,11 +474,12 @@ class DimDelinquencyBandCreateView(LoginRequiredMixin, CreateView):
         messages.error(self.request, "There were errors in the form. Please correct them below.")
         return super().form_invalid(form)
 
-class DimDelinquencyBandUpdateView(LoginRequiredMixin, UpdateView):
+class DimDelinquencyBandUpdateView(LoginRequiredMixin, PermissionRequiredMixin,UpdateView):
     model = Dim_Delinquency_Band
     form_class = DimDelinquencyBandForm
     template_name = 'staging/dim_delinquency_band_form.html'
     success_url = reverse_lazy('dim_delinquency_band_list')
+    permission_required = 'IFRS9.change_dimdelinquencyband'
 
     def form_valid(self, form):
         try:
@@ -508,10 +521,11 @@ class DimDelinquencyBandUpdateView(LoginRequiredMixin, UpdateView):
         messages.error(self.request, "There were errors in the form. Please correct them below.")
         return super().form_invalid(form)
 
-class DimDelinquencyBandDeleteView(LoginRequiredMixin, DeleteView):
+class DimDelinquencyBandDeleteView(LoginRequiredMixin,PermissionRequiredMixin, DeleteView):
     model = Dim_Delinquency_Band
-    template_name = 'staging/dim_delinquency_band_confirm_delete.html'
+    template_name = 'staging/dpd_stage_mapping_confirm_delete.html'
     success_url = reverse_lazy('dim_delinquency_band_list')
+    permission_required = 'IFRS9.delete_dimdelinquencyband'
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -542,11 +556,12 @@ class CreditRatingCodeBandListView(LoginRequiredMixin,ListView):
     context_object_name = 'rating_codes'
     paginate_by = 10
 
-class CreditRatingCodeBandCreateView(LoginRequiredMixin, CreateView):
+class CreditRatingCodeBandCreateView(LoginRequiredMixin,PermissionRequiredMixin, CreateView):
     model = Credit_Rating_Code_Band
     form_class = CreditRatingCodeBandForm
     template_name = 'staging/credit_rating_code_band_form.html'
     success_url = reverse_lazy('credit_rating_code_band_list')
+    permission_required = 'IFRS9.add_credit_rating_code_band'
 
     def form_valid(self, form):
         try:
@@ -585,11 +600,12 @@ class CreditRatingCodeBandCreateView(LoginRequiredMixin, CreateView):
         messages.error(self.request, "There were errors in the form. Please correct them below.")
         return super().form_invalid(form)
 
-class CreditRatingCodeBandUpdateView(LoginRequiredMixin, UpdateView):
+class CreditRatingCodeBandUpdateView(LoginRequiredMixin, PermissionRequiredMixin,UpdateView):
     model = Credit_Rating_Code_Band
     form_class = CreditRatingCodeBandForm
     template_name = 'staging/credit_rating_code_band_form.html'
     success_url = reverse_lazy('credit_rating_code_band_list')
+    permission_required = 'IFRS9.change_credit_rating_code_band'
 
     def form_valid(self, form):
         try:
@@ -622,10 +638,12 @@ class CreditRatingCodeBandUpdateView(LoginRequiredMixin, UpdateView):
             messages.error(self.request, f"An unexpected error occurred: {e}")
             return self.form_invalid(form)
 
-class CreditRatingCodeBandDeleteView(LoginRequiredMixin, DeleteView):
+class CreditRatingCodeBandDeleteView(LoginRequiredMixin,PermissionRequiredMixin, DeleteView):
     model = Credit_Rating_Code_Band
     template_name = 'staging/credit_rating_code_band_confirm_delete.html'
     success_url = reverse_lazy('credit_rating_code_band_list')
+    permission_required = 'IFRS9.delete_credit_rating_code_band'
+    
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -663,6 +681,7 @@ STAGE_DESCRIPTION_MAP = {
 
 
 @login_required
+@permission_required('IFRS9.change_stage_reassignment', raise_exception=True)
 def stage_reassignment(request): 
     filter_form = StageReassignmentFilterForm(request.GET or None)
     records = None

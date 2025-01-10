@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.forms import inlineformset_factory
 from django.db import transaction
 import threading
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from ..models import Process, RunProcess,Function,FunctionExecutionStatus
 from Users.models import AuditTrail  # Import AuditTrail model
@@ -55,6 +55,7 @@ from django.db.models import Min, Max
 
 
 @login_required
+
 def operations_view(request):
     return render(request, 'operations/operations.html')
 
@@ -62,12 +63,15 @@ def operations_view(request):
 
 # List all processes
 @login_required
+@permission_required('IFRS9.view_process', raise_exception=True)
 def process_list(request):
     processes = Process.objects.all()
     return render(request, 'operations/process_list.html', {'processes': processes})
 
 # View the details of a specific process, including its associated functions and execution order
 @login_required
+@permission_required('IFRS9.view_process', raise_exception=True)
+@permission_required('IFRS9.view_runprocess', raise_exception=True)
 def process_detail(request, process_id):
     process = get_object_or_404(Process, id=process_id)
     run_processes = RunProcess.objects.filter(process=process).order_by('order')  # Fetch functions in order
@@ -75,6 +79,8 @@ def process_detail(request, process_id):
 
 # Create or edit a process
 @login_required
+@permission_required('IFRS9.add_process', raise_exception=True)
+@permission_required('IFRS9.add_runprocess', raise_exception=True)
 def create_process(request, process_id=None):
     """
     View to add or edit a process and its corresponding run processes.
@@ -181,6 +187,10 @@ def create_process(request, process_id=None):
         'title': form_title,
     })
 
+# Edit an existing process
+@login_required
+@permission_required('IFRS9.change_process', raise_exception=True)
+@permission_required('IFRS9.change_runprocess', raise_exception=True)
 def edit_process(request, process_id):
     """
     View to edit an existing process and its corresponding run processes.
@@ -277,6 +287,7 @@ def edit_process(request, process_id):
 
 
 @login_required
+@permission_required('IFRS9.delete_process', raise_exception=True)
 def delete_process(request, process_id):
     process = get_object_or_404(Process, id=process_id)
     if request.method == 'POST':
@@ -588,6 +599,7 @@ def running_processes_view(request):
 
 # Updated function to handle cancellation request
 @login_required
+@permission_required('IFRS9.cancel_functionexecutionstatus', raise_exception=True)
 def cancel_running_process(request, process_run_id):
     # Check if the process is running
     try:

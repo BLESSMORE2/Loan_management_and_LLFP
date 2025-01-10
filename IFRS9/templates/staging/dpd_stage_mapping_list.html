@@ -24,9 +24,11 @@
     
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 text-primary">Staging Using Delinquent Days</h1>
+        {% if perms.IFRS9.add_fsi_dpd_stage_mapping %}
         <a href="{% url 'dpd_stage_mapping_add' %}" class="btn btn-primary btn-sm">
             <i class="fas fa-plus"></i> Add
         </a>
+        {% endif %}
     </div>
 
     <div class="table-responsive">
@@ -50,17 +52,21 @@
                     <td>{{ mapping.stage_3_threshold }}</td>
                     <td>{{ mapping.created_by.email }}</td>
                     <td>
+                        {% if perms.IFRS9.change_fsi_dpd_stage_mapping %}
                         <a href="{% url 'dpd_stage_mapping_edit' mapping.pk %}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i> Edit
                         </a>
+                        {% endif %}
+                        {% if perms.IFRS9.delete_fsi_dpd_stage_mapping %}
                         <a href="{% url 'dpd_stage_mapping_delete' mapping.pk %}" class="btn btn-sm btn-danger">
                             <i class="fas fa-trash"></i> Delete
                         </a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center">No data found</td>
+                    <td colspan="6" class="text-center">No data found</td>
                 </tr>
                 {% endfor %}
             </tbody>

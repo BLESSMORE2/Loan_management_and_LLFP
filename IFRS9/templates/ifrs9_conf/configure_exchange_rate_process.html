@@ -15,8 +15,8 @@
     </div>
     {% endif %}
 
-     <!-- Back Button -->
-     <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-outline-secondary mb-3">
+    <!-- Back Button -->
+    <a href="{% url 'configure_exchange_rates_options' %}" class="btn btn-outline-secondary mb-3">
         <i class="fas fa-arrow-left"></i> Back 
     </a>
     
@@ -42,27 +42,36 @@
                     <td>{{ conf.use_latest_exchange_rates|yesno:"Yes,No" }}</td>
                     <td>{{ conf.created_by.email }}</td>
                     <td>
+                        <!-- Edit Button (Requires Change Permission) -->
+                        {% if perms.IFRS9.change_dimexchangerateconf %}
                         <a href="{% url 'edit_exchange_rate_conf' conf.id %}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-edit"></i> Edit
                         </a>
+                        {% endif %}
+                        
+                        <!-- Delete Button (Requires Delete Permission) -->
+                        {% if perms.IFRS9.delete_dimexchangerateconf %}
                         <a href="{% url 'delete_exchange_rate_conf' conf.id %}" class="btn btn-outline-danger btn-sm">
                             <i class="fas fa-trash"></i> Delete
                         </a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="3" class="text-center">No configurations found.</td>
+                    <td colspan="5" class="text-center">No configurations found.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- Add New Configuration Button -->
+    <!-- Add New Configuration Button (Requires Add Permission) -->
+    {% if perms.IFRS9.add_dimexchangerateconf %}
     <a href="{% url 'add_exchange_rate_conf' %}" class="btn btn-success">
         <i class="fas fa-plus"></i> Add New Configuration
     </a>
+    {% endif %}
     
 </div>
 {% endblock %}

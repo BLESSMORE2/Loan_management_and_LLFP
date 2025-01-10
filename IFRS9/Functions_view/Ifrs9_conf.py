@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.http import JsonResponse
 import requests
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from Users.models import AuditTrail  # Import AuditTrail model
 from django.utils.timezone import now  # For timestamping
 
@@ -35,6 +35,7 @@ def ecl_methodology_list(request):
     return render(request, 'ifrs9_conf/ecl_methodology_list.html', {'methods': methods})
 
 @login_required
+@permission_required('IFRS9.add_eclmethod', raise_exception=True)
 def add_ecl_method(request):
     if request.method == 'POST':
         form = ECLMethodForm(request.POST)
@@ -68,6 +69,7 @@ def add_ecl_method(request):
 
 
 @login_required
+@permission_required('IFRS9.change_eclmethod', raise_exception=True)
 def edit_ecl_method(request, method_id):
     method = get_object_or_404(ECLMethod, pk=method_id)
     if request.method == 'POST':
@@ -111,6 +113,7 @@ def edit_ecl_method(request, method_id):
 
 
 @login_required
+@permission_required('IFRS9.delete_eclmethod', raise_exception=True)
 def delete_ecl_method(request, method_id):
     method = get_object_or_404(ECLMethod, pk=method_id)
     
@@ -141,6 +144,7 @@ def choose_ecl_methodology(request):
 
 
 @login_required
+@permission_required('IFRS9.change_reportcolumnconfig', raise_exception=True)
 def column_mapping_view(request):
     # Dynamically retrieve all field names from the model
     model_fields = [field.name for field in FCT_Reporting_Lines._meta.get_fields()]
@@ -192,6 +196,7 @@ def reporting_currency_list(request):
 # Create a new Reporting Currency
 # Create a new Reporting Currency (only if there isn't one already)
 @login_required
+@permission_required('IFRS9.add_reportingcurrency', raise_exception=True)
 def reporting_currency_create(request):
     # Check if a reporting currency already exists
     if ReportingCurrency.objects.exists():
@@ -213,6 +218,7 @@ def reporting_currency_create(request):
 
 # Edit an existing Reporting Currency
 @login_required
+@permission_required('IFRS9.change_reportingcurrency', raise_exception=True)
 def reporting_currency_edit(request, currency_id):
     reporting_currency = get_object_or_404(ReportingCurrency, pk=currency_id)
     if request.method == 'POST':
@@ -230,6 +236,7 @@ def reporting_currency_edit(request, currency_id):
 
 # Delete an existing Reporting Currency
 @login_required
+@permission_required('IFRS9.delete_reportingcurrency', raise_exception=True)
 def reporting_currency_delete(request, currency_id):
     reporting_currency = get_object_or_404(ReportingCurrency, pk=currency_id)
     if request.method == 'POST':
@@ -263,6 +270,7 @@ def define_currency_view(request):
 
 # Create Reporting Currency (only if there isn't one already)
 @login_required
+@permission_required('IFRS9.add_currencycode', raise_exception=True)
 def define_currency_create(request):
     
     
@@ -281,6 +289,7 @@ def define_currency_create(request):
 
 # Edit the existing Reporting Currency
 @login_required
+@permission_required('IFRS9.change_currencycode', raise_exception=True)
 def define_currency_edit(request, currency_id):
     reporting_currency = get_object_or_404(CurrencyCode, pk=currency_id)  # Fetch from CurrencyCode table
     if request.method == 'POST':
@@ -298,6 +307,7 @@ def define_currency_edit(request, currency_id):
 
 # Delete the existing Reporting Currency
 @login_required
+@permission_required('IFRS9.delete_currencycode', raise_exception=True)
 def define_currency_delete(request, currency_id):
     reporting_currency = get_object_or_404(CurrencyCode, pk=currency_id)  # Fetch from CurrencyCode table
     if request.method == 'POST':
@@ -324,6 +334,7 @@ def configure_exchange_rate_process(request):
     return render(request, 'ifrs9_conf/configure_exchange_rate_process.html', {'exchange_conf_list': exchange_conf_list})
 
 @login_required
+@permission_required('IFRS9.add_dimexchangerateconf', raise_exception=True)
 def add_exchange_rate_conf(request):
     if request.method == 'POST':
         form = ExchangeRateConfForm(request.POST)
@@ -355,6 +366,7 @@ def add_exchange_rate_conf(request):
 # Edit view
 # Edit view
 @login_required
+@permission_required('IFRS9.change_dimexchangerateconf', raise_exception=True)
 def edit_exchange_rate_conf(request, id):
     exchange_conf = get_object_or_404(DimExchangeRateConf, id=id)
     if request.method == 'POST':
@@ -395,6 +407,7 @@ def edit_exchange_rate_conf(request, id):
 
 # Delete view
 @login_required
+@permission_required('IFRS9.delete_dimexchangerateconf', raise_exception=True)
 def delete_exchange_rate_conf(request, id):
     exchange_conf = get_object_or_404(DimExchangeRateConf, id=id)
     if request.method == 'POST':

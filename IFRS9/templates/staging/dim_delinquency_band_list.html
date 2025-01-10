@@ -24,9 +24,11 @@
    
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 text-primary">Delinquency Bands</h1>
+        {% if perms.IFRS9.add_dim_delinquency_band %}
         <a href="{% url 'dim_delinquency_band_add' %}" class="btn btn-primary btn-sm">
             <i class="fas fa-plus"></i> Add Delinquency Band
         </a>
+        {% endif %}
     </div>
 
     <div class="table-responsive">
@@ -52,17 +54,21 @@
                     <td>{{ band.v_amrt_term_unit }}</td>
                     <td>{{ band.created_by.email }}</td>
                     <td>
+                        {% if perms.IFRS9.change_dim_delinquency_band %}
                         <a href="{% url 'dim_delinquency_band_edit' band.pk %}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i> Edit
                         </a>
+                        {% endif %}
+                        {% if perms.IFRS9.delete_dim_delinquency_band %}
                         <a href="{% url 'dim_delinquency_band_delete' band.pk %}" class="btn btn-sm btn-danger">
                             <i class="fas fa-trash"></i> Delete
                         </a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center">No data found</td>
+                    <td colspan="7" class="text-center">No data found</td>
                 </tr>
                 {% endfor %}
             </tbody>

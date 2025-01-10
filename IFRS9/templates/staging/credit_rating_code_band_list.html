@@ -24,9 +24,11 @@
    
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 text-primary">Credit Rating Codes</h1>
+        {% if perms.IFRS9.add_credit_rating_code_band %}
         <a href="{% url 'credit_rating_code_band_add' %}" class="btn btn-primary btn-sm">
             <i class="fas fa-plus"></i> Add Rating Code
         </a>
+        {% endif %}
     </div>
 
     <div class="table-responsive">
@@ -46,17 +48,21 @@
                     <td>{{ code.v_rating_desc }}</td>
                     <td>{{ code.created_by.email }}</td>
                     <td>
+                        {% if perms.IFRS9.change_credit_rating_code_band %}
                         <a href="{% url 'credit_rating_code_band_edit' code.pk %}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i> Edit
                         </a>
+                        {% endif %}
+                        {% if perms.IFRS9.delete_credit_rating_code_band %}
                         <a href="{% url 'credit_rating_code_band_delete' code.pk %}" class="btn btn-sm btn-danger">
                             <i class="fas fa-trash"></i> Delete
                         </a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="3" class="text-center">No data found</td>
+                    <td colspan="4" class="text-center">No data found</td>
                 </tr>
                 {% endfor %}
             </tbody>

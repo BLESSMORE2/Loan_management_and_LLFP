@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from ..models import *
 from ..forms import *
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db import IntegrityError
@@ -44,6 +44,7 @@ def segment_list(request):
 
 # Create new segment
 @login_required
+@permission_required('IFRS9.add_fsi_product_segment', raise_exception=True)
 def segment_create(request):
     if request.method == "POST":
         form = FSIProductSegmentForm(request.POST)
@@ -98,6 +99,7 @@ def get_product_description(request):
 
 # Update existing segment
 @login_required
+@permission_required('IFRS9.change_fsi_product_segment', raise_exception=True)
 def segment_edit(request, segment_id):
     segment = get_object_or_404(FSI_Product_Segment, pk=segment_id)
     
@@ -142,6 +144,7 @@ def segment_edit(request, segment_id):
 
 # Delete segment
 @login_required
+@permission_required('IFRS9.delete_fsi_product_segment', raise_exception=True)
 def segment_delete(request, segment_id):
     segment = get_object_or_404(FSI_Product_Segment, pk=segment_id)
     if request.method == "POST":
@@ -176,6 +179,7 @@ def pd_term_structure_list(request):
 
 # Create new PD Term Structure
 @login_required
+@permission_required('IFRS9.add_ldn_pd_term_structure', raise_exception=True)
 def pd_term_structure_create(request):
     if request.method == "POST":
         form = PDTermStructureForm(request.POST)
@@ -218,6 +222,7 @@ def pd_term_structure_create(request):
     return render(request, 'probability_conf/pd_term_structure_form.html', {'form': form})
 
 @login_required
+@permission_required('IFRS9.change_ldn_pd_term_structure', raise_exception=True)
 def pd_term_structure_edit(request, term_id):
     term_structure = get_object_or_404(Ldn_PD_Term_Structure, pk=term_id)
     
@@ -260,6 +265,7 @@ def pd_term_structure_edit(request, term_id):
     return render(request, 'probability_conf/pd_term_structure_form.html', {'form': form})
 # Delete PD Term Structure
 @login_required
+@permission_required('IFRS9.delete_ldn_pd_term_structure', raise_exception=True)
 def pd_term_structure_delete(request, term_id):
     term_structure = get_object_or_404(Ldn_PD_Term_Structure, pk=term_id)
     if request.method == "POST":
@@ -299,6 +305,7 @@ def delinquent_pd_list(request):
 
 # Create a new PD Term Detail
 @login_required
+@permission_required('IFRS9.add_ldn_pd_term_structure_dtl', raise_exception=True)
 def delinquent_pd_create(request):
     if request.method == 'POST':
         form = PDTermStructureDtlForm(request.POST)
@@ -339,6 +346,7 @@ def delinquent_pd_create(request):
 
 # Edit PD Term Detail
 @login_required
+@permission_required('IFRS9.change_ldn_pd_term_structure_dtl', raise_exception=True)
 def delinquent_pd_edit(request, term_id):
     pd_term_detail = get_object_or_404(Ldn_PD_Term_Structure_Dtl, pk=term_id)
     
@@ -382,6 +390,7 @@ def delinquent_pd_edit(request, term_id):
     return render(request, 'probability_conf/delinquent_pd_form.html', {'form': form})
 # Delete PD Term Detail
 @login_required
+@permission_required('IFRS9.delete_ldn_pd_term_structure_dtl', raise_exception=True)
 def delinquent_pd_delete(request, term_id):
     pd_term_detail = get_object_or_404(Ldn_PD_Term_Structure_Dtl, pk=term_id)
     if request.method == 'POST':
@@ -421,6 +430,7 @@ def rating_pd_list(request):
 
 # Create a new Rating Based PD Term Detail
 @login_required
+@permission_required('IFRS9.add_ldn_pd_term_structure_dtl', raise_exception=True)
 def rating_pd_create(request):
     if request.method == 'POST':
         form = PDTermStructureDtlRatingForm(request.POST)
@@ -458,6 +468,7 @@ def rating_pd_create(request):
 
 # Edit Rating Based PD Term Detail
 @login_required
+@permission_required('IFRS9.change_ldn_pd_term_structure_dtl', raise_exception=True)
 def rating_pd_edit(request, term_id):
     pd_term_detail = get_object_or_404(Ldn_PD_Term_Structure_Dtl, pk=term_id)
     if request.method == 'POST':
@@ -498,6 +509,7 @@ def rating_pd_edit(request, term_id):
 
 # Delete Rating Based PD Term Detail
 @login_required
+@permission_required('IFRS9.delete_ldn_pd_term_structure_dtl', raise_exception=True)
 def rating_pd_delete(request, term_id):
     pd_term_detail = get_object_or_404(Ldn_PD_Term_Structure_Dtl, pk=term_id)
     if request.method == 'POST':
@@ -529,6 +541,7 @@ def interpolation_method_list(request):
 
 # Create a new Interpolation Method
 @login_required
+@permission_required('IFRS9.add_fsi_llfp_app_preferences', raise_exception=True)
 def interpolation_method_create(request):
     if request.method == 'POST':
         form = InterpolationMethodForm(request.POST)
@@ -570,6 +583,7 @@ def interpolation_method_create(request):
     return render(request, 'probability_conf/interpolation_method_form.html', {'form': form})
 # Edit Interpolation Method
 @login_required
+@permission_required('IFRS9.change_fsi_llfp_app_preferences', raise_exception=True)
 def interpolation_method_edit(request, method_id):
     interpolation_method = get_object_or_404(FSI_LLFP_APP_PREFERENCES, pk=method_id)
     
@@ -614,6 +628,7 @@ def interpolation_method_edit(request, method_id):
 
 # Delete Interpolation Method
 @login_required
+@permission_required('IFRS9.delete_fsi_llfp_app_preferences', raise_exception=True)
 def interpolation_method_delete(request, method_id):
     interpolation_method = get_object_or_404(FSI_LLFP_APP_PREFERENCES, pk=method_id)
 

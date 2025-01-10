@@ -4,11 +4,13 @@
 <div class="container py-4">
     <h1 class="h3 text-primary text-center mb-4">Reporting Currencies</h1>
 
+    <!-- Back Button -->
     <a href="{% url 'configure_reporting_currency' %}" class="btn btn-outline-secondary mb-3">
-        <i class="fas fa-arrow-left"></i> Back 
-        </a>
-        <br>
-        
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <br>
+
+    <!-- Messages Block -->
     {% if messages %}
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -18,7 +20,10 @@
         {% endfor %}
     {% endif %}
 
+    <!-- Add New Reporting Currency (Requires Add Permission) -->
+    {% if perms.IFRS9.add_reportingcurrency %}
     <a href="{% url 'reporting_currency_create' %}" class="btn btn-success mb-3">Add New Reporting Currency</a>
+    {% endif %}
 
     <table class="table table-bordered">
         <thead>
@@ -32,8 +37,15 @@
             <tr>
                 <td>{{ currency.currency_code.code }} - {{ currency.currency_code.description }}</td>
                 <td>
+                    <!-- Edit Button (Requires Change Permission) -->
+                    {% if perms.IFRS9.change_reportingcurrency %}
                     <a href="{% url 'reporting_currency_edit' currency.id %}" class="btn btn-primary btn-sm">Edit</a>
+                    {% endif %}
+
+                    <!-- Delete Button (Requires Delete Permission) -->
+                    {% if perms.IFRS9.delete_reportingcurrency %}
                     <a href="{% url 'reporting_currency_delete' currency.id %}" class="btn btn-danger btn-sm">Delete</a>
+                    {% endif %}
                 </td>
             </tr>
             {% empty %}
