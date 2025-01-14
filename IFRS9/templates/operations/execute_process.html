@@ -84,8 +84,19 @@
                 </div>
 
                 <!-- Submit button to execute the process with selected functions -->
-                <button type="submit" class="btn btn-primary mt-3" id="execute-btn" style="display: none;">Execute Process</button>
-            </form>
+                {% if perms.IFRS9.can_execute_run %}
+                <!-- Submit button to execute the process with selected functions -->
+                <button type="submit" class="btn btn-primary mt-3" id="execute-btn" style="display: none;">
+                    <i class="fas fa-play-circle"></i> Execute Process
+                </button>
+            {% else %}
+                <!-- Warning message if the user lacks permissions -->
+                <div class="alert alert-warning mt-3 d-flex align-items-center" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span>You do not have permission to execute processes.</span>
+                </div>
+            {% endif %}
+                        </form>
         </div>
     </div>
 </div>

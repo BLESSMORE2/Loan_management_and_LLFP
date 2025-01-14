@@ -35,38 +35,51 @@
                     <i class="bi bi-plus-circle me-2"></i> Create Run Process
                 </a>
             </li>
+            {% else %}
+            <li class="nav-item">
+                <p class="text-warning px-3">No permission to view run processes.</p>
+            </li>
             {% endif %}
 
+            
             <li class="nav-item">
                 <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'execute_process_view' %}active{% endif %} text-white" href="{% url 'execute_process_view' %}">
                     <i class="bi bi-play-circle me-2"></i> Run Execution Process
                 </a>
             </li>
-       
+            
 
-            {% if perms.IFRS9.monitor_running_process %}
+            {% if perms.IFRS9.can_monitor %}
             <li class="nav-item">
                 <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'monitor_running_process_view' %}active{% endif %} text-white" href="{% url 'monitor_running_process_view' %}">
                     <i class="bi bi-eye me-2"></i> Monitor Running Process
                 </a>
             </li>
+            {% else %}
+            <li class="nav-item">
+                <p class="text-warning px-3">No permission to monitor runs.</p>
+            </li>
             {% endif %}
 
-            {% if perms.IFRS9.cancel_process %}
+            {% if perms.IFRS9.can_cancel_run %}
             <li class="nav-item">
                 <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'running_processes' %}active{% endif %} text-white" href="{% url 'running_processes' %}">
                     <i class="bi bi-x-circle me-2"></i> Cancel Running Process
                 </a>
             </li>
+            {% else %}
+            <li class="nav-item">
+                <p class="text-warning px-3">No permission to cancel runs.</p>
+            </li>
             {% endif %}
 
-            {% if perms.IFRS9.view_data_quality %}
+            
             <li class="nav-item">
                 <a class="nav-link font-weight-bold {% if request.resolver_match.url_name == 'data_quality_check' %}active{% endif %} text-white" href="{% url 'data_quality_check' %}">
                     <i class="bi bi-bar-chart me-2"></i> Data Quality Check
                 </a>
             </li>
-            {% endif %}
+           
         </ul>
     </div>
 </nav>

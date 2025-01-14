@@ -90,7 +90,7 @@
                     <a class="nav-link" href="{% url 'ifrs9_home' %}">Home</a>
                 </li>
                 {% if request.user.is_superuser %}
-                <li class="nav-item {% if request.path == '/admin/' %}active{% endif %}">
+                <li class="nav-item {% if request.path == '/ifrs-admin/' %}active{% endif %}">
                     <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
                 </li>
                 {% endif %}

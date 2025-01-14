@@ -71,16 +71,15 @@ def process_list(request):
 # View the details of a specific process, including its associated functions and execution order
 @login_required
 @permission_required('IFRS9.view_process', raise_exception=True)
-@permission_required('IFRS9.view_runprocess', raise_exception=True)
 def process_detail(request, process_id):
     process = get_object_or_404(Process, id=process_id)
     run_processes = RunProcess.objects.filter(process=process).order_by('order')  # Fetch functions in order
     return render(request, 'operations/process_detail.html', {'process': process, 'run_processes': run_processes})
 
+
 # Create or edit a process
 @login_required
 @permission_required('IFRS9.add_process', raise_exception=True)
-@permission_required('IFRS9.add_runprocess', raise_exception=True)
 def create_process(request, process_id=None):
     """
     View to add or edit a process and its corresponding run processes.
@@ -190,7 +189,6 @@ def create_process(request, process_id=None):
 # Edit an existing process
 @login_required
 @permission_required('IFRS9.change_process', raise_exception=True)
-@permission_required('IFRS9.change_runprocess', raise_exception=True)
 def edit_process(request, process_id):
     """
     View to edit an existing process and its corresponding run processes.
@@ -599,7 +597,6 @@ def running_processes_view(request):
 
 # Updated function to handle cancellation request
 @login_required
-@permission_required('IFRS9.cancel_functionexecutionstatus', raise_exception=True)
 def cancel_running_process(request, process_run_id):
     # Check if the process is running
     try:

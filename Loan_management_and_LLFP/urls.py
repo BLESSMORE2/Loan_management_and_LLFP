@@ -17,12 +17,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 
+# Customizing the admin interface titles
 admin.site.site_title = "IFRS 9 Compliance and Risk Management"
-admin.site.site_header = "IFRS 9 Compliance and Risk Management  administration"
-admin.site.index_title = "Site administration"
+admin.site.site_header = "IFRS 9 Compliance and Risk Management Administration"
+admin.site.index_title = "Welcome to the Administration Panel"
+
 urlpatterns = [
    
-    path('admin/', admin.site.urls),
+    path('ifrs-admin/', admin.site.urls),
     path('', include('IFRS9.urls')),  # Include URLs from the IFRS9 app
     path('', include('Users.urls')),
 ]

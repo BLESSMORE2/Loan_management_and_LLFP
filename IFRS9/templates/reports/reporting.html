@@ -17,6 +17,7 @@
 
         <!-- Reporting & Analytics List -->
         <div class="row justify-content-center">
+            {% if perms.IFRS9.can_view_reports %}
             <!-- First Report Option (View Results and Extract) -->
             <div class="col-md-8 mb-4">
                 <div class="card shadow-sm border-0">
@@ -29,6 +30,18 @@
                     </div>
                 </div>
             </div>
+            {% else %}
+            <!-- Restricted Access Message -->
+            <div class="col-md-8 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body d-flex align-items-center text-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <p class="mb-0">You do not have permission to view reports.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
 
             <!-- Second Report Option (Reports) -->
             <div class="col-md-8 mb-4">

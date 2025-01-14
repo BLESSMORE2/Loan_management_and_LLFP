@@ -52,6 +52,9 @@ class Ldn_Financial_Instrument(models.Model):
     class Meta:
         db_table = 'Ldn_Financial_Instrument'
         unique_together = ('fic_mis_date', 'v_account_number')
+        permissions = [
+            ("can_load_data", "Can load data"), ("can_view_edit_data", "Can load data"), 
+        ]
 
 
     
@@ -672,6 +675,9 @@ class FCT_Reporting_Lines(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['fic_mis_date', 'n_account_number', 'n_run_key'], name='unique_fct_reporting_lines')
         ]
+        permissions = [
+            ("can_view_reports", "Can view reports"), 
+        ]
 
 class ECLMethod(models.Model):
     METHOD_CHOICES = [
@@ -764,6 +770,9 @@ class FunctionExecutionStatus(models.Model):
         ordering = ['run_count', 'execution_start_date']
         constraints = [
             models.UniqueConstraint(fields=['execution_start_date', 'process_run_id','function'], name='unique_execution_process')
+        ]
+        permissions = [
+            ("can_execute_run", "Can execute"), ("can_monitor", "Can monitor"),("can_cancel_run", "Can cancel run"),
         ]
       
 

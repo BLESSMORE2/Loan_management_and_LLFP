@@ -15,7 +15,7 @@ from django.db.models import Q
 import csv
 from django.http import HttpResponse,JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db import IntegrityError, DatabaseError as DBError
 from django.views import View
 import pandas as pd
@@ -31,8 +31,9 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 def data_management(request):
     return render(request, 'load_data/data_management.html')
 
-class FileUploadView(LoginRequiredMixin,View):
+class FileUploadView(LoginRequiredMixin, PermissionRequiredMixin, View):
     template_name = 'load_data/file_upload_step1.html'
+    permission_required = 'IFRS9.can_load_data'  # Add the custom permission
 
     def get(self, request):
         form = UploadFileForm()
