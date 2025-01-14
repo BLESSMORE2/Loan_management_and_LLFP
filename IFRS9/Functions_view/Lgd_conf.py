@@ -141,6 +141,15 @@ def edit_lgd_calculation(request):
         form = CollateralLGDForm(request.POST, instance=lgd_instance)
         if form.is_valid():
             form.save()
+            # Log the update in the AuditTrail
+            AuditTrail.objects.create(
+                    user=request.user,
+                    model_name='CollateralLGD',
+                    action='update',
+                    object_id=lgd_instance.pk,
+                    change_description=f"Updated LGD Calculation settings. Changes: {form.changed_data}",
+                    timestamp=now(),
+                )
             messages.success(request, "LGD Calculation settings updated successfully!")
             return redirect('view_lgd_calculation')
         else:

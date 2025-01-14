@@ -13,6 +13,8 @@ from django.apps import apps
 from django.forms import modelform_factory
 from django.db.models import Q
 import csv
+from Users.models import AuditTrail  # Import AuditTrail model
+from django.utils.timezone import now  # For timestamping
 from django.http import HttpResponse,JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -265,6 +267,16 @@ class SubmitToDatabaseView(LoginRequiredMixin, View):
                 # Update progress in session after each chunk
                 request.session['progress'] = int((i / total_chunks) * 100)
                 request.session.modified = True
+
+            # Log the successful upload in the AuditTrail
+            AuditTrail.objects.create(
+                user=request.user,
+                model_name=selected_table,
+                action='upload',
+                object_id=None,  # No specific object ID since multiple records are uploaded
+                change_description=f"Uploaded {success_count} records to the {selected_table} table.",
+                timestamp=now(),
+            )
 
             # Mark completion and return success message with count of records uploaded
             request.session['progress'] = 100

@@ -144,7 +144,6 @@ def choose_ecl_methodology(request):
 
 
 @login_required
-@permission_required('IFRS9.change_reportcolumnconfig', raise_exception=True)
 def column_mapping_view(request):
     # Dynamically retrieve all field names from the model
     model_fields = [field.name for field in FCT_Reporting_Lines._meta.get_fields()]

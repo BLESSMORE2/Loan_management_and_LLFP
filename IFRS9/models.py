@@ -676,7 +676,7 @@ class FCT_Reporting_Lines(models.Model):
             models.UniqueConstraint(fields=['fic_mis_date', 'n_account_number', 'n_run_key'], name='unique_fct_reporting_lines')
         ]
         permissions = [
-            ("can_view_reports", "Can view reports"), 
+            ("can_view_reports", "Can view reports"), ("can_select_result_columns", "Can select columns"), 
         ]
 
 class ECLMethod(models.Model):
