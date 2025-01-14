@@ -19,6 +19,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, DatabaseError as DBError
 from django.views import View
 import pandas as pd
+from django.core.cache import cache
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 
 
 
@@ -336,16 +339,47 @@ def data_entry_view(request):
     })
 
 
+
 @login_required
 def get_fic_mis_dates(request):
     table_name = request.GET.get('table_name')
+    if not table_name:
+        return JsonResponse({'dates': []})
+        
     try:
         model_class = apps.get_model('IFRS9', table_name)
-        dates = model_class.objects.values_list('fic_mis_date', flat=True).distinct().order_by('-fic_mis_date')
-        date_choices = [(date, date.strftime('%Y-%m-%d')) for date in dates]
-        return JsonResponse({'dates': date_choices})
     except LookupError:
-        return JsonResponse({'error': 'Table not found'}, status=404)
+        return JsonResponse({'error': 'Invalid table name'}, status=400)
+    
+    # Check if the model has a field named 'fic_mis_date'
+    field_names = [field.name for field in model_class._meta.fields]
+    if 'fic_mis_date' not in field_names:
+        # If the field doesn't exist, return an empty list or a suitable response
+        return JsonResponse({'dates': []})
+    
+    try:
+        distinct_dates = (
+            model_class.objects
+            .values_list('fic_mis_date', flat=True)
+            .distinct()
+            .order_by('-fic_mis_date')
+        )
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+    dates = []
+    for date in distinct_dates:
+        # Skip None values
+        if date is None:
+            continue
+        # Format date safely
+        try:
+            formatted_date = date.strftime('%Y-%m-%d')
+        except Exception:
+            formatted_date = str(date)
+        dates.append((date.isoformat(), formatted_date))
+
+    return JsonResponse({'dates': dates})
     
 ########################################################
 
@@ -389,110 +423,143 @@ def view_data(request):
     if table_form.is_valid():
         if table_name and fic_mis_date:
             try:
-                # Get the model class dynamically based on the selected table
                 model_class = apps.get_model('IFRS9', table_name)
                 print(f"Selected Table: {table_name}, Selected Date: {fic_mis_date}")
 
-                # Apply filtering by `fic_mis_date` using `__date` for compatibility
-                data = model_class.objects.filter(fic_mis_date__date=fic_mis_date)
-                
-                # Debug output
-                print(f"Query: {data.query}")
-                print(f"Data Count: {data.count()}")  # Check if data is returned
+                # Direct filtering on fic_mis_date for improved performance
+                data = model_class.objects.filter(fic_mis_date=fic_mis_date)
 
-                # Get column names and unique values for each column
-                columns = [field.name for field in model_class._meta.fields]
-                for column in columns:
-                    column_unique_values[column] = model_class.objects.values_list(column, flat=True).distinct()
-                
-                if not data:
+                print(f"Query: {data.query}")
+                print(f"Data Count: {data.count()}")
+
+                if data.exists():
+                    columns = [field.name for field in model_class._meta.fields]
+                    for column in columns:
+                        column_unique_values[column] = model_class.objects.values_list(column, flat=True).distinct()
+                else:
                     messages.warning(request, "No data found for the selected date.")
-                
             except LookupError:
                 messages.error(request, "Error: The selected table does not exist.")
         else:
             messages.warning(request, "Please select both a table and a date to view data.")
-            
-            # Repopulate `fic_mis_date` choices based on selected table
             if table_name:
-                model_class = apps.get_model('IFRS9', table_name)
-                distinct_dates = model_class.objects.values_list('fic_mis_date', flat=True).distinct().order_by('-fic_mis_date')
-                table_form.fields['fic_mis_date'].choices = [('', 'Select Date')] + [(date, date) for date in distinct_dates]
+                try:
+                    model_class = apps.get_model('IFRS9', table_name)
+                    distinct_dates = model_class.objects.values_list('fic_mis_date', flat=True).distinct().order_by('-fic_mis_date')
+                    table_form.fields['fic_mis_date'].choices = [('', 'Select Date')] + [(date, date) for date in distinct_dates]
+                except LookupError:
+                    messages.error(request, "Error: The selected table does not exist.")
+
+    # Apply pagination if data exists
+    page_obj = None
+    if data is not None:
+        page = request.GET.get('page', 1)
+        paginator = Paginator(data, 100)  # Show 100 records per page
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
 
     return render(request, 'load_data/view_data.html', {
         'table_form': table_form,
-        'data': data,
+        'page_obj': page_obj,  # Pass the paginated page object
         'columns': columns,
         'column_unique_values': column_unique_values,
         'table_name': table_name,
         'fic_mis_date': fic_mis_date,
     })
+
 
 
 @login_required
 def filter_table(request):
-    # Get table_name from the GET parameters
     table_name = request.GET.get('table_name')
-    table_form = TableSelectForm(initial={'table_name': table_name})
-    data = None
-    columns = []
-    column_unique_values = {}
-    
-    # Retrieve other parameters
     fic_mis_date = request.GET.get('fic_mis_date')
     filter_column = request.GET.get('filter_column')
     filter_values = request.GET.get('filter_values')
     sort_order = request.GET.get('sort_order')
+    
+    table_form = TableSelectForm(initial={'table_name': table_name})
+    columns = []
+    column_unique_values = {}
+    page_obj = None
 
-    if table_name and fic_mis_date:  # Ensure both table_name and fic_mis_date are required for data retrieval
-        try:
-            model_class = apps.get_model('IFRS9', table_name)
-            
-            # Start by filtering directly on fic_mis_date, without __date lookup
-            data = model_class.objects.filter(fic_mis_date=fic_mis_date)
-
-            # Additional column-specific filtering if provided
-            if filter_column and filter_values:
-                filter_values_list = filter_values.split(',')
-                filter_values_list = [value for value in filter_values_list if value not in ["on", "(Select All)"]]
-                
-                filters = Q()
-                if "None" in filter_values_list:
-                    filter_values_list.remove("None")
-                    filters |= Q(**{f"{filter_column}__isnull": True})
-                if filter_values_list:
-                    filters |= Q(**{f"{filter_column}__in": filter_values_list})
-                
-                data = data.filter(filters)
-
-            # Apply sorting if specified
-            if filter_column and sort_order:
-                data = data.order_by(filter_column if sort_order == 'asc' else f'-{filter_column}')
-
-            # Retrieve columns and unique values for dropdown filters
-            columns = [field.name for field in model_class._meta.fields]
-            for column in columns:
-                column_unique_values[column] = data.values_list(column, flat=True).distinct()
-
-            # Debug output
-            print(f"SQL Query: {data.query}")
-            print(f"Data Count: {data.count()}")
-
-        except LookupError:
-            messages.error(request, "Error: The selected table does not exist.")
-            print("Error: The selected table does not exist.")
-    else:
+    # Show warning if table_name or fic_mis_date is missing
+    if not table_name or not fic_mis_date:
         messages.warning(request, "Please select both a table and a date to view data.")
+        return render(request, 'load_data/view_data.html', {
+            'table_form': table_form,
+            'page_obj': None,
+            'columns': [],
+            'column_unique_values': {},
+            'table_name': table_name,
+            'fic_mis_date': fic_mis_date,
+        })
 
-    return render(request, 'load_data/view_data.html', {
+    try:
+        # Dynamically load the model and limit fields with .only()
+        model_class = apps.get_model('IFRS9', table_name)
+        fields = [field.name for field in model_class._meta.fields]
+        columns = fields  # Use all fields for columns
+
+        queryset = model_class.objects.only(*fields).filter(fic_mis_date=fic_mis_date)
+
+        # Apply column-based filtering if specified
+        if filter_column and filter_values:
+            values_list = [
+                val for val in filter_values.split(',')
+                if val not in ["on", "(Select All)"]
+            ]
+            filters = Q()
+            if "None" in values_list:
+                values_list.remove("None")
+                filters |= Q(**{f"{filter_column}__isnull": True})
+            if values_list:
+                filters |= Q(**{f"{filter_column}__in": values_list})
+            queryset = queryset.filter(filters)
+
+        # Apply sorting if specified
+        if filter_column and sort_order:
+            order_exp = filter_column if sort_order == 'asc' else f'-{filter_column}'
+            queryset = queryset.order_by(order_exp)
+
+        # Cache distinct values for each column to improve performance
+        if queryset.exists():
+            for col in columns:
+                # Create a unique cache key for distinct values
+                cache_key = f"distinct_{table_name}_{fic_mis_date}_{col}"
+                distinct_vals = cache.get(cache_key)
+                if distinct_vals is None:
+                    # Retrieve distinct values (limit to 500)
+                    distinct_vals = list(queryset.values_list(col, flat=True).distinct()[:1000])
+                    cache.set(cache_key, distinct_vals, timeout=300)  # Cache for 5 minutes
+                column_unique_values[col] = distinct_vals
+
+        # Pagination: Show 20 rows per page
+        page = request.GET.get('page', 1)
+        paginator = Paginator(queryset, 20)
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+
+    except LookupError:
+        messages.error(request, "Error: The selected table does not exist.")
+        page_obj = None
+
+    context = {
         'table_form': table_form,
-        'data': data,
+        'page_obj': page_obj,
         'columns': columns,
         'column_unique_values': column_unique_values,
         'table_name': table_name,
         'fic_mis_date': fic_mis_date,
-    })
-
+    }
+    return render(request, 'load_data/view_data.html', context)
 
 @login_required
 def download_data(request, table_name):
@@ -595,6 +662,7 @@ def delete_row(request, table_name, row_id):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 
 
 
