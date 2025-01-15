@@ -171,7 +171,7 @@ def delinquent_lgd_list(request):
     # Filter for 'Delinquent' type PD Term Structures
     pd_term_details_list = FSI_LGD_Term_Structure.objects.filter(
         v_lgd_term_structure_id__v_pd_term_structure_type='D'
-    ).select_related('v_lgd_term_structure_id')
+    ).select_related('v__term_structure_id')
     
     # Set up pagination with 5 items per page
     paginator = Paginator(pd_term_details_list, 5)
@@ -182,7 +182,7 @@ def delinquent_lgd_list(request):
 
 # Create a new PD Term Detail
 @login_required
-@permission_required('IFRS9.add_FSI_LGD_Term_Structure', raise_exception=True)
+@permission_required('IFRS9.add_fsi_lgd_term_structure', raise_exception=True)
 def delinquent_lgd_create(request):
     if request.method == 'POST':
         form = LGDTermStructureDtlForm(request.POST)
@@ -223,7 +223,7 @@ def delinquent_lgd_create(request):
 
 # Edit PD Term Detail
 @login_required
-@permission_required('IFRS9.change_FSI_LGD_Term_Structure', raise_exception=True)
+@permission_required('IFRS9.change_fsi_lgd_term_structure', raise_exception=True)
 def delinquent_lgd_edit(request, term_id):
     pd_term_detail = get_object_or_404(FSI_LGD_Term_Structure, pk=term_id)
     
@@ -267,7 +267,7 @@ def delinquent_lgd_edit(request, term_id):
     return render(request, 'lgd_conf/delinquent_lgd_form.html', {'form': form})
 # Delete PD Term Detail
 @login_required
-@permission_required('IFRS9.delete_FSI_LGD_Term_Structure', raise_exception=True)
+@permission_required('IFRS9.delete_fsi_lgd_term_structure', raise_exception=True)
 def delinquent_lgd_delete(request, term_id):
     pd_term_detail = get_object_or_404(FSI_LGD_Term_Structure, pk=term_id)
     if request.method == 'POST':
@@ -307,7 +307,7 @@ def rating_lgd_list(request):
 
 # Create a new Rating Based PD Term Detail
 @login_required
-@permission_required('IFRS9.add_FSI_LGD_Term_Structure', raise_exception=True)
+@permission_required('IFRS9.add_fsi_lgd_term_structure', raise_exception=True)
 def rating_lgd_create(request):
     if request.method == 'POST':
         form = LGDTermStructureDtlRatingForm(request.POST)
@@ -345,7 +345,7 @@ def rating_lgd_create(request):
 
 # Edit Rating Based PD Term Detail
 @login_required
-@permission_required('IFRS9.change_FSI_LGD_Term_Structure', raise_exception=True)
+@permission_required('IFRS9.change_fsi_lgd_term_structure', raise_exception=True)
 def rating_lgd_edit(request, term_id):
     pd_term_detail = get_object_or_404(FSI_LGD_Term_Structure, pk=term_id)
     if request.method == 'POST':
@@ -386,7 +386,7 @@ def rating_lgd_edit(request, term_id):
 
 # Delete Rating Based PD Term Detail
 @login_required
-@permission_required('IFRS9.delete_FSI_LGD_Term_Structure', raise_exception=True)
+@permission_required('IFRS9.delete_fsi_lgd_term_structure', raise_exception=True)
 def rating_lgd_delete(request, term_id):
     pd_term_detail = get_object_or_404(FSI_LGD_Term_Structure, pk=term_id)
     if request.method == 'POST':

@@ -22,7 +22,7 @@
     <br>
     
     <!-- Add Button with Permission -->
-    {% if perms.IFRS9.add_ldn_lgd_term_structure %}
+    {% if perms.IFRS9.add_fsi_lgd_term_structure %}
     <a href="{% url 'lgd_term_structure_create' %}" class="btn btn-success mb-4">Add LGD Term Structure</a>
     {% endif %}
     
@@ -45,12 +45,12 @@
                 <td>{{ structure.created_by.email }}</td>
                 <td>
                     <!-- Edit Button with Permission -->
-                    {% if perms.IFRS9.change_ldn_lgd_term_structure %}
+                    {% if perms.IFRS9.change_fsi_lgd_term_structure %}
                     <a href="{% url 'lgd_term_structure_edit' structure.v_lgd_term_structure_id %}" class="btn btn-primary btn-sm">Edit</a>
                     {% endif %}
                     
                     <!-- Delete Button with Permission -->
-                    {% if perms.IFRS9.delete_ldn_lgd_term_structure %}
+                    {% if perms.IFRS9.delete_fsi_lgd_term_structure %}
                     <a href="{% url 'lgd_term_structure_delete' structure.v_lgd_term_structure_id %}" class="btn btn-danger btn-sm">Delete</a>
                     {% endif %}
                 </td>

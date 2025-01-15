@@ -189,13 +189,9 @@ urlpatterns = [
     path('stage-migration-matrix-sub-filter/', views.stage_migration_matrix_sub_filter_view, name='stage_migration_matrix_sub_filter_view'),
     path('export-stage-migration-report/', export_stage_migration_report_to_excel, name='export_stage_migration_report_to_excel'),
     
-
-
-
-
-
-
-
+    path('upload-documents/', views.upload_document, name='upload_document'),
+    path('documents/', views.view_documents, name='view_documents'),
+    path('delete/<int:document_id>/', views.delete_document, name='delete_document'),
 
 
 ]

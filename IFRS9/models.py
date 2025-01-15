@@ -840,6 +840,20 @@ class ReportingCurrency(models.Model):
 
     def __str__(self):
         return self.currency_code.code
+    
+
+class SupportDocuments(models.Model):
+    file_name = models.CharField(max_length=255)
+    uploaded_file = models.FileField(upload_to='support_documents/')
+    upload_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.file_name} ({self.get_document_type_display()})"
+    class Meta:
+        db_table = 'support_documents'
+    permissions = [
+            ("can_upload_document", "Can upload documents"), ("can_delete_document", "Can delete documents"),
+        ]
 
 
  
