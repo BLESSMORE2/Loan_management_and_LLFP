@@ -44,6 +44,7 @@ from ..Functions.calculate_fct_EAD_using_cashflows_pv import *
 from ..Functions.calculate_eir import *
 from ..Functions.update_fin_cashflw import *
 from ..Functions.calculate_cash_flow_rate_and_amount1 import *
+from ..Functions.cal_cf_lgd_using_collateral import *
 from ..Functions.cal_periodic_discount_Rate2 import *
 from ..Functions.cal_exp_cash_n_cash_shortfall3 import *
 from ..Functions.cal_forward_exposure4 import *
@@ -956,12 +957,13 @@ def check_cashflow_data(request):
 # ('calculate_pd_for_accounts', 'Calculates probability of default for accounts.'),
 # ('insert_cash_flow_data', 'Inserts cash flow data into the system.'),
 # ('update_financial_cash_flow', 'Updates financial cash flow records.'),
+# ('calculate_discount_factors', 'Calculates discount factors for cash flows.'),
+# ('calculate_ead_by_buckets', 'Calculates exposure at default for cash flows.'),
 # ('update_cash_flow_with_pd_buckets', 'Updates cash flows with probability of default buckets.'),
 # ('update_marginal_pd', 'Updates marginal probability of default calculations.'),
+# ('cal_lgd_and_loss_rate_for_cash_flows_using_collateral', 'Calculates LGD using Collateral for cash flows.'),
 # ('calculate_expected_cash_flow', 'Calculates expected cash flow projections.'),
-# ('calculate_discount_factors', 'Calculates discount factors for cash flows.'),
 # ('update_stage_determination_ead_with_cashflow_pv', 'Calculates exposure at default using cash flows pv.'),
-# ('calculate_ead_by_buckets', 'Calculates exposure at default for cash flows.'),
 # ('calculate_forward_loss_fields', 'Calculates forward-looking loss fields.'),
 # ('calculate_cashflow_fields', 'Calculates various cash flow fields.'),
 # ('populate_fct_reporting_lines', 'Populates reporting lines for FCT.'),

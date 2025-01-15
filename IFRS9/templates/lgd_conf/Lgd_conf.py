@@ -167,23 +167,23 @@ def edit_lgd_calculation(request):
 ####################################33
 # List all Delinquent Based PD Terms
 @login_required
-def delinquent_lgd_list(request):
+def delinquent_pd_list(request):
     # Filter for 'Delinquent' type PD Term Structures
     pd_term_details_list = FSI_LGD_Term_Structure.objects.filter(
-        v_lgd_term_structure_id__v_pd_term_structure_type='D'
-    ).select_related('v_lgd_term_structure_id')
+        v_pd_term_structure_id__v_pd_term_structure_type='D'
+    ).select_related('v_pd_term_structure_id')
     
     # Set up pagination with 5 items per page
     paginator = Paginator(pd_term_details_list, 5)
     page_number = request.GET.get('page')
     pd_term_details = paginator.get_page(page_number)
 
-    return render(request, 'lgd_conf/delinquent_lgd_list.html', {'pd_term_details': pd_term_details})
+    return render(request, 'lgd_conf/delinquent_pd_list.html', {'pd_term_details': pd_term_details})
 
 # Create a new PD Term Detail
 @login_required
 @permission_required('IFRS9.add_FSI_LGD_Term_Structure', raise_exception=True)
-def delinquent_lgd_create(request):
+def delinquent_pd_create(request):
     if request.method == 'POST':
         form = LGDTermStructureDtlForm(request.POST)
         if form.is_valid():
@@ -197,11 +197,11 @@ def delinquent_lgd_create(request):
                  # Log the creation in the AuditTrail
                 AuditTrail.objects.create(
                     user=request.user,
-                    model_name='FSI_LGD_Term_Structure',
+                    model_name='Ldn_PD_Term_Structure_Dtl',
                     action='create',
                     object_id=delinquent_pd.pk,
                     change_description=(
-                        f"Created Delinquent PD Term: Structure ID - {delinquent_pd.v_lgd_term_structure_id}, "
+                        f"Created Delinquent PD Term: Structure ID - {delinquent_pd.v_pd_term_structure_id}, "
                         f"Date - {delinquent_pd.fic_mis_date}, Risk Basis - {delinquent_pd.v_credit_risk_basis_cd}, "
                         f"PD Percent - {delinquent_pd.n_pd_percent}"
                     ),
@@ -219,12 +219,12 @@ def delinquent_lgd_create(request):
     else:
         form = LGDTermStructureDtlForm()
     
-    return render(request, 'lgd_conf/delinquent_lgd_form.html', {'form': form})
+    return render(request, 'lgd_conf/delinquent_pd_form.html', {'form': form})
 
 # Edit PD Term Detail
 @login_required
 @permission_required('IFRS9.change_FSI_LGD_Term_Structure', raise_exception=True)
-def delinquent_lgd_edit(request, term_id):
+def delinquent_pd_edit(request, term_id):
     pd_term_detail = get_object_or_404(FSI_LGD_Term_Structure, pk=term_id)
     
     if request.method == 'POST':
@@ -241,11 +241,11 @@ def delinquent_lgd_edit(request, term_id):
                 # Log the update in the AuditTrail
                 AuditTrail.objects.create(
                     user=request.user,
-                    model_name='FSI_LGD_Term_Structure',
+                    model_name='Ldn_PD_Term_Structure_Dtl',
                     action='update',
                     object_id=delinquent_pd.pk,
                     change_description=(
-                        f"Updated Delinquent PD Term: Structure ID - {delinquent_pd.v_lgd_term_structure_id}, "
+                        f"Updated Delinquent PD Term: Structure ID - {delinquent_pd.v_pd_term_structure_id}, "
                         f"Date - {delinquent_pd.fic_mis_date}, Risk Basis - {delinquent_pd.v_credit_risk_basis_cd}, "
                         f"PD Percent - {delinquent_pd.n_pd_percent}"
                     ),
@@ -264,21 +264,21 @@ def delinquent_lgd_edit(request, term_id):
     else:
         form = LGDTermStructureDtlForm(instance=pd_term_detail)
     
-    return render(request, 'lgd_conf/delinquent_lgd_form.html', {'form': form})
+    return render(request, 'lgd_conf/delinquent_pd_form.html', {'form': form})
 # Delete PD Term Detail
 @login_required
 @permission_required('IFRS9.delete_FSI_LGD_Term_Structure', raise_exception=True)
-def delinquent_lgd_delete(request, term_id):
+def delinquent_pd_delete(request, term_id):
     pd_term_detail = get_object_or_404(FSI_LGD_Term_Structure, pk=term_id)
     if request.method == 'POST':
          # Log the deletion in the AuditTrail
         AuditTrail.objects.create(
             user=request.user,
-            model_name='FSI_LGD_Term_Structure',
+            model_name='Ldn_PD_Term_Structure_Dtl',
             action='delete',
             object_id=pd_term_detail.pk,
             change_description=(
-                f"Deleted Delinquent Based PD Term: Structure ID - {pd_term_detail.v_lgd_term_structure_id}, "
+                f"Deleted Delinquent Based PD Term: Structure ID - {pd_term_detail.v_pd_term_structure_id}, "
                 f"Date - {pd_term_detail.fic_mis_date}, Risk Basis - {pd_term_detail.v_credit_risk_basis_cd}, "
                 f"PD Percent - {pd_term_detail.n_pd_percent}"
             ),
@@ -287,28 +287,28 @@ def delinquent_lgd_delete(request, term_id):
         pd_term_detail.delete()
         messages.success(request, "Delinquent PD Term deleted successfully!")
         return redirect('delinquent_pd_list')
-    return render(request, 'lgd_conf/delinquent_lgd_confirm_delete.html', {'pd_term_detail': pd_term_detail})
+    return render(request, 'lgd_conf/delinquent_pd_confirm_delete.html', {'pd_term_detail': pd_term_detail})
 
 # List View
 # List all Rating Based PD Terms
 @login_required
-def rating_lgd_list(request):
+def rating_pd_list(request):
     # Filter for 'Rating' type PD Term Structures
     pd_term_details_list = FSI_LGD_Term_Structure.objects.filter(
-        v_lgd_term_structure_id__v_pd_term_structure_type='R'
-    ).select_related('v_lgd_term_structure_id')
+        v_pd_term_structure_id__v_pd_term_structure_type='R'
+    ).select_related('v_pd_term_structure_id')
     
     # Set up pagination with 5 items per page
     paginator = Paginator(pd_term_details_list, 5)
     page_number = request.GET.get('page')
     pd_term_details = paginator.get_page(page_number)
 
-    return render(request, 'lgd_conf/rating_lgd_list.html', {'pd_term_details': pd_term_details})
+    return render(request, 'lgd_conf/rating_pd_list.html', {'pd_term_details': pd_term_details})
 
 # Create a new Rating Based PD Term Detail
 @login_required
 @permission_required('IFRS9.add_FSI_LGD_Term_Structure', raise_exception=True)
-def rating_lgd_create(request):
+def rating_pd_create(request):
     if request.method == 'POST':
         form = LGDTermStructureDtlRatingForm(request.POST)
         if form.is_valid():
@@ -322,11 +322,11 @@ def rating_lgd_create(request):
                 # Log the creation in the AuditTrail
                 AuditTrail.objects.create(
                     user=request.user,
-                    model_name='FSI_LGD_Term_Structure',
+                    model_name='Ldn_PD_Term_Structure_Dtl',
                     action='create',
                     object_id=rating.pk,
                     change_description=(
-                        f"Created Rating Based PD Term: Structure ID - {rating.v_lgd_term_structure_id}, "
+                        f"Created Rating Based PD Term: Structure ID - {rating.v_pd_term_structure_id}, "
                         f"Date - {rating.fic_mis_date}, Risk Basis - {rating.v_credit_risk_basis_cd}, "
                         f"PD Percent - {rating.n_pd_percent}"
                     ),
@@ -341,12 +341,12 @@ def rating_lgd_create(request):
     else:
         form = LGDTermStructureDtlRatingForm()
     
-    return render(request, 'lgd_conf/rating_lgd_form.html', {'form': form})
+    return render(request, 'lgd_conf/rating_pd_form.html', {'form': form})
 
 # Edit Rating Based PD Term Detail
 @login_required
 @permission_required('IFRS9.change_FSI_LGD_Term_Structure', raise_exception=True)
-def rating_lgd_edit(request, term_id):
+def rating_pd_edit(request, term_id):
     pd_term_detail = get_object_or_404(FSI_LGD_Term_Structure, pk=term_id)
     if request.method == 'POST':
         form = LGDTermStructureDtlRatingForm(request.POST, instance=pd_term_detail)
@@ -361,11 +361,11 @@ def rating_lgd_edit(request, term_id):
 
                 AuditTrail.objects.create(
                     user=request.user,
-                    model_name='FSI_LGD_Term_Structure',
+                    model_name='Ldn_PD_Term_Structure_Dtl',
                     action='update',
                     object_id=rating.pk,
                     change_description=(
-                        f"Updated Rating Based PD Term: Structure ID - {rating.v_lgd_term_structure_id}, "
+                        f"Updated Rating Based PD Term: Structure ID - {rating.v_pd_term_structure_id}, "
                         f"Date - {rating.fic_mis_date}, Risk Basis - {rating.v_credit_risk_basis_cd}, "
                         f"PD Percent - {rating.n_pd_percent}"
                     ),
@@ -382,22 +382,22 @@ def rating_lgd_edit(request, term_id):
     else:
         form = LGDTermStructureDtlRatingForm(instance=pd_term_detail)
     
-    return render(request, 'lgd_conf/rating_lgd_form.html', {'form': form})
+    return render(request, 'lgd_conf/rating_pd_form.html', {'form': form})
 
 # Delete Rating Based PD Term Detail
 @login_required
 @permission_required('IFRS9.delete_FSI_LGD_Term_Structure', raise_exception=True)
-def rating_lgd_delete(request, term_id):
+def rating_pd_delete(request, term_id):
     pd_term_detail = get_object_or_404(FSI_LGD_Term_Structure, pk=term_id)
     if request.method == 'POST':
          # Log the deletion in the AuditTrail
         AuditTrail.objects.create(
             user=request.user,
-            model_name='FSI_LGD_Term_Structure',
+            model_name='Ldn_PD_Term_Structure_Dtl',
             action='delete',
             object_id=pd_term_detail.pk,
             change_description=(
-                f"Deleted Rating Based PD Term: Structure ID - {pd_term_detail.v_lgd_term_structure_id}, "
+                f"Deleted Rating Based PD Term: Structure ID - {pd_term_detail.v_pd_term_structure_id}, "
                 f"Date - {pd_term_detail.fic_mis_date}, Risk Basis - {pd_term_detail.v_credit_risk_basis_cd}, "
                 f"PD Percent - {pd_term_detail.n_pd_percent}"
             ),
@@ -406,5 +406,5 @@ def rating_lgd_delete(request, term_id):
         pd_term_detail.delete()
         messages.success(request, "Rating Based PD Term deleted successfully!")
         return redirect('rating_pd_list')
-    return render(request, 'lgd_conf/rating_lgd_confirm_delete.html', {'pd_term_detail': pd_term_detail})
+    return render(request, 'lgd_conf/rating_pd_confirm_delete.html', {'pd_term_detail': pd_term_detail})
 

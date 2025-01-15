@@ -342,6 +342,52 @@ class PDTermStructureDtlRatingForm(forms.ModelForm):
             for rating in Credit_Rating_Code_Band.objects.all()
         ])
 
+
+############################################
+
+class LGDTermStructureDtlForm(forms.ModelForm):
+    class Meta:
+        model = FSI_LGD_Term_Structure
+        fields = ['v_lgd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd', 'n_lgd_percent']
+
+    def __init__(self, *args, **kwargs):
+        super(LGDTermStructureDtlForm, self).__init__(*args, **kwargs)
+        
+        # Filter Term Structure ID based on v_pd_term_structure_type
+        self.fields['v_lgd_term_structure_id'].queryset = Ldn_PD_Term_Structure.objects.filter(
+            v_pd_term_structure_type='D'
+        )
+
+        # Populate v_credit_risk_basis_cd choices from Dim_Delinquency_Band
+        delinquency_bands = Dim_Delinquency_Band.objects.values_list('n_delq_band_code', 'v_delq_band_desc')
+        self.fields['v_credit_risk_basis_cd'] = forms.ChoiceField(choices=[
+            (code, f"{desc}") for code, desc in delinquency_bands
+        ])
+
+class LGDTermStructureDtlRatingForm(forms.ModelForm):
+    class Meta:
+        model = FSI_LGD_Term_Structure
+        fields = ['v_lgd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd', 'n_lgd_percent']
+
+    def __init__(self, *args, **kwargs):
+        super(LGDTermStructureDtlRatingForm, self).__init__(*args, **kwargs)
+        
+        # Filter Term Structure ID based on v_pd_term_structure_type
+        self.fields['v_lgd_term_structure_id'].queryset = Ldn_PD_Term_Structure.objects.filter(
+            v_pd_term_structure_type='R'
+        )
+        
+        # Set up Date Input for fic_mis_date
+        self.fields['fic_mis_date'].widget = forms.DateInput(attrs={'type': 'date'})
+        
+        # Set up Rating Code dropdown from Credit_Rating_Code_Band
+        self.fields['v_credit_risk_basis_cd'].queryset = Credit_Rating_Code_Band.objects.all()
+        self.fields['v_credit_risk_basis_cd'].label = "Rating Code"
+        self.fields['v_credit_risk_basis_cd'].widget = forms.Select(choices=[
+            (rating.v_rating_code, f"{rating.v_rating_code}") 
+            for rating in Credit_Rating_Code_Band.objects.all()
+        ])
+
 class LGDTermStructureForm(forms.ModelForm):
     class Meta:
         model = Ldn_LGD_Term_Structure

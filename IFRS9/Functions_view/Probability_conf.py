@@ -12,6 +12,7 @@ from django.utils.timezone import now  # For timestamping
 
 
 
+
 @login_required
 def probability_configuration(request):
     return render(request, 'probability_conf/probability_configuration.html')

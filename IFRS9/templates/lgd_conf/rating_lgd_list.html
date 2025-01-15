@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 text-primary">Rating Based LGD Term Values</h1>
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <a href="{% url 'lgd_configuration' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back 
+    </a>
+    
+    <!-- Add Button -->
+    {% if perms.IFRS9.add_ldn_pd_term_structure_dtl %}
+    <a href="{% url 'rating_lgd_create' %}" class="btn btn-success mb-4">Add Rating LGD Term</a>
+    {% endif %}
+
+    <!-- Table for Rating PD Terms -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Term Structure ID</th>
+                <th>Reporting Date</th>
+                <th>Rating Code</th>
+                <th>LGD Percent</th>
+                <th>Created by</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pd_term in pd_term_details %}
+            <tr>
+                <td>{{ pd_term.v_lgd_term_structure_id }}</td>
+                <td>{{ pd_term.fic_mis_date }}</td>
+                <td>{{ pd_term.v_credit_risk_basis_cd }}</td>
+                <td>{{ pd_term.n_lgd_percent }}</td>
+                <td>{{ pd_term.created_by.email }}</td>
+                <td>
+                    {% if perms.IFRS9.change_ldn_pd_term_structure_dtl %}
+                    <a href="{% url 'rating_lgd_edit' pd_term.id %}" class="btn btn-primary btn-sm">Edit</a>
+                    {% endif %}
+                    {% if perms.IFRS9.delete_ldn_pd_term_structure_dtl %}
+                    <a href="{% url 'rating_lgd_delete' pd_term.id %}" class="btn btn-danger btn-sm">Delete</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No Rating LGD Terms found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination Controls -->
+    {% if pd_term_details.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <!-- First and Previous buttons -->
+            {% if pd_term_details.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">« First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pd_term_details.previous_page_number }}">‹ Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">« First</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">‹ Previous</span>
+                </li>
+            {% endif %}
+
+            <!-- Page numbers -->
+            {% for num in pd_term_details.paginator.page_range %}
+                {% if pd_term_details.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > pd_term_details.number|add:'-3' and num < pd_term_details.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next and Last buttons -->
+            {% if pd_term_details.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pd_term_details.next_page_number }}">Next ›</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pd_term_details.paginator.num_pages }}">Last »</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next ›</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Last »</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

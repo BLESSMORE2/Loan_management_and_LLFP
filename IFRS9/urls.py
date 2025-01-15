@@ -97,6 +97,15 @@ urlpatterns = [
     path('lgd-term-structure/create/', lgd_term_structure_create, name='lgd_term_structure_create'),
     path('lgd-term-structure/edit/<int:term_id>/', lgd_term_structure_edit, name='lgd_term_structure_edit'),
     path('lgd-term-structure/delete/<int:term_id>/', lgd_term_structure_delete, name='lgd_term_structure_delete'),
+    path('delinquent-lgd/', delinquent_lgd_list, name='delinquent_lgd_list'),
+    path('delinquent-lgd/create/', delinquent_lgd_create, name='delinquent_lgd_create'),
+    path('delinquent-lgd/edit/<int:term_id>/', delinquent_lgd_edit, name='delinquent_lgd_edit'),
+    path('delinquent-lgd/delete/<int:term_id>/', delinquent_lgd_delete, name='delinquent_lgd_delete'),
+    # List view for rating based PD terms
+    path('rating-lgd/', views.rating_lgd_list, name='rating_lgd_list'),
+    path('rating-lgd/create/', views.rating_lgd_create, name='rating_lgd_create'),
+    path('rating-lgd/edit/<int:term_id>/', views.rating_lgd_edit, name='rating_lgd_edit'),
+    path('rating-lgd/delete/<int:term_id>/', views.rating_lgd_delete, name='rating_lgd_delete'),
     path('lgd-calculation/view/', views.view_lgd_calculation, name='view_lgd_calculation'),
     path('lgd-calculation/edit/', views.edit_lgd_calculation, name='edit_lgd_calculation'),
 

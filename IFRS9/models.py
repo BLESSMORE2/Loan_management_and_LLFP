@@ -147,6 +147,16 @@ class Ldn_PD_Term_Structure_Dtl(models.Model):
         db_table = 'Ldn_pd_term_structure_dtl'
         unique_together = ('v_pd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd')
 
+class FSI_LGD_Term_Structure(models.Model):
+    v_lgd_term_structure_id = models.ForeignKey('Ldn_PD_Term_Structure',on_delete=models.CASCADE,to_field='v_pd_term_structure_id' )
+    fic_mis_date = models.DateField()
+    v_credit_risk_basis_cd = models.CharField(max_length=100)
+    n_lgd_percent = models.DecimalField(max_digits=5, decimal_places=4)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        db_table = 'fsi_lgd_term_structure'
+        unique_together = ('v_lgd_term_structure_id', 'fic_mis_date', 'v_credit_risk_basis_cd')
 
 class FSI_PD_Interpolated(models.Model):
     v_pd_term_structure_id = models.CharField(max_length=100)
