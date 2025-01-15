@@ -94,11 +94,14 @@
                 </tbody>
             </table>
         </div>
-        {% if perms.IFRS9.change_fc_t_stage_determination %}
-            <button type="submit" class="btn btn-success mt-3">Reassign Stages</button>
+        {% if perms.IFRS9.can_reassign_stage %}
+        <button type="submit" class="btn btn-success mt-3">Reassign Stages</button>
         {% else %}
-            <p>You do not have permission to change stages.</p>
-        {% endif %}         
+            <p>
+                <i class="fas fa-exclamation-circle text-danger"></i> You do not have permission to reassign stages.
+            </p>
+        {% endif %}
+      
     </form>
 </div>
 

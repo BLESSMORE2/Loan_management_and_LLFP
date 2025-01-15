@@ -53,7 +53,7 @@ class Ldn_Financial_Instrument(models.Model):
         db_table = 'Ldn_Financial_Instrument'
         unique_together = ('fic_mis_date', 'v_account_number')
         permissions = [
-            ("can_load_data", "Can load data"), ("can_view_edit_data", "Can load data"), 
+            ("can_load_data", "Can load data"), ("can_view_edit_data", "Can view data"), 
         ]
 
 
@@ -499,6 +499,9 @@ class FCT_Stage_Determination(models.Model):
     class Meta:
         db_table = "fct_stage_determination"  # Updated table name
         unique_together = ('fic_mis_date', 'n_account_number') 
+        permissions = [
+            ("can_reassign_stage", "Can reassign stage"), 
+        ]
 
 
 # Credit Rating to Stage Mapping

@@ -418,6 +418,7 @@ def execute_functions_in_background(function_status_entries, process_run_id, mis
 
 
 @login_required
+@permission_required('IFRS9.can_execute_run',raise_exception=True)
 def run_process_execution(request):
     if request.method == 'POST':
         process_id = request.POST.get('process_id')

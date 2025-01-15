@@ -143,7 +143,9 @@ def choose_ecl_methodology(request):
     return render(request, 'ifrs9_conf/choose_ecl_methodology.html')  
 
 
+
 @login_required
+@permission_required('IFRS9.can_select_result_columns', raise_exception=True)
 def column_mapping_view(request):
     # Dynamically retrieve all field names from the model
     model_fields = [field.name for field in FCT_Reporting_Lines._meta.get_fields()]

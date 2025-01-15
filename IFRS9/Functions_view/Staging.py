@@ -681,7 +681,7 @@ STAGE_DESCRIPTION_MAP = {
 
 
 @login_required
-@permission_required('IFRS9.change_fc_t_stage_determination', raise_exception=True)
+@permission_required('IFRS9.can_reassign_stage', raise_exception=True)
 def stage_reassignment(request): 
     filter_form = StageReassignmentFilterForm(request.GET or None)
     records = None
